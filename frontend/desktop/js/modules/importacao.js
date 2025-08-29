@@ -85,9 +85,9 @@ class ImportacaoModule {
                 this.uiManager?.showSuccess(response.data?.mensagem || successMsg);
                 // Atualiza listas se módulos estiverem disponíveis
                 // Eliminado: recarga de proprietarios en la pantalla de importar
-                if (window.imoveisModule && tipo === 'imoveis' && typeof window.imoveisModule.loadImoveis === 'function') {
+                /* if (window.imoveisModule && tipo === 'imoveis' && typeof window.imoveisModule.loadImoveis === 'function') {
                     window.imoveisModule.loadImoveis();
-                }
+                } */
                 if (window.participacoesModule && tipo === 'participacoes' && typeof window.participacoesModule.loadParticipacoes === 'function') {
                     window.participacoesModule.loadParticipacoes();
                 }

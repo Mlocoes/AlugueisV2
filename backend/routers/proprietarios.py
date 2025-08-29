@@ -157,17 +157,22 @@ async def importar_proprietarios(file: UploadFile = File(...), db: Session = Dep
                     erros.append(f"Linha {index + 2}: Nome do proprietário ausente.")
                     continue
                 
-                # Verificação de duplicidade: preferir documento; senão, nome+sobrenome
-                proprietario_existente = None
+                # Verificação de duplicidade melhorada
+                from sqlalchemy import or_
+                query = db.query(Proprietario)
+                conditions = []
                 if doc:
-                    proprietario_existente = db.query(Proprietario).filter(Proprietario.documento == doc).first()
+                    conditions.append(Proprietario.documento == doc)
+                if nome:
+                    conditions.append(Proprietario.nome == nome)
+
+                if conditions:
+                    proprietario_existente = query.filter(or_(*conditions)).first()
                 else:
-                    proprietario_existente = db.query(Proprietario).filter(
-                        Proprietario.nome == nome,
-                        Proprietario.sobrenome == (sobrenome or None)
-                    ).first()
+                    proprietario_existente = None
+
                 if proprietario_existente:
-                    erros.append(f"Linha {index + 2}: Proprietário já existe (documento/nome).")
+                    erros.append(f"Linha {index + 2}: Proprietário com nome '{nome}' ou documento '{doc}' já existe.")
                     continue
 
                 # Preparar dados somente com colunas válidas e strings normalizadas
