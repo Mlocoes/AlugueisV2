@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Alquileres V2 - Móvil</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#007bff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Alquileres V2">
+
+    <!-- PWA Icons -->
+    <link rel="apple-touch-icon" sizes="180x180"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+
+    <!-- Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            padding-bottom: 80px;
+            /* Espacio para navegación inferior */
+        }
+
+        .mobile-container {
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Loading Screen */
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Login Screen */
+        #loginScreen {
+            min-height: 100vh;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .login-logo {
+            text-align: center;
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        /* App Screen */
+        #appScreen {
+            display: none;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        /* Header */
+        .mobile-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        /* Cards */
+        .mobile-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            margin: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+        }
+
+        .mobile-card-header {
+            background: linear-gradient(135deg, var(--primary-color), #0056b3);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .mobile-card-body {
+            padding: 20px;
+        }
+
+        .card-header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Buttons */
+        .btn-mobile {
+            width: 100%;
+            height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.9em;
+            font-weight: 600;
+            border-radius: 15px;
+            border: none;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: white;
+        }
+
+        .btn-mobile i {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .btn-mobile:hover,
+        .btn-mobile:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            color: white;
+        }
+
+        /* Table Mobile */
+        .table-mobile-row {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .row-header {
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .row-content {
+            color: #555;
+        }
+
+        .row-actions {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            text-align: right;
+        }
+
+        /* Forms móvil */
+        .form-control-mobile {
+            padding: 1rem;
+            font-size: 1rem;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.9);
+            margin-bottom: 1rem;
+        }
+
+        .form-control-mobile:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        /* Menu inferior */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            z-index: 1000;
+        }
+
+        .bottom-nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 0.75rem 0.5rem;
+            color: var(--secondary-color);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .bottom-nav-item.active {
+            color: var(--primary-color);
+            background: rgba(0, 123, 255, 0.1);
+        }
+
+        .bottom-nav-item i {
+            display: block;
+            font-size: 1.2em;
+            margin-bottom: 0.25rem;
+        }
+
+        .bottom-nav-item span {
+            font-size: 0.75em;
+            font-weight: 500;
+        }
+
+        /* Alerts */
+        .alert-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            z-index: 9998;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 576px) {
+            .mobile-card {
+                margin: 10px 5px;
+            }
+
+            .mobile-card-header {
+                padding: 15px;
+                font-size: 1em;
+            }
+
+            .mobile-card-body {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <h3>🏠 Sistema de Alquileres</h3>
+        <p>Carregando aplicação móvil...</p>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="loginScreen">
+        <div class="login-card">
+            <div class="login-logo">🏠</div>
+            <h4 class="text-center mb-4">Sistema de Alquileres V2</h4>
+
+            <div id="loginAlert" class="alert alert-danger" style="display: none;" role="alert"></div>
+
+            <form id="loginForm">
+                <!-- Campo de usuario, ID único -->
+                <div class="mb-3">
+                    <label for="username" class="form-label">Usuário</label>
+                    <input type="text" class="form-control form-control-mobile" id="username" name="username" required
+                        autocomplete="username">
+                </div>
+                <!-- Campo de senha, ID único -->
+                <div class="mb-3">
+                    <label for="password" class="form-label">Senha</label>
+                    <input type="password" class="form-control form-control-mobile" id="password" name="password"
+                        required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-mobile" style="height: 50px;">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span>Entrar</span>
+                </button>
+            </form>
+
+            <div class="text-center mt-3">
+                <small class="text-muted">Versão Móvil 2.0</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Screen -->
+    <div id="appScreen">
+        <div class="mobile-container">
+            <!-- Header -->
+            <div class="mobile-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>🏠 Sistema de Alquileres V2</strong>
+                        <br>
+                        <small class="text-muted">Olá, <span id="userNameDisplay">Usuário</span></small>
+                    </div>
+                    <button class="btn btn-outline-danger btn-sm" onclick="logout()">
+                        <i class="bi bi-box-arrow-right"></i> Sair
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Cards -->
+            <div id="dashboardView">
+                <div class="mobile-card">
+                    <div class="mobile-card-header">
+                        <i class="bi bi-speedometer2 me-2"></i>Painel Principal
+                    </div>
+                    <div class="mobile-card-body">
+                        <div id="dashboardSummary" class="row g-3">
+                            <div class="col-12">
+                                <div class="table-mobile-row text-center">
+                                    <div class="row-header"><i class="bi bi-people"></i> Proprietários</div>
+                                    <div class="row-data"><span id="dashboardProprietarios">...</span></div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="table-mobile-row text-center">
+                                    <div class="row-header"><i class="bi bi-buildings"></i> Imóveis</div>
+                                    <div class="row-data"><span id="dashboardImoveis">...</span></div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="table-mobile-row text-center">
+                                    <div class="row-header"><i class="bi bi-receipt"></i> Valor Total Aluguel (Último
+                                        Mês)</div>
+                                    <div class="row-data"><span id="dashboardAluguelTotal">...</span></div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="table-mobile-row text-center">
+                                    <div class="row-header"><i class="bi bi-graph-up"></i> Variação (%) Último vs
+                                        Anterior</div>
+                                    <div class="row-data"><span id="dashboardVariacao">...</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proprietários View -->
+            <div id="proprietariosView" style="display: none;">
+                <div class="mobile-card">
+                    <div class="mobile-card-header">
+                        <i class="bi bi-people me-2"></i>Proprietários
+                        <div class="card-header-actions">
+                            <!-- Solo mostrar para admin -->
+                            <script>
+                                if (window.mobileAuth && window.mobileAuth.getUserData && window.mobileAuth.getUserData().tipo === 'admin') {
+                                    document.write('<button class="btn btn-primary" onclick="addProprietario()"><i class="bi bi-plus"></i> Adicionar</button>');
+                                }
+                            </script>
+                            <button class="btn btn-outline-secondary" onclick="refreshProprietarios()">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mobile-card-body">
+                        <div id="proprietariosList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Imóveis View -->
+            <div id="imoveisView" style="display: none;">
+                <div class="mobile-card">
+                    <div class="mobile-card-header">
+                        <i class="bi bi-buildings me-2"></i>Imóveis
+                        <div class="card-header-actions">
+                            <!-- Solo mostrar para admin -->
+                            <script>
+                                if (window.mobileAuth && window.mobileAuth.getUserData && window.mobileAuth.getUserData().tipo === 'admin') {
+                                    document.write('<button class="btn btn-primary" onclick="addImovel()"><i class="bi bi-plus"></i> Adicionar</button>');
+                                }
+                            </script>
+                            <button class="btn btn-outline-secondary" onclick="refreshImoveis()">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mobile-card-body">
+                        <div id="imoveisList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aluguéis View -->
+            <div id="alugueisView" style="display: none;">
+                <div class="mobile-card">
+                    <div class="mobile-card-header">
+                        <i class="bi bi-receipt me-2"></i>Aluguéis
+                        <div class="card-header-actions">
+                            <!-- Solo mostrar para admin -->
+                            <script>
+                                if (window.mobileAuth && window.mobileAuth.getUserData && window.mobileAuth.getUserData().tipo === 'admin') {
+                                    document.write('<button class="btn btn-primary" onclick="addAluguel()"><i class="bi bi-plus"></i> Adicionar</button>');
+                                }
+                            </script>
+                            <button class="btn btn-outline-secondary" onclick="refreshAlugueis()">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mobile-card-body">
+                        <!-- Filtros de año y mes -->
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <select id="filtroAno" class="form-select">
+                                    <option value="">Ano</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <select id="filtroMes" class="form-select">
+                                    <option value="">Mês</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="alugueisList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Participações View -->
+            <div id="participacoesView" style="display: none;">
+                <div class="mobile-card">
+                    <div class="mobile-card-header">
+                        <i class="bi bi-pie-chart me-2"></i>Participações
+                        <div class="card-header-actions">
+                            <!-- Solo mostrar para admin -->
+                            <script>
+                                if (window.mobileAuth && window.mobileAuth.getUserData && window.mobileAuth.getUserData().tipo === 'admin') {
+                                    document.write('<button class="btn btn-primary" onclick="addParticipacao()"><i class="bi bi-plus"></i> Adicionar</button>');
+                                }
+                            </script>
+                            <button class="btn btn-outline-secondary" onclick="refreshParticipacoes()">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mobile-card-body">
+                        <div id="participacoesList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <a href="#" class="bottom-nav-item active" onclick="showView('dashboard')">
+                <i class="bi bi-house"></i>
+                <span>Início</span>
+            </a>
+            <a href="#" class="bottom-nav-item" onclick="showView('proprietarios')">
+                <i class="bi bi-people"></i>
+                <span>Proprietários</span>
+            </a>
+            <a href="#" class="bottom-nav-item" onclick="showView('imoveis')">
+                <i class="bi bi-buildings"></i>
+                <span>Imóveis</span>
+            </a>
+            <a href="#" class="bottom-nav-item" onclick="showView('alugueis')">
+                <i class="bi bi-receipt"></i>
+                <span>Aluguéis</span>
+            </a>
+            <a href="#" class="bottom-nav-item" onclick="showView('participacoes')">
+                <i class="bi bi-pie-chart"></i>
+                <span>Participações</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" class="alert-container"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- App Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/views.js"></script>
+    <script src="js/app.js"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/mobile/sw.js')
+                    .then(registration => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(registrationError => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
+</body>
+
+</html>

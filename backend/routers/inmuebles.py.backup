@@ -1,0 +1,237 @@
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
+from sqlalchemy.orm import Session
+from typing import List
+import pandas as pd
+import traceback
+from datetime import datetime
+from models_final import Inmueble
+from config import get_db
+
+router = APIRouter(prefix="/inmuebles", tags=["inmuebles"])
+
+@router.get("/")
+def listar_inmuebles(db: Session = Depends(get_db)):
+    try:
+        inmuebles = db.query(Inmueble).order_by(Inmueble.nombre).all()
+        result = []
+        for inmueble in inmuebles:
+            result.append(inmueble.to_dict())
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/{inmueble_id}", response_model=dict)
+def obtener_inmueble(inmueble_id: int, db: Session = Depends(get_db)):
+    i = db.query(Inmueble).filter(Inmueble.id == inmueble_id).first()
+    if not i:
+        raise HTTPException(status_code=404, detail="Inmueble no encontrado")
+    return i.to_dict()
+
+@router.post("/", response_model=dict)
+def crear_inmueble(datos: dict, db: Session = Depends(get_db)):
+    i = Inmueble(**datos)
+    db.add(i)
+    db.commit()
+    db.refresh(i)
+    return i.to_dict()
+
+@router.put("/{inmueble_id}", response_model=dict)
+def actualizar_inmueble(inmueble_id: int, datos: dict, db: Session = Depends(get_db)):
+    i = db.query(Inmueble).filter(Inmueble.id == inmueble_id).first()
+    if not i:
+        raise HTTPException(status_code=404, detail="Inmueble no encontrado")
+    
+    # Mapear campos que pueden venir del frontend
+    campo_mapping = {
+        "direccion": "direccion_completa",  # Mapear direccion a direccion_completa
+        "direccion_completa": "direccion_completa"
+    }
+    
+    # Lista completa de campos permitidos (todos los campos del modelo excepto id, uuid, fecha_creacion)
+    campos_permitidos = [
+        "nombre", "direccion_completa", "calle", "numero", "apartamento", "barrio", "ciudad", 
+        "estado", "cep", "tipo", "area_total", "area_construida", "dormitorios", "banos", 
+        "garajes", "valor_catastral", "valor_mercado", "iptu_anual", "condominio_mensual", 
+        "estado_conservacion", "fecha_construccion", "fecha_ultima_reforma", "activo", 
+        "observaciones"
+    ]
+    
+    # Aplicar mapeo de campos
+    for campo_frontend, campo_bd in campo_mapping.items():
+        if campo_frontend in datos:
+            setattr(i, campo_bd, datos[campo_frontend])
+    
+    # Actualizar todos los campos permitidos
+    for campo in campos_permitidos:
+        if campo in datos and campo not in campo_mapping.values():
+            setattr(i, campo, datos[campo])
+    
+    # Actualizar fecha de modificación automáticamente
+    from datetime import datetime
+    i.fecha_actualizacion = datetime.now()
+    
+    db.commit()
+    db.refresh(i)
+    return i.to_dict()
+
+@router.delete("/{inmueble_id}")
+def eliminar_inmueble(inmueble_id: int, db: Session = Depends(get_db)):
+    # Importar aquí para evitar importaciones circulares
+    from models_final import AlquilerSimple
+    
+    # Verificar si el inmueble existe
+    i = db.query(Inmueble).filter(Inmueble.id == inmueble_id).first()
+    if not i:
+        raise HTTPException(status_code=404, detail="Inmueble no encontrado")
+    
+    # Verificar si tiene alquileres asociados
+    alquileres_count = db.query(AlquilerSimple).filter(AlquilerSimple.inmueble_id == inmueble_id).count()
+    if alquileres_count > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"No se puede eliminar el inmueble porque tiene {alquileres_count} alquiler(es) asociado(s). Elimine primero los alquileres o desactive el inmueble."
+        )
+    
+    # Si no hay alquileres, proceder con la eliminación
+    db.delete(i)
+    db.commit()
+    return {"mensaje": "Inmueble eliminado exitosamente"}
+
+@router.get("/disponibles/", response_model=List[dict])
+def listar_inmuebles_disponibles(db: Session = Depends(get_db)):
+    """Obtener inmuebles activos/disponibles"""
+    try:
+        inmuebles = db.query(Inmueble).filter(Inmueble.activo == True).order_by(Inmueble.nombre).all()
+        return [i.to_dict() for i in inmuebles]
+    except Exception as e:
+        import traceback
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/importar", response_model=dict)
+async def importar_inmuebles(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """Importar inmuebles desde archivo Excel según ModeloInmuebles.xlsx"""
+    if not file.filename.endswith(('.xlsx', '.xls')):
+        raise HTTPException(status_code=400, detail="Archivo debe ser Excel (.xlsx o .xls)")
+    
+    try:
+        # Leer archivo Excel
+        contenido = await file.read()
+        df = pd.read_excel(contenido)
+        
+        # Mapeo exacto según ModeloInmuebles.xlsx
+        mapeo_columnas = {
+            'Nombre': 'nombre',
+            'Dirección': 'direccion_completa',
+            'Calle': 'calle',
+            'Número': 'numero',
+            'Apto': 'apartamento',
+            'Barrio': 'barrio',
+            'Ciudad': 'ciudad',
+            'Estado': 'estado',
+            'CEP': 'cep',
+            'Tipo': 'tipo',
+            'Área Total': 'area_total',
+            'Área Construida': 'area_construida',
+            'Dormitorios': 'dormitorios',
+            'Baños': 'banos',
+            'Garajes': 'garajes',
+            'Valor Catastral': 'valor_catastral',
+            'Valor Mercado': 'valor_mercado',
+            'IPTU Anual': 'iptu_anual',
+            'Condominio': 'condominio_mensual',
+            'Estado Conserv.': 'estado_conservacion',
+            'Fecha Construcción': 'fecha_construccion',
+            'Última Reforma': 'fecha_ultima_reforma',
+            'Observaciones': 'observaciones'
+        }
+        
+        # Verificar que existe la columna obligatoria
+        if 'Nombre' not in df.columns:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Columna 'Nombre' requerida no encontrada. Columnas disponibles: {list(df.columns)}"
+            )
+        
+        procesados = 0
+        creados = 0
+        errores = []
+        
+        for index, row in df.iterrows():
+            try:
+                procesados += 1
+                
+                # Preparar datos del inmueble usando mapeo exacto
+                datos_inmueble = {}
+                
+                for col_excel, col_modelo in mapeo_columnas.items():
+                    if col_excel in df.columns:
+                        valor = row[col_excel]
+                        if pd.notna(valor) and str(valor).strip() != '':
+                            # Convertir tipos según el campo
+                            if col_modelo in ['area_total', 'area_construida', 'valor_catastral', 'valor_mercado', 'iptu_anual', 'condominio_mensual']:
+                                try:
+                                    datos_inmueble[col_modelo] = float(valor)
+                                except (ValueError, TypeError):
+                                    pass
+                            elif col_modelo in ['dormitorios', 'banos', 'garajes']:
+                                try:
+                                    datos_inmueble[col_modelo] = int(valor)
+                                except (ValueError, TypeError):
+                                    pass
+                            elif col_modelo in ['fecha_construccion', 'fecha_ultima_reforma']:
+                                try:
+                                    if isinstance(valor, pd.Timestamp):
+                                        datos_inmueble[col_modelo] = valor.date()
+                                    else:
+                                        from datetime import datetime
+                                        fecha = pd.to_datetime(valor)
+                                        datos_inmueble[col_modelo] = fecha.date()
+                                except:
+                                    pass
+                            else:
+                                datos_inmueble[col_modelo] = str(valor).strip()
+                
+                # Verificar que tenga al menos nombre
+                if 'nombre' not in datos_inmueble or not datos_inmueble['nombre']:
+                    errores.append(f"Fila {index + 2}: Falta el nombre del inmueble")
+                    continue
+                
+                # Si no tiene dirección completa, usar el nombre como dirección (campo obligatorio)
+                if 'direccion_completa' not in datos_inmueble or not datos_inmueble['direccion_completa']:
+                    datos_inmueble['direccion_completa'] = datos_inmueble['nombre']
+                
+                # Verificar si ya existe un inmueble con el mismo nombre
+                inmueble_existente = db.query(Inmueble).filter(Inmueble.nombre == datos_inmueble['nombre']).first()
+                if inmueble_existente:
+                    errores.append(f"Fila {index + 2}: Ya existe un inmueble con el nombre '{datos_inmueble['nombre']}'")
+                    continue
+                
+                # Crear inmueble
+                nuevo_inmueble = Inmueble(**datos_inmueble)
+                db.add(nuevo_inmueble)
+                db.commit()
+                db.refresh(nuevo_inmueble)
+                
+                creados += 1
+                
+            except Exception as e:
+                db.rollback()
+                errores.append(f"Fila {index + 2}: {str(e)}")
+                continue
+        
+        # Preparar respuesta
+        resultado = {
+            "procesados": procesados,
+            "creados": creados,
+            "errores": len(errores),
+            "detalle_errores": errores[:10],  # Limitar a 10 errores para no sobrecargar
+            "mensaje": f"Procesados: {procesados}, Creados: {creados}, Errores: {len(errores)}"
+        }
+        
+        return resultado
+        
+    except Exception as e:
+        db.rollback()
+        import traceback
+        print(f"Error en importación de inmuebles: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Error al procesar archivo: {str(e)}")
