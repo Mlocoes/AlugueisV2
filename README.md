@@ -2,6 +2,12 @@
 
 **Sistema completo e profissional para gestão de aluguéis, proprietários, imóveis e participações. Arquitetura moderna, escalável e automatizada.**
 
+### 🆕 Atualização Agosto 2025
+- Corrigido: Dashboard móvel agora mostra corretamente o valor total de aluguel do último mês.
+- Corrigido: Tela de imóveis móvel mostra corretamente o status "Alugado" conforme o campo `ativo` do banco de dados.
+- Corrigido: Tela de aluguéis móvel mostra os valores reais usando o campo `valor_liquido_proprietario`.
+- Todos os cálculos e exibições de valores foram revisados para garantir consistência com os dados do backend.
+
 [![Versão](https://img.shields.io/badge/versão-2.0-blue.svg)](./VERSION)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104.1-green.svg)](https://fastapi.tiangolo.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
@@ -654,6 +660,15 @@ O script principal centraliza todas as operações do sistema:
 ./run_script.sh logs -f  # Seguimento em tempo real
 tail -f logs/*.log        # Todos os logs
 ```
+
+---
+
+## 🆕 Mudanças Recentes no Frontend Móvel
+
+- O dashboard agora soma corretamente os valores de aluguel usando o campo `valor_liquido_proprietario`.
+- A tela de imóveis exibe o status "Alugado" de acordo com o campo `ativo` (Sim = ativo, Não = inativo).
+- A tela de aluguéis mostra os valores reais, corrigindo o uso do campo do backend.
+- Todas as telas foram revisadas para garantir que os dados exibidos correspondam aos valores reais do banco de dados.
 
 ---
 
