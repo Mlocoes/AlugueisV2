@@ -94,46 +94,17 @@ class SistemaAlquileresApp {
                 return;
             }
 
-            if (typeof window.NetworkConfig !== 'undefined') {
-                const networkConfig = new window.NetworkConfig();
-                const serverInfo = await networkConfig.detectServerIP();
-
-                console.log('🔍 Información de red detectada:', serverInfo);
-
-                // Verificar que AppConfig existe antes de usarlo
-                if (!window.AppConfig || typeof window.AppConfig.updateBaseURL !== 'function') {
-                    console.error('❌ window.AppConfig no está disponible');
-                    return;
-                }
-
-                // Actualizar configuración global con la IP detectada
-                if (serverInfo && serverInfo.detectedIP) {
-                    window.AppConfig.updateBaseURL(`http://${serverInfo.detectedIP}:8000`);
-                    console.log(`📡 URL base actualizada: ${window.AppConfig.getBaseURL()}`);
-                } else if (serverInfo) {
-                    window.AppConfig.updateBaseURL(`http://${serverInfo}:8000`);
-                    console.log(`📡 URL base actualizada: ${window.AppConfig.getBaseURL()}`);
-                } else {
-                    console.warn('⚠️ No se pudo detectar IP, usando localhost');
-                    window.AppConfig.updateBaseURL('http://localhost:8000');
-                }
+            // Usar solo la lógica de hostname y AppConfig
+            if (!window.AppConfig || typeof window.AppConfig.updateBaseURL !== 'function') {
+                console.error('❌ window.AppConfig no está disponible');
+                return;
+            }
+            const currentHost = window.location.hostname;
+            if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+                window.AppConfig.updateBaseURL(`http://${currentHost}:8000`);
+                console.log(`📡 Detectado desde URL, usando: ${window.AppConfig.getBaseURL()}`);
             } else {
-                console.warn('⚠️ NetworkConfig no disponible, usando configuración por defecto');
-
-                // Verificar que AppConfig existe antes de usarlo
-                if (!window.AppConfig || typeof window.AppConfig.updateBaseURL !== 'function') {
-                    console.error('❌ window.AppConfig no está disponible');
-                    return;
-                }
-
-                // Detectar desde la URL actual
-                const currentHost = window.location.hostname;
-                if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-                    window.AppConfig.updateBaseURL(`http://${currentHost}:8000`);
-                    console.log(`📡 Detectado desde URL, usando: ${window.AppConfig.getBaseURL()}`);
-                } else {
-                    window.AppConfig.updateBaseURL('http://localhost:8000');
-                }
+                window.AppConfig.updateBaseURL('http://localhost:8000');
             }
         } catch (error) {
             console.warn('⚠️ Error en configuración de red, usando configuración por defecto:', error);
