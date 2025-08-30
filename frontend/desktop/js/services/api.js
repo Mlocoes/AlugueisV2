@@ -164,12 +164,22 @@ class ApiService {
     async upload(endpoint, formData) {
         const config = this.getConfig();
         const url = `${config.baseUrl}${endpoint}`;
+        const headers = {};
+
+        // Agregar token de autenticación si está disponible
+        if (window.authService && window.authService.isAuthenticated()) {
+            const authHeader = window.authService.getAuthHeader();
+            if (authHeader) {
+                headers['Authorization'] = authHeader;
+            }
+        }
 
         try {
             console.log(`📤 Upload Request: POST ${url}`);
             const response = await fetch(url, {
                 method: 'POST',
-                body: formData // Não adicionar Content-Type para FormData
+                body: formData, // No agregar Content-Type para FormData
+                headers
             });
 
             if (!response.ok) {
