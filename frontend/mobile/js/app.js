@@ -303,13 +303,14 @@ async function loadDashboardSummary() {
         document.getElementById('dashboardImoveis').textContent = imoveis.length;
 
         // Aluguel total do último mês disponível
-        let alugueis = Array.isArray(alugueisResp) ? alugueisResp : (alugueisResp?.data || []);
-        // Normalizar mes/ano para número
-        alugueis.forEach(a => {
-            a.mes = Number(a.mes);
-            a.ano = Number(a.ano);
-            a.valor_aluguel_proprietario = Number(a.valor_aluguel_proprietario || 0);
-        });
+            let alugueis = Array.isArray(alugueisResp) ? alugueisResp : (alugueisResp?.data || []);
+            // Normalizar mes/ano para número y usar el campo correcto del backend
+            alugueis.forEach(a => {
+                a.mes = Number(a.mes);
+                a.ano = Number(a.ano);
+                // El backend envía 'valor_liquido_proprietario', no 'valor_aluguel_proprietario'
+                a.valor_liquido_proprietario = Number(a.valor_liquido_proprietario || 0);
+            });
         // Encontrar todos los meses/años únicos presentes
         let mesesAnosUnicos = [];
         alugueis.forEach(a => {
@@ -324,12 +325,12 @@ async function loadDashboardSummary() {
 
         // Total do último mês
         let totalUltimo = alugueis.filter(a => a.mes === ultimo.mes && a.ano === ultimo.ano)
-            .reduce((sum, a) => sum + a.valor_aluguel_proprietario, 0);
+            .reduce((sum, a) => sum + a.valor_liquido_proprietario, 0);
         document.getElementById('dashboardAluguelTotal').textContent = formatMoney(totalUltimo);
 
         // Total do mês anterior
         let totalPenultimo = alugueis.filter(a => a.mes === penultimo.mes && a.ano === penultimo.ano)
-            .reduce((sum, a) => sum + a.valor_aluguel_proprietario, 0);
+            .reduce((sum, a) => sum + a.valor_liquido_proprietario, 0);
 
         // Variação
         let variacao = 0;

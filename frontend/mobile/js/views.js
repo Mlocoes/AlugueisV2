@@ -153,8 +153,8 @@ function displayImoveis(imoveis) {
             </div>
             <div class="row-data">
                 <strong>Alugado:</strong> 
-                <span class="badge ${imovel.alugado ? 'bg-success' : 'bg-secondary'}">
-                    ${imovel.alugado ? 'Sim' : 'Não'}
+                <span class="badge ${(imovel.ativo === true ? 'bg-success' : 'bg-secondary')}">
+                    ${(imovel.ativo === true ? 'Sim' : 'Não')}
                 </span>
             </div>
             <div class="mt-2">
@@ -276,10 +276,10 @@ function displayAlugueis(alugueis) {
                     imoveis: []
                 };
             }
-            agrupado[key].total += Number(a.valor_aluguel_proprietario);
+            agrupado[key].total += Number(a.valor_liquido_proprietario);
             agrupado[key].imoveis.push({
                 nome_imovel: a.nome_imovel,
-                valor: a.valor_aluguel_proprietario
+                valor: a.valor_liquido_proprietario
             });
         });
 
