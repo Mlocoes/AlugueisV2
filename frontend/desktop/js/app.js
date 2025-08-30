@@ -254,10 +254,15 @@ class SistemaAlquileresApp {
         console.log(`🎯 Cargando pestaña inicial: ${initialTab}`);
         window.uiManager?.showTab(initialTab);
 
-        // Inicializar módulo de proprietarios también en Importar
+        // Inicializar módulos también en Importar
         const importarTab = document.getElementById('importar');
-        if (importarTab && typeof window.proprietariosModule !== 'undefined') {
-            window.proprietariosModule.init();
+        if (importarTab) {
+            if (typeof window.proprietariosModule !== 'undefined') {
+                window.proprietariosModule.init();
+            }
+            if (typeof window.imoveisModule !== 'undefined') {
+                window.imoveisModule.init();
+            }
         }
     }
 

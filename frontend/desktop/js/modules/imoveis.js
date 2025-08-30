@@ -16,6 +16,16 @@ class ImoveisModule {
         if (this.initialized) return;
         // ...existing code...
         this.bindEvents();
+            // Interceptar submit del formulario de Importar (Novo Imóvel)
+            const formNovoImportar = document.getElementById('form-novo-imovel-importar');
+            if (formNovoImportar) {
+                formNovoImportar.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(formNovoImportar);
+                    const data = Object.fromEntries(formData.entries());
+                    this.handleCreateData(data, formNovoImportar);
+                });
+            }
         this.initialized = true;
     }
 
@@ -86,34 +96,20 @@ class ImoveisModule {
             this.uiManager.showLoading('Criando imóvel...');
             const response = await this.apiService.createImovel(payload);
             if (response && response.success) {
-                const modalEl = document.getElementById('novo-imovel-modal');
-                if (modalEl) {
-                    // Mover el foco fuera del modal antes de cerrarlo
-                    if (document.activeElement) document.activeElement.blur();
-                    document.body.focus();
-                    const modal = bootstrap.Modal.getInstance(modalEl);
-                    if (modal) modal.hide();
+                // Detectar el modal correcto
+                let modalId = 'novo-imovel-modal';
+                if (formElement && formElement.id === 'form-novo-imovel-importar') {
+                    modalId = 'novo-imovel-importar-modal';
                 }
+                const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
+                if (modal) modal.hide();
                 formElement.reset();
-                // Limpieza manual de cualquier backdrop residual
+                // Limpiar backdrop residual
                 const backdrops = document.querySelectorAll('.modal-backdrop');
                 backdrops.forEach(bd => bd.remove());
-                // Restaurar scroll solo si la pestaña imoveis está activa
-                const tabImoveis = document.getElementById('imoveis');
-                if (tabImoveis && tabImoveis.classList.contains('active')) {
-                    const tableResponsive = tabImoveis.querySelector('.table-responsive');
-                    if (tableResponsive) {
-                        tableResponsive.style.overflowY = 'auto';
-                        tableResponsive.style.maxHeight = '';
-                    }
-                }
-                // Siempre restaurar el scroll del body
-                document.body.classList.remove('modal-open');
-                document.body.style.overflow = 'auto';
+                // Recargar lista de imóveis
+                await this.loadImoveis();
                 this.uiManager.showSuccessToast('Imóvel cadastrado', 'O imóvel foi cadastrado com sucesso.');
-                // Limpiar clases y scroll del body
-                document.body.classList.remove('modal-open');
-                document.body.style.overflow = 'auto';
             } else {
                 // Lanzar error con mensaje siempre
                 throw new Error(response?.error || 'Erro ao criar imóvel');
