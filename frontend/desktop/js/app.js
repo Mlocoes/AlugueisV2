@@ -253,6 +253,12 @@ class SistemaAlquileresApp {
         const initialTab = window.AppConfig?.ui?.defaultTab || 'dashboard';
         console.log(`🎯 Cargando pestaña inicial: ${initialTab}`);
         window.uiManager?.showTab(initialTab);
+
+        // Inicializar módulo de proprietarios también en Importar
+        const importarTab = document.getElementById('importar');
+        if (importarTab && typeof window.proprietariosModule !== 'undefined') {
+            window.proprietariosModule.init();
+        }
     }
 
     /**
