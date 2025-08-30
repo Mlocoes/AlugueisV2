@@ -445,7 +445,7 @@ docker-compose logs frontend -f
 #### **PostgreSQL**
 ```sql
 -- Otimizar consultas lentas
-EXPLAIN ANALYZE SELECT * FROM aluguel_simple
+EXPLAIN ANALYZE SELECT * FROM aluguel_simple 
 JOIN inmuebles ON aluguel_simple.inmueble_id = inmuebles.id;
 
 -- Reconstruir índices
