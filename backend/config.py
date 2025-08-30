@@ -41,9 +41,12 @@ APP_CONFIG = {
     "redoc_url": "/redoc"
 }
 
+import logging
 # Configuração CORS parametrizável por ambiente
 raw_origins = os.getenv("CORS_ALLOW_ORIGINS", "*")
 ALLOW_ORIGINS = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+logging.basicConfig(level=logging.INFO)
+logging.info(f"[CORS] ALLOW_ORIGINS: {ALLOW_ORIGINS}")
 
 # Controlar credenciais por variável (padrão: false em dev, true em prod)
 if os.getenv("CORS_ALLOW_CREDENTIALS") is not None:
@@ -73,9 +76,9 @@ if ENV == "production" and not SECRET_KEY:
 DEBUG = (os.getenv("DEBUG").lower() == "true") if os.getenv("DEBUG") else (ENV != "production")
 
 # Configurações de upload
-UPLOAD_DIR = "/app/uploads"
-STORAGE_DIR = "/app/storage"
+# UPLOAD_DIR = "/app/uploads"
+# STORAGE_DIR = "/app/storage"
 
 # Criar diretórios se não existirem
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-os.makedirs(STORAGE_DIR, exist_ok=True)
+# os.makedirs(UPLOAD_DIR, exist_ok=True)
+# os.makedirs(STORAGE_DIR, exist_ok=True)

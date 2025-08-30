@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # Configuración de la base de datos
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://alquileresv2_user:alquileresv2_pass@localhost:5432/alquileresv2_db"
+    "postgresql://alquileresv2_user:alquileresv2_pass@192.168.0.7:5432/alquileresv2_db"
 )
 
 # Configuración del engine con pool de conexiones

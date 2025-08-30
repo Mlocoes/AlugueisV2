@@ -1,4 +1,4 @@
-# 🏠 Sistema de Aluguéis V2
+# 🏠 Sistema de Aluguéis V1
 
 **Sistema completo e profissional para gestão de aluguéis, proprietários, imóveis e participações. Arquitetura moderna, escalável e automatizada.**
 

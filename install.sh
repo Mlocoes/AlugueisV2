@@ -67,7 +67,7 @@ cat > backend/.env <<BENVEOF
 ENV=development
 SECRET_KEY=${SECRET_KEY}
 DEBUG=true
-CORS_ALLOW_ORIGINS=http://localhost:3000,http://localhost:8000
+CORS_ALLOW_ORIGINS=http://192.168.0.7:3000,http://192.168.0.7:8000
 DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_v1:5432/${POSTGRES_DB}
 BENVEOF
 
@@ -80,7 +80,8 @@ if [ -z "$PURGE" ] || [ "$PURGE" = "S" ] || [ "$PURGE" = "s" ]; then
 fi
 
 echo "[4/5] Subindo containers..."
-docker compose up -d --build
+
+docker compose build --no-cache && docker compose up -d
 
 echo "Aguardando PostgreSQL saudável..."
 PG_CID=$(docker compose ps -q postgres_v1)
@@ -111,9 +112,9 @@ docker exec -e PGPASSWORD="$POSTGRES_PASSWORD" "$PG_CID" psql -U "$POSTGRES_USER
 
 echo
 echo "✅ Sistema instalado!"
-echo "Frontend:  http://localhost:3000"
-echo "Backend:   http://localhost:8000/docs"
-echo "Adminer:   http://localhost:8080 (Servidor: postgres_v1, DB: ${POSTGRES_DB}, User: ${POSTGRES_USER})"
+echo "Frontend:  http://192.168.0.7:3000"
+echo "Backend:   http://192.168.0.7:8000/docs"
+echo "Adminer:   http://192.168.0.7:8080 (Servidor: postgres_v1, DB: ${POSTGRES_DB}, User: ${POSTGRES_USER})"
 echo
 echo "Usuário admin: ${ADMIN_USER}"
 echo "Senha admin:  ${ADMIN_PASS}"

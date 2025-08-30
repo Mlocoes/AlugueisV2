@@ -109,7 +109,7 @@ cd backend
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 # Verificar funcionamiento
-curl http://localhost:8000/health
+curl http://192.168.0.7:8000/health
 ```
 
 ### Backup
