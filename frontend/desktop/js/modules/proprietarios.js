@@ -18,6 +18,16 @@ class ProprietariosModule {
         if (this.initialized) return;
         // ...existing code...
         this.bindEvents();
+        // Lógica igual que Novo Imóvel: restaurar foco al input de búsqueda al cerrar el modal
+        const modalNovo = document.getElementById('novo-proprietario-modal');
+        const searchInput = document.getElementById('search-proprietarios');
+        if (modalNovo && searchInput) {
+            modalNovo.addEventListener('hidden.bs.modal', function () {
+                setTimeout(() => {
+                    searchInput.focus();
+                }, 300); // Espera a que el modal termine de ocultarse
+            });
+        }
         this.initialized = true;
         // ...existing code...
     }
@@ -50,6 +60,18 @@ class ProprietariosModule {
         if (searchInput) {
             searchInput.addEventListener('input', (e) => this.filterProprietarios(e.target.value));
         }
+        // Registrar el evento solo cuando el DOM está listo
+        document.addEventListener('DOMContentLoaded', () => {
+            const modalNovo = document.getElementById('novo-proprietario-modal');
+            if (modalNovo) {
+                modalNovo.addEventListener('hidden.bs.modal', () => {
+                    const searchInput = document.getElementById('search-proprietarios');
+                    if (searchInput) {
+                        searchInput.focus();
+                    }
+                });
+            }
+        });
     }
 
     async loadProprietarios() {
@@ -176,7 +198,22 @@ class ProprietariosModule {
     }
 
     showNewModal() {
-        const modal = new bootstrap.Modal(document.getElementById('novo-proprietario-modal'));
+        const modalEl = document.getElementById('novo-proprietario-modal');
+        // Buscar el contenedor principal de Importar
+        const importarTab = document.getElementById('importar');
+        if (modalEl && importarTab) {
+            // Eliminar listeners previos para evitar duplicidad
+            modalEl.removeEventListener('hidden.bs.modal', modalEl._restoreFocusListener || (()=>{}));
+            // Registrar nuevo listener y guardar referencia
+            const restoreFocus = function() {
+                setTimeout(() => {
+                    importarTab.focus();
+                }, 300);
+            };
+            modalEl.addEventListener('hidden.bs.modal', restoreFocus);
+            modalEl._restoreFocusListener = restoreFocus;
+        }
+        const modal = new bootstrap.Modal(modalEl);
         modal.show();
     }
 
@@ -188,12 +225,18 @@ class ProprietariosModule {
             this.uiManager.showLoading('Criando proprietário...');
             const response = await this.apiService.createProprietario(data);
             if (response && response.success) {
-                const modal = bootstrap.Modal.getInstance(document.getElementById('novo-proprietario-modal'));
-                modal.hide();
+                // Blur y focus al body antes de cerrar el modal (igual que Novo Imóvel)
+                const modalEl = document.getElementById('novo-proprietario-modal');
+                if (document.activeElement) document.activeElement.blur();
+                document.body.focus();
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
                 formElement.reset();
                 // Limpieza manual de cualquier backdrop residual
                 const backdrops = document.querySelectorAll('.modal-backdrop');
                 backdrops.forEach(bd => bd.remove());
+                // Recargar lista automáticamente
+                await this.loadProprietarios();
             } else {
                 throw new Error(response?.error || 'Erro ao criar proprietário');
             }
