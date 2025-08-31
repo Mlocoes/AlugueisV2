@@ -9,6 +9,7 @@ class ImoveisModule {
         this.imoveis = [];
         this.currentEditId = null;
         this.initialized = false;
+        this.imovelToDeleteId = null; // <-- Nuevo campo para guardar el id a eliminar
     }
 
 
@@ -53,6 +54,21 @@ class ImoveisModule {
         const form = document.getElementById('edit-imovel-form');
         if (form) {
             form.addEventListener('submit', (event) => this.handleUpdate(event));
+        }
+        // Integrar el botón de confirmación del modal visual
+        const btnConfirmarExclusao = document.getElementById('btn-confirmar-exclusao-imovel');
+        if (btnConfirmarExclusao) {
+            btnConfirmarExclusao.addEventListener('click', () => {
+                if (this.imovelToDeleteId) {
+                    this._deleteImovelConfirmed(this.imovelToDeleteId);
+                    this.imovelToDeleteId = null;
+                    const modalEl = document.getElementById('modal-confirmar-exclusao-imovel');
+                    if (modalEl) {
+                        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                        modal.hide();
+                    }
+                }
+            });
         }
     }
 
@@ -288,11 +304,17 @@ class ImoveisModule {
         this.loadImoveis();
     }
 
-    async deleteImovel(id) {
-        if (!confirm('Tem certeza que deseja excluir este imóvel? Esta ação não pode ser desfeita.')) {
-            return;
+    deleteImovel(id) {
+        // Mostrar el modal visual en vez de confirm()
+        this.imovelToDeleteId = id;
+        const modalEl = document.getElementById('modal-confirmar-exclusao-imovel');
+        if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            modal.show();
         }
+    }
 
+    async _deleteImovelConfirmed(id) {
         this.uiManager.showLoading('Excluindo imóvel...');
         const response = await this.apiService.deleteImovel(id);
         this.uiManager.hideLoading();
