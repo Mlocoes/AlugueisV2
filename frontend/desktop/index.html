@@ -504,7 +504,7 @@
                         aria-labelledby="novoImovelImportarModalLabel" aria-hidden="true">
                         <div class="modal-dialog">
                             <div class="modal-content">
-                                <div class="modal-header bg-success text-white">
+                                <div class="modal-header bg-primary text-white">
                                     <h5 class="modal-title" id="novoImovelImportarModalLabel">
                                         <i class="fas fa-building me-2"></i>Novo Imóvel
                                     </h5>
@@ -580,7 +580,7 @@
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary"
                                             data-bs-dismiss="modal">Cancelar</button>
-                                        <button type="submit" class="btn btn-success">Salvar</button>
+                                        <button type="submit" class="btn btn-primary">Salvar</button>
                                     </div>
                                 </form>
                             </div>
@@ -843,7 +843,7 @@
     aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-warning text-white">
+            <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="modalAlterarUsuarioLabel">
                     <i class="fas fa-user-edit me-2"></i>
                     Alterar Usuário
@@ -1012,3 +1012,27 @@
 </div>
 
 </html>
+<!-- Modal de Confirmación de Exclusión de Imóvel -->
+<div class="modal fade" id="modal-confirmar-exclusao-imovel" tabindex="-1" aria-labelledby="modalConfirmarExclusaoImovelLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalConfirmarExclusaoImovelLabel">
+                    <i class="fas fa-trash me-2"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Tem certeza que deseja excluir este imóvel? Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="btn-confirmar-exclusao-imovel">
+                    <i class="fas fa-trash me-1"></i> Excluir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
