@@ -9,6 +9,7 @@ class ImoveisModule {
         this.imoveis = [];
         this.currentEditId = null;
         this.initialized = false;
+        this.imovelToDeleteId = null; // <-- Nuevo campo para guardar el id a eliminar
     }
 
 
@@ -16,6 +17,16 @@ class ImoveisModule {
         if (this.initialized) return;
         // ...existing code...
         this.bindEvents();
+            // Interceptar submit del formulario de Importar (Novo Imóvel)
+            const formNovoImportar = document.getElementById('form-novo-imovel-importar');
+            if (formNovoImportar) {
+                formNovoImportar.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(formNovoImportar);
+                    const data = Object.fromEntries(formData.entries());
+                    this.handleCreateData(data, formNovoImportar);
+                });
+            }
         this.initialized = true;
     }
 
@@ -25,12 +36,110 @@ class ImoveisModule {
     }
 
     bindEvents() {
+        // Botón y modal para novo imóvel
+        const btnNovo = document.getElementById('btn-novo-imovel');
+        if (btnNovo) {
+            btnNovo.addEventListener('click', () => this.showNewModal());
+        }
+        const formNovo = document.getElementById('form-novo-imovel');
+        if (formNovo) {
+            formNovo.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(formNovo);
+                const data = Object.fromEntries(formData.entries());
+                this.handleCreateData(data, formNovo);
+            });
+        }
+        // Formulario de edición
         const form = document.getElementById('edit-imovel-form');
         if (form) {
             form.addEventListener('submit', (event) => this.handleUpdate(event));
         }
+        // Integrar el botón de confirmación del modal visual
+        const btnConfirmarExclusao = document.getElementById('btn-confirmar-exclusao-imovel');
+        if (btnConfirmarExclusao) {
+            btnConfirmarExclusao.addEventListener('click', () => {
+                if (this.imovelToDeleteId) {
+                    this._deleteImovelConfirmed(this.imovelToDeleteId);
+                    this.imovelToDeleteId = null;
+                    const modalEl = document.getElementById('modal-confirmar-exclusao-imovel');
+                    if (modalEl) {
+                        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                        modal.hide();
+                    }
+                }
+            });
+        }
     }
 
+    showNewModal() {
+        const modalEl = document.getElementById('novo-imovel-modal');
+        if (!modalEl) {
+            this.uiManager.showErrorToast('Modal de novo imóvel não encontrado no DOM.');
+            return;
+        }
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+
+    async handleCreateData(data, formElement) {
+        // Adaptar campos según modelo Imovel
+        const allowed = ['nome', 'endereco', 'tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_anual', 'condominio_mensal', 'observacoes', 'ativo'];
+        const numericFields = ['area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_anual', 'condominio_mensal'];
+        const payload = {};
+        for (const key of allowed) {
+            if (key in data) {
+                let val = data[key];
+                if (val === '') { val = null; }
+                if (numericFields.includes(key)) {
+                    payload[key] = val !== null ? Number(val) : null;
+                } else if (key === 'ativo') {
+                    payload[key] = val === 'true' || val === true;
+                } else {
+                    payload[key] = val;
+                }
+            }
+        }
+        // Validación de campos obligatorios
+        const requiredFields = ['nome', 'endereco'];
+        for (const field of requiredFields) {
+            if (!payload[field] || payload[field].trim() === '') {
+                this.uiManager.showErrorToast('Campos obrigatórios não podem estar em branco', `Preencha o campo: ${field}`);
+                return;
+            }
+        }
+        try {
+            this.uiManager.showLoading('Criando imóvel...');
+            const response = await this.apiService.createImovel(payload);
+            if (response && response.success) {
+                // Detectar el modal correcto
+                let modalId = 'novo-imovel-modal';
+                if (formElement && formElement.id === 'form-novo-imovel-importar') {
+                    modalId = 'novo-imovel-importar-modal';
+                }
+                const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
+                if (modal) modal.hide();
+                formElement.reset();
+                // Limpiar backdrop residual
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                backdrops.forEach(bd => bd.remove());
+                // Recargar lista de imóveis
+                await this.loadImoveis();
+                this.uiManager.showSuccessToast('Imóvel cadastrado', 'O imóvel foi cadastrado com sucesso.');
+            } else {
+                // Lanzar error con mensaje siempre
+                throw new Error(response?.error || 'Erro ao criar imóvel');
+            }
+        } catch (error) {
+            const msg = error && error.message ? error.message : 'Erro desconhecido ao criar imóvel';
+            this.uiManager.showErrorToast('Erro ao criar imóvel', msg);
+        } finally {
+            this.uiManager.hideLoading();
+            // Eliminación forzada del loader global si persiste
+            const loader = document.getElementById('global-loader');
+            if (loader) loader.remove();
+        }
+    }
     async loadImoveis() {
         try {
             this.uiManager.showLoading('Carregando imóveis...');
@@ -49,7 +158,6 @@ class ImoveisModule {
             this.uiManager.showErrorToast('Erro ao carregar imóveis', error.message);
             this.uiManager.hideLoading();
         }
-
     }
 
     renderTable() {
@@ -57,33 +165,34 @@ class ImoveisModule {
         if (!tableBody) return;
 
         tableBody.innerHTML = this.imoveis.map(imovel => {
-            const estado = imovel.ativo ? '<span class="badge bg-success">Ativo</span>' : '<span class="badge bg-secondary">Inativo</span>';
+            // Sensibiliza alugado correctamente usando o campo 'ativo'
+            const alugado = imovel.ativo ? '<span class="badge bg-success">Sim</span>' : '<span class="badge bg-secondary">Não</span>';
             return `
-                <tr>
-                    <td>${imovel.nome || ''}</td>
-                    <td>${imovel.endereco || ''}</td>
-                    <td>${imovel.tipo_imovel || ''}</td>
-                    <td>${imovel.area_total || ''}</td>
-                    <td>${imovel.area_construida || ''}</td>
-                    <td>${imovel.valor_cadastral || ''}</td>
-                    <td>${imovel.valor_mercado || ''}</td>
-                    <td>${imovel.iptu_anual || ''}</td>
-                    <td>${imovel.condominio_mensal || ''}</td>
-                    <td>${estado}</td>
-                    <td>${imovel.data_cadastro ? new Date(imovel.data_cadastro).toLocaleDateString() : ''}</td>
-                    <td>${imovel.observacoes || ''}</td>
-                    <td>
-                        <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-warning admin-only" onclick="window.imoveisModule.editImovel(${imovel.id})" title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-outline-danger admin-only" onclick="window.imoveisModule.deleteImovel(${imovel.id})" title="Excluir">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `;
+                    <tr>
+                        <td>${imovel.nome || ''}</td>
+                        <td>${imovel.endereco || ''}</td>
+                        <td>${imovel.tipo_imovel || ''}</td>
+                        <td>${imovel.area_total || ''}</td>
+                        <td>${imovel.area_construida || ''}</td>
+                        <td>${imovel.valor_cadastral || ''}</td>
+                        <td>${imovel.valor_mercado || ''}</td>
+                        <td>${imovel.iptu_anual || ''}</td>
+                        <td>${imovel.condominio_mensal || ''}</td>
+                        <td>${alugado}</td>
+                        <td>${imovel.data_cadastro ? new Date(imovel.data_cadastro).toLocaleDateString() : ''}</td>
+                        <td>${imovel.observacoes || ''}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-warning admin-only" onclick="window.imoveisModule.editImovel(${imovel.id})" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-danger admin-only" onclick="window.imoveisModule.deleteImovel(${imovel.id})" title="Excluir">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
         }).join('');
     }
 
@@ -94,6 +203,14 @@ class ImoveisModule {
     }
 
     async editImovel(id) {
+        // Verificar autenticación antes de editar
+        if (!window.authService || !window.authService.isAuthenticated()) {
+            this.uiManager.showErrorToast('Você precisa estar autenticado para editar imóveis.', 'error');
+            if (window.loginManager) {
+                window.loginManager.showLoginModal();
+            }
+            return;
+        }
         try {
             this.uiManager.showLoading('Carregando dados do imóvel...');
             const response = await this.apiService.getImovel(id);
@@ -122,7 +239,11 @@ class ImoveisModule {
         for (const key in imovel) {
             const input = form.elements[key];
             if (input) {
-                input.value = imovel[key];
+                if (key === 'ativo') {
+                    input.value = imovel[key] ? 'true' : 'false';
+                } else {
+                    input.value = imovel[key];
+                }
             }
         }
     }
@@ -137,7 +258,36 @@ class ImoveisModule {
         }
 
         const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
+        const raw = Object.fromEntries(formData.entries());
+
+        // Campos permitidos por el backend (modelo Imovel)
+        const allowed = ['nome', 'endereco', 'tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_anual', 'condominio_mensal', 'observacoes', 'ativo'];
+        const numericFields = ['area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_anual', 'condominio_mensal'];
+
+        // Construir payload filtrado y tipado
+        const data = {};
+        for (const key of allowed) {
+            if (key in raw) {
+                let val = raw[key];
+                if (val === '') { val = null; }
+                if (numericFields.includes(key)) {
+                    data[key] = val !== null ? Number(val) : null;
+                } else if (key === 'ativo') {
+                    data[key] = val === 'true' || val === true;
+                } else {
+                    data[key] = val;
+                }
+            }
+        }
+
+        // Validación solo para campos obligatorios
+        const requiredFields = ['nome', 'endereco'];
+        for (const field of requiredFields) {
+            if (!data[field] || data[field].trim() === '') {
+                this.uiManager.showErrorToast('Campos obrigatórios não podem estar em branco', `Preencha o campo: ${field}`);
+                return;
+            }
+        }
 
         this.uiManager.showLoading('Atualizando imóvel...');
         const response = await this.apiService.updateImovel(this.currentEditId, data);
@@ -154,11 +304,17 @@ class ImoveisModule {
         this.loadImoveis();
     }
 
-    async deleteImovel(id) {
-        if (!confirm('Tem certeza que deseja excluir este imóvel? Esta ação não pode ser desfeita.')) {
-            return;
+    deleteImovel(id) {
+        // Mostrar el modal visual en vez de confirm()
+        this.imovelToDeleteId = id;
+        const modalEl = document.getElementById('modal-confirmar-exclusao-imovel');
+        if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            modal.show();
         }
+    }
 
+    async _deleteImovelConfirmed(id) {
         this.uiManager.showLoading('Excluindo imóvel...');
         const response = await this.apiService.deleteImovel(id);
         this.uiManager.hideLoading();

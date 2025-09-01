@@ -94,46 +94,17 @@ class SistemaAlquileresApp {
                 return;
             }
 
-            if (typeof window.NetworkConfig !== 'undefined') {
-                const networkConfig = new window.NetworkConfig();
-                const serverInfo = await networkConfig.detectServerIP();
-
-                console.log('🔍 Información de red detectada:', serverInfo);
-
-                // Verificar que AppConfig existe antes de usarlo
-                if (!window.AppConfig || typeof window.AppConfig.updateBaseURL !== 'function') {
-                    console.error('❌ window.AppConfig no está disponible');
-                    return;
-                }
-
-                // Actualizar configuración global con la IP detectada
-                if (serverInfo && serverInfo.detectedIP) {
-                    window.AppConfig.updateBaseURL(`http://${serverInfo.detectedIP}:8000`);
-                    console.log(`📡 URL base actualizada: ${window.AppConfig.getBaseURL()}`);
-                } else if (serverInfo) {
-                    window.AppConfig.updateBaseURL(`http://${serverInfo}:8000`);
-                    console.log(`📡 URL base actualizada: ${window.AppConfig.getBaseURL()}`);
-                } else {
-                    console.warn('⚠️ No se pudo detectar IP, usando localhost');
-                    window.AppConfig.updateBaseURL('http://localhost:8000');
-                }
+            // Usar solo la lógica de hostname y AppConfig
+            if (!window.AppConfig || typeof window.AppConfig.updateBaseURL !== 'function') {
+                console.error('❌ window.AppConfig no está disponible');
+                return;
+            }
+            const currentHost = window.location.hostname;
+            if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+                window.AppConfig.updateBaseURL(`http://${currentHost}:8000`);
+                console.log(`📡 Detectado desde URL, usando: ${window.AppConfig.getBaseURL()}`);
             } else {
-                console.warn('⚠️ NetworkConfig no disponible, usando configuración por defecto');
-
-                // Verificar que AppConfig existe antes de usarlo
-                if (!window.AppConfig || typeof window.AppConfig.updateBaseURL !== 'function') {
-                    console.error('❌ window.AppConfig no está disponible');
-                    return;
-                }
-
-                // Detectar desde la URL actual
-                const currentHost = window.location.hostname;
-                if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-                    window.AppConfig.updateBaseURL(`http://${currentHost}:8000`);
-                    console.log(`📡 Detectado desde URL, usando: ${window.AppConfig.getBaseURL()}`);
-                } else {
-                    window.AppConfig.updateBaseURL('http://localhost:8000');
-                }
+                window.AppConfig.updateBaseURL('http://localhost:8000');
             }
         } catch (error) {
             console.warn('⚠️ Error en configuración de red, usando configuración por defecto:', error);
@@ -246,8 +217,16 @@ class SistemaAlquileresApp {
 
         // Event listener para errores globales
         window.addEventListener('error', (event) => {
-            console.error('❌ Error global capturado:', event.error);
-            this.showError('Error inesperado', event.error);
+            let errorMsg = 'Error desconhecido';
+            if (event.error && event.error.message) {
+                errorMsg = event.error.message;
+            } else if (typeof event.error === 'string') {
+                errorMsg = event.error;
+            } else if (event.message) {
+                errorMsg = event.message;
+            }
+            console.error('❌ Error global capturado:', errorMsg);
+            this.showError('Error inesperado', errorMsg);
         });
 
         // Event listener para promesas rechazadas
@@ -274,6 +253,17 @@ class SistemaAlquileresApp {
         const initialTab = window.AppConfig?.ui?.defaultTab || 'dashboard';
         console.log(`🎯 Cargando pestaña inicial: ${initialTab}`);
         window.uiManager?.showTab(initialTab);
+
+        // Inicializar módulos también en Importar
+        const importarTab = document.getElementById('importar');
+        if (importarTab) {
+            if (typeof window.proprietariosModule !== 'undefined') {
+                window.proprietariosModule.init();
+            }
+            if (typeof window.imoveisModule !== 'undefined') {
+                window.imoveisModule.init();
+            }
+        }
     }
 
     /**
@@ -304,12 +294,21 @@ class SistemaAlquileresApp {
         const errorMessage = errorModal.querySelector('#error-message');
         const errorDetails = errorModal.querySelector('#error-details');
 
-        if (errorMessage) errorMessage.textContent = message;
-        if (errorDetails) errorDetails.textContent = error?.message || error?.toString() || 'Error desconocido';
+        // Si el error es null, undefined o vacío, mostrar mensaje genérico
+        if (errorMessage) errorMessage.textContent = message || 'Ocurrió un error inesperado.';
+        if (errorDetails) {
+            if (error === null || error === undefined || error === '' || error === 'null') {
+                errorDetails.textContent = 'No hay detalles técnicos disponibles.';
+            } else {
+                errorDetails.textContent = error?.message || error?.toString() || String(error);
+            }
+        }
 
-        // Mostrar modal
-        const bsModal = new bootstrap.Modal(errorModal);
-        bsModal.show();
+        // Mostrar modal solo si existe correctamente
+        if (errorModal) {
+            const bsModal = new bootstrap.Modal(errorModal);
+            bsModal.show();
+        }
     }
 
     /**
