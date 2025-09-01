@@ -18,16 +18,6 @@ class ProprietariosModule {
         if (this.initialized) return;
         // ...existing code...
         this.bindEvents();
-        // Lógica igual que Novo Imóvel: restaurar foco al input de búsqueda al cerrar el modal
-        const modalNovo = document.getElementById('novo-proprietario-modal');
-        const searchInput = document.getElementById('search-proprietarios');
-        if (modalNovo && searchInput) {
-            modalNovo.addEventListener('hidden.bs.modal', function () {
-                setTimeout(() => {
-                    searchInput.focus();
-                }, 300); // Espera a que el modal termine de ocultarse
-            });
-        }
         this.initialized = true;
         // ...existing code...
     }
@@ -199,22 +189,15 @@ class ProprietariosModule {
 
     showNewModal() {
         const modalEl = document.getElementById('novo-proprietario-modal');
-        // Buscar el contenedor principal de Importar
-        const importarTab = document.getElementById('importar');
-        if (modalEl && importarTab) {
-            // Eliminar listeners previos para evitar duplicidad
-            modalEl.removeEventListener('hidden.bs.modal', modalEl._restoreFocusListener || (()=>{}));
-            // Registrar nuevo listener y guardar referencia
-            const restoreFocus = function() {
-                setTimeout(() => {
-                    importarTab.focus();
-                }, 300);
-            };
-            modalEl.addEventListener('hidden.bs.modal', restoreFocus);
-            modalEl._restoreFocusListener = restoreFocus;
+        if (modalEl) {
+            // Limpiar el formulario
+            const form = document.getElementById('form-novo-proprietario');
+            if (form) form.reset();
+            
+            // Mostrar modal usando Bootstrap
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
         }
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
     }
 
     async handleCreateData(data, formElement) {
