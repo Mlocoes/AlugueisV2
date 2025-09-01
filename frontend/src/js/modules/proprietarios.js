@@ -6,6 +6,7 @@
 
 class ProprietariosModule {
     constructor() {
+        // ...existing code...
         this.apiService = window.apiService;
         this.uiManager = window.uiManager;
         this.proprietarios = [];
@@ -15,8 +16,10 @@ class ProprietariosModule {
 
     init() {
         if (this.initialized) return;
+        // ...existing code...
         this.bindEvents();
         this.initialized = true;
+        // ...existing code...
     }
 
     async load() {
@@ -31,8 +34,14 @@ class ProprietariosModule {
         }
         const formNuevo = document.getElementById('form-novo-proprietario');
         if (formNuevo) {
-            formNuevo.addEventListener('submit', (e) => this.handleCreate(e));
+            formNuevo.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(formNuevo);
+                const data = Object.fromEntries(formData.entries());
+                this.handleCreateData(data, formNuevo);
+            });
         }
+        // ...existing code...
         const formEditar = document.getElementById('form-editar-proprietario');
         if (formEditar) {
             formEditar.addEventListener('submit', (e) => this.handleUpdate(e));
@@ -41,6 +50,18 @@ class ProprietariosModule {
         if (searchInput) {
             searchInput.addEventListener('input', (e) => this.filterProprietarios(e.target.value));
         }
+        // Registrar el evento solo cuando el DOM está listo
+        document.addEventListener('DOMContentLoaded', () => {
+            const modalNovo = document.getElementById('novo-proprietario-modal');
+            if (modalNovo) {
+                modalNovo.addEventListener('hidden.bs.modal', () => {
+                    const searchInput = document.getElementById('search-proprietarios');
+                    if (searchInput) {
+                        searchInput.focus();
+                    }
+                });
+            }
+        });
     }
 
     async loadProprietarios() {
@@ -90,7 +111,6 @@ class ProprietariosModule {
                     <td><small class="text-muted">${new Date(prop.data_cadastro).toLocaleDateString()}</small></td>
                     <td>
                         <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-primary admin-only" onclick="proprietariosModule.viewDetails(${prop.id})" title="Ver detalhes"><i class="fas fa-eye"></i></button>
                             <button class="btn btn-outline-warning admin-only" onclick="proprietariosModule.editProprietario(${prop.id})" title="Editar"><i class="fas fa-edit"></i></button>
                             <button class="btn btn-outline-danger admin-only" onclick="proprietariosModule.deleteProprietario(${prop.id})" title="Eliminar"><i class="fas fa-trash"></i></button>
                         </div>
@@ -158,7 +178,6 @@ class ProprietariosModule {
                     <td><small class="text-muted">${new Date(prop.data_cadastro).toLocaleDateString()}</small></td>
                     <td>
                         <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-primary admin-only" onclick="proprietariosModule.viewDetails(${prop.id})" title="Ver detalhes"><i class="fas fa-eye"></i></button>
                             <button class="btn btn-outline-warning admin-only" onclick="proprietariosModule.editProprietario(${prop.id})" title="Editar"><i class="fas fa-edit"></i></button>
                             <button class="btn btn-outline-danger admin-only" onclick="proprietariosModule.deleteProprietario(${prop.id})" title="Eliminar"><i class="fas fa-trash"></i></button>
                         </div>
@@ -169,30 +188,52 @@ class ProprietariosModule {
     }
 
     showNewModal() {
-        const modal = new bootstrap.Modal(document.getElementById('novo-proprietario-modal'));
-        modal.show();
+        const modalEl = document.getElementById('novo-proprietario-modal');
+        if (modalEl) {
+            // Limpiar el formulario
+            const form = document.getElementById('form-novo-proprietario');
+            if (form) form.reset();
+
+            // Mostrar modal usando Bootstrap
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
     }
 
-    async handleCreate(event) {
-        event.preventDefault();
-        const formData = new FormData(event.target);
-        const data = Object.fromEntries(formData.entries());
-        data.ativo = formData.has('ativo');
+    async handleCreateData(data, formElement) {
+        if ('ativo' in data) {
+            data.ativo = data.ativo === 'true';
+        }
         try {
             this.uiManager.showLoading('Criando proprietário...');
             const response = await this.apiService.createProprietario(data);
-            if (response.success) {
-                const modal = bootstrap.Modal.getInstance(document.getElementById('novo-proprietario-modal'));
-                modal.hide();
-                event.target.reset();
+            if (response && response.success) {
+                // Blur y focus al body antes de cerrar el modal (igual que Novo Imóvel)
+                const modalEl = document.getElementById('novo-proprietario-modal');
+                if (document.activeElement) document.activeElement.blur();
+                document.body.focus();
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+                formElement.reset();
+                // Limpieza manual de cualquier backdrop residual
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                backdrops.forEach(bd => bd.remove());
+                // Recargar lista automáticamente
                 await this.loadProprietarios();
             } else {
-                throw new Error(response.error || 'Erro ao criar proprietário');
+                throw new Error(response?.error || 'Erro ao criar proprietário');
             }
         } catch (error) {
             this.uiManager.showError('Erro ao criar proprietário: ' + error.message);
-        } finally {
-            this.uiManager.hideLoading();
+        }
+        // Oculta el loader siempre, incluso si no hay recarga de lista
+        // ...existing code...
+        this.uiManager.hideLoading();
+        // ...existing code...
+        // Eliminación forzada del loader global si persiste
+        const loader = document.getElementById('global-loader');
+        if (loader) {
+            loader.remove();
         }
     }
 
@@ -225,9 +266,9 @@ class ProprietariosModule {
                 input.value = proprietario[field] || '';
             }
         });
-        const ativoCheckbox = form.querySelector('[name="ativo"]');
-        if (ativoCheckbox) {
-            ativoCheckbox.checked = !!proprietario.ativo;
+        const ativoSelect = form.querySelector('[name="ativo"]');
+        if (ativoSelect) {
+            ativoSelect.value = proprietario.ativo ? 'true' : 'false';
         }
     }
 
@@ -239,7 +280,9 @@ class ProprietariosModule {
         }
         const formData = new FormData(event.target);
         const data = Object.fromEntries(formData.entries());
-        data.ativo = formData.get('ativo') === 'on';
+        if ('ativo' in data) {
+            data.ativo = data.ativo === 'true';
+        }
         try {
             this.uiManager.showLoading('Atualizando proprietário...');
             const response = await this.apiService.updateProprietario(this.currentEditId, data);
@@ -331,7 +374,9 @@ class ProprietariosModule {
 
 // Inicializar módulo quando o DOM estiver pronto
 document.addEventListener('DOMContentLoaded', () => {
-    if (AppConfig.modules.proprietarios) {
+    // Evita inicializar en la pantalla de importar
+    const isImportScreen = window.location.hash.includes('importar') || window.location.pathname.includes('importar');
+    if (AppConfig.modules.proprietarios && !isImportScreen) {
         window.proprietariosModule = new ProprietariosModule();
     }
 });

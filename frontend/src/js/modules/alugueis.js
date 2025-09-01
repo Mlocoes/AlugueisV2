@@ -29,13 +29,15 @@ class AlugueisModule {
         try {
             const resp = await this.apiService.getAnosDisponiveisAlugueis();
             if (resp.success && resp.data && resp.data.anos && resp.data.anos.length) {
-                // Solo el año más reciente
+                // Seleccionar el año más reciente
                 const anoMaisRecente = Math.max(...resp.data.anos);
                 this.anosDisponiveis = [anoMaisRecente];
                 this.anoSelecionado = anoMaisRecente;
                 this.populateAnoDropdown();
-                // Cargar automáticamente el mes más reciente
-                await this.loadMesReciente();
+                // Seleccionar "Todos os meses" y cargar la suma total
+                this.mesSelecionado = 'todos';
+                this.populateMesDropdown();
+                await this.loadMatrizAlugueis(anoMaisRecente, 'todos');
             } else {
                 this.anosDisponiveis = [];
                 this.populateAnoDropdown();
@@ -51,7 +53,8 @@ class AlugueisModule {
             // Usar fetch directo como fallback para obtener último período
             let ultimoPeriodo = null;
             try {
-                const response = await fetch('http://localhost:8000/alugueis/ultimo-periodo/', {
+                const baseUrl = window.AppConfig?.api?.baseUrl || 'http://localhost:8000';
+                const response = await fetch(`${baseUrl}/alugueis/ultimo-periodo/`, {
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': window.authService?.getAuthHeader() || ''
@@ -197,23 +200,30 @@ class AlugueisModule {
 
             let resp;
             if (mes === 'todos') {
-                // Usar fetch directo para suma de todos los meses
+                // Usar el endpoint correcto para sumar todos los meses del año
                 try {
                     console.log('🔍 Buscando soma de todos os meses para ano:', ano);
-                    const response = await fetch(`http://localhost:8000/alugueis/distribuicao-todos-meses/?ano=${ano}`, {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': window.authService?.getAuthHeader() || ''
+                    const baseUrl = window.AppConfig?.api?.baseUrl || 'http://localhost:8000';
+                    const headers = {
+                        'Content-Type': 'application/json'
+                    };
+                    if (window.authService && window.authService.isAuthenticated()) {
+                        const authHeader = window.authService.getAuthHeader();
+                        if (authHeader) {
+                            headers['Authorization'] = authHeader;
                         }
+                    }
+                    const response = await fetch(`${baseUrl}/alugueis/distribuicao-matriz/?ano=${ano}&agregacao=ano_completo`, {
+                        headers
                     });
                     if (response.ok) {
                         resp = await response.json();
-                        console.log('✅ Soma de todos os meses obtida via fetch direto');
+                        console.log('✅ Soma de todos os meses obtida via fetch correto');
                     } else {
                         throw new Error(`HTTP ${response.status}`);
                     }
                 } catch (fetchError) {
-                    console.warn('Erro ao usar fetch direto para todos os meses, usando método padrão:', fetchError);
+                    console.warn('Erro ao usar fetch para todos os meses, usando método padrão:', fetchError);
                     resp = await this.apiService.getDistribuicaoMatrizAlugueis(ano, null);
                 }
             } else {
@@ -262,12 +272,12 @@ class AlugueisModule {
             return;
         }
 
-        // Cabeçalho: Imóvel | Proprietário1 | Proprietário2 | ... | Total | Ações
+        // Cabeçalho: Imóvel | Proprietário1 | Proprietário2 | ... | Total
         let headHtml = '<tr><th>Imóvel</th>';
         for (const prop of this.proprietarios) {
             headHtml += `<th>${prop.nome}</th>`;
         }
-        headHtml += '<th>Total</th><th width="120">Ações</th></tr>';
+        headHtml += '<th>Total</th></tr>';
         tableHead.innerHTML = headHtml;
 
         // Corpo: para cada imóvel, uma linha
@@ -287,17 +297,7 @@ class AlugueisModule {
                 total += valor;
                 bodyHtml += `<td>${valor ? 'R$ ' + valor.toFixed(2) : '-'}</td>`;
             }
-            bodyHtml += `<td><strong>R$ ${total.toFixed(2)}</strong></td>`;
-            bodyHtml += `<td>
-                <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-warning admin-only" title="Editar" onclick="window.alugueisModule.editAluguel('${imovel.id}')">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-outline-danger admin-only" title="Excluir" onclick="window.alugueisModule.deleteAluguel('${imovel.id}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </td></tr>`;
+            bodyHtml += `<td><strong>R$ ${total.toFixed(2)}</strong></td></tr>`;
         }
         tableBody.innerHTML = bodyHtml;
 
