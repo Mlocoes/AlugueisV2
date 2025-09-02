@@ -1,9 +1,9 @@
 /**
- * Aplicación principal del Sistema de Alquileres V2 Optimizado
- * Punto de entrada y coordinador de todos los módulos
+ * Aplicação principal do Sistema de Aluguéis V2 Otimizado
+ * Ponto de entrada e coordenador de todos os módulos
  */
 
-class SistemaAlquileresApp {
+class SistemaAlugueisApp {
     constructor() {
         this.initialized = false;
         this.modules = {};
@@ -11,46 +11,46 @@ class SistemaAlquileresApp {
     }
 
     /**
-     * Inicializar la aplicación
+     * Inicializar a aplicação
      */
     async init() {
         try {
-            console.log(`🚀 Inicializando Sistema de Alquileres V${this.version}...`);
+            console.log(`🚀 Inicializando Sistema de Aluguéis V${this.version}...`);
 
-            // Inicializar configuración de red
+            // Inicializar configuração de rede
             await this.initializeNetwork();
 
-            // Verificar dependencias
+            // Verificar dependências
             if (!this.checkDependencies()) {
-                throw new Error('Faltan dependencias requeridas');
+                throw new Error('Faltam dependências requeridas');
             }
 
-            // Verificar conexión con el backend
+            // Verificar conexão com o backend
             await this.checkBackendConnection();
 
             // Inicializar módulos
             await this.initializeModules();
 
-            // Configurar eventos globales
+            // Configurar eventos globais
             this.setupGlobalEvents();
 
-            // Cargar pestaña inicial
+            // Carregar aba inicial
             this.loadInitialTab();
 
             this.initialized = true;
-            console.log('✅ Sistema de Alquileres inicializado correctamente');
+            console.log('✅ Sistema de Aluguéis inicializado corretamente');
 
-            // Mostrar mensaje de bienvenida
-            // ...existing code...
+            // Mostrar mensagem de boas-vindas
+            // ...código existente...
 
         } catch (error) {
-            console.error('❌ Error inicializando la aplicación:', error);
-            this.showError('Error crítico al inicializar el sistema', error);
+            console.error('❌ Erro inicializando a aplicação:', error);
+            this.showError('Erro crítico ao inicializar o sistema', error);
         }
     }
 
     /**
-     * Verificar dependencias requeridas
+     * Verificar dependências requeridas
      */
     checkDependencies() {
         const dependencies = [
@@ -64,54 +64,54 @@ class SistemaAlquileresApp {
         const missing = dependencies.filter(dep => !dep.check());
 
         if (missing.length > 0) {
-            console.error('❌ Dependencias faltantes:', missing.map(d => d.name));
+            console.error('❌ Dependências faltantes:', missing.map(d => d.name));
             return false;
         }
 
-        console.log('✅ Todas las dependencias verificadas');
-        console.log('📊 Chart.js versión:', Chart.version);
+        console.log('✅ Todas as dependências verificadas');
+        console.log('📊 Chart.js versão:', Chart.version);
         return true;
     }
 
     /**
-     * Inicializar configuración de red y detectar IP del servidor
+     * Inicializar configuração de rede e detectar IP do servidor
      */
     async initializeNetwork() {
         try {
-            console.log('🌐 Inicializando configuración de red...');
+            console.log('🌐 Inicializando configuração de rede...');
 
-            // Esperar a que AppConfig esté disponible (máximo 2 segundos)
+            // Esperar que AppConfig esteja disponível (máximo 2 segundos)
             let attempts = 0;
             const maxAttempts = 20;
             while (!window.AppConfig && attempts < maxAttempts) {
-                console.log(`⏳ Esperando AppConfig... intento ${attempts + 1}/${maxAttempts}`);
+                console.log(`⏳ Esperando AppConfig... tentativa ${attempts + 1}/${maxAttempts}`);
                 await new Promise(resolve => setTimeout(resolve, 100));
                 attempts++;
             }
 
             if (!window.AppConfig) {
-                console.error('❌ window.AppConfig no se pudo cargar después de esperar');
+                console.error('❌ window.AppConfig não pôde ser carregado após esperar');
                 return;
             }
 
-            // DESHABILITADO: Usar detección automática - siempre usar proxy nginx
-            console.log('🌐 Usando proxy nginx - configuración automática de URL deshabilitada');
-            console.log(`� BaseURL actual: ${window.AppConfig.getBaseURL()}`);
+            // DESABILITADO: Usar detecção automática - sempre usar proxy nginx
+            console.log('🌐 Usando proxy nginx - configuração automática de URL desabilitada');
+            console.log(`� BaseURL atual: ${window.AppConfig.getBaseURL()}`);
             
-            // No modificar baseUrl - mantener la configuración de proxy nginx
+            // Não modificar baseUrl - manter a configuração de proxy nginx
         } catch (error) {
-            console.warn('⚠️ Error en configuración de red, manteniendo configuración de proxy:', error);
-            // No hacer fallback a IPs directas - mantener proxy nginx
+            console.warn('⚠️ Erro na configuração de rede, mantendo configuração de proxy:', error);
+            // Não fazer fallback para IPs diretos - manter proxy nginx
         }
     }    /**
-     * Verificar conexión con el backend
+     * Verificar conexão com o backend
      */
     async checkBackendConnection() {
         try {
             const health = await window.apiService.getHealth();
             console.log('✅ Backend conectado:', health);
 
-            // Actualizar indicador de conexión
+            // Atualizar indicador de conexão
             const indicator = document.querySelector('.navbar-text');
             if (indicator) {
                 indicator.innerHTML = '<i class="fas fa-circle text-success me-1"></i>Conectado';
@@ -119,81 +119,81 @@ class SistemaAlquileresApp {
 
             return true;
         } catch (error) {
-            console.error('❌ Backend no disponible:', error);
+            console.error('❌ Backend não disponível:', error);
 
-            // Actualizar indicador de conexión
+            // Atualizar indicador de conexão
             const indicator = document.querySelector('.navbar-text');
             if (indicator) {
                 indicator.innerHTML = '<i class="fas fa-circle text-danger me-1"></i>Desconectado';
             }
 
-            throw new Error('Backend no disponible');
+            throw new Error('Backend não disponível');
         }
     }
 
     /**
-     * Inicializar módulos de la aplicación
+     * Inicializar módulos da aplicação
      */
     async initializeModules() {
         console.log('📦 Inicializando módulos...');
 
-        // Crear instancias de los módulos
+        // Criar instâncias dos módulos
         if (typeof DashboardModule !== 'undefined') {
             this.modules.dashboard = new DashboardModule();
             window.dashboardModule = this.modules.dashboard;
-            console.log('✅ Dashboard module creado');
+            console.log('✅ Módulo Dashboard criado');
         }
 
         if (typeof ProprietariosModule !== 'undefined') {
             this.modules.proprietarios = new ProprietariosModule();
             window.proprietariosModule = this.modules.proprietarios;
-            console.log('✅ Proprietarios module criado');
+            console.log('✅ Módulo Proprietarios criado');
         }
 
         if (typeof ImoveisModule !== 'undefined') {
             this.modules.imoveis = new ImoveisModule();
             window.imoveisModule = this.modules.imoveis;
-            console.log('✅ Imoveis module criado');
+            console.log('✅ Módulo Imoveis criado');
         }
 
         if (typeof ParticipacoesModule !== 'undefined') {
             this.modules.participacoes = new ParticipacoesModule();
             window.participacoesModule = this.modules.participacoes;
-            console.log('✅ Participacoes module criado');
+            console.log('✅ Módulo Participacoes criado');
         }
 
         if (typeof ImportacaoModule !== 'undefined') {
             this.modules.importacao = new ImportacaoModule();
             window.importacaoModule = this.modules.importacao;
-            console.log('✅ Importacao module criado');
+            console.log('✅ Módulo Importacao criado');
         }
 
         if (typeof AlugueisModule !== 'undefined') {
             this.modules.alugueis = new AlugueisModule();
             window.alugueisModule = this.modules.alugueis;
-            console.log('✅ Alugueis module criado');
+            console.log('✅ Módulo Alugueis criado');
         }
 
         if (typeof window.usuarioManager !== 'undefined') {
             window.usuarioManager.init();
-            console.log('✅ Usuario manager inicializado');
+            console.log('✅ Gerenciador de usuário inicializado');
         }
 
         console.log('✅ Módulos inicializados:', Object.keys(this.modules));
     }
 
     /**
-     * Configurar eventos globales
+     * Configurar eventos globais
      */
     setupGlobalEvents() {
-        // Event listener para el documento
+        // Event listener para o documento
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('📄 DOM completamente cargado');
+            console.log('📄 DOM completamente carregado');
         });
 
-        // Event listener para errores globales
+        // Event listener para erros globais
         window.addEventListener('error', (event) => {
-            let errorMsg = 'Error desconhecido';
+            let errorMsg = 'Erro desconhecido';
             if (event.error && event.error.message) {
                 errorMsg = event.error.message;
             } else if (typeof event.error === 'string') {
@@ -201,36 +201,36 @@ class SistemaAlquileresApp {
             } else if (event.message) {
                 errorMsg = event.message;
             }
-            console.error('❌ Error global capturado:', errorMsg);
-            this.showError('Error inesperado', errorMsg);
+            console.error('❌ Erro global capturado:', errorMsg);
+            this.showError('Erro inesperado', errorMsg);
         });
 
-        // Event listener para promesas rechazadas
+        // Event listener para promessas rejeitadas
         window.addEventListener('unhandledrejection', (event) => {
-            console.error('❌ Promesa rechazada:', event.reason);
-            this.showError('Error de promesa no manejada', event.reason);
+            console.error('❌ Promessa rejeitada:', event.reason);
+            this.showError('Erro de promessa não tratada', event.reason);
         });
 
-        // Event listener para visibilidad de la página
+        // Event listener para visibilidade da página
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden && this.initialized) {
-                console.log('👁️ Página visible - refrescando datos');
+                console.log('👁️ Página visível - atualizando dados');
                 this.refreshCurrentTab();
             }
         });
 
-        console.log('✅ Eventos globales configurados');
+        console.log('✅ Eventos globais configurados');
     }
 
     /**
-     * Cargar pestaña inicial
+     * Carregar aba inicial
      */
     loadInitialTab() {
         const initialTab = window.AppConfig?.ui?.defaultTab || 'dashboard';
-        console.log(`🎯 Cargando pestaña inicial: ${initialTab}`);
+        console.log(`🎯 Carregando aba inicial: ${initialTab}`);
         window.uiManager?.showTab(initialTab);
 
-        // Inicializar módulos también en Importar
+        // Inicializar módulos também em Importar
         const importarTab = document.getElementById('importar');
         if (importarTab) {
             if (typeof window.proprietariosModule !== 'undefined') {
@@ -243,7 +243,7 @@ class SistemaAlquileresApp {
     }
 
     /**
-     * Refrescar datos de la pestaña actual
+     * Atualizar dados da aba atual
      */
     async refreshCurrentTab() {
         const currentTab = window.uiManager?.currentTab;
@@ -251,36 +251,36 @@ class SistemaAlquileresApp {
             try {
                 await this.modules[currentTab].refresh();
             } catch (error) {
-                console.error(`❌ Error refrescando ${currentTab}:`, error);
+                console.error(`❌ Erro atualizando ${currentTab}:`, error);
             }
         }
     }
 
     /**
-     * Mostrar error crítico
+     * Mostrar erro crítico
      */
     showError(message, error) {
-        // Crear modal de error si no existe
+        // Criar modal de erro se não existir
         let errorModal = document.getElementById('errorModal');
         if (!errorModal) {
             errorModal = this.createErrorModal();
         }
 
-        // Actualizar contenido del error
+        // Atualizar conteúdo do erro
         const errorMessage = errorModal.querySelector('#error-message');
         const errorDetails = errorModal.querySelector('#error-details');
 
-        // Si el error es null, undefined o vacío, mostrar mensaje genérico
-        if (errorMessage) errorMessage.textContent = message || 'Ocurrió un error inesperado.';
+        // Se o erro for nulo, indefinido ou vazio, mostrar mensagem genérica
+        if (errorMessage) errorMessage.textContent = message || 'Ocorreu um erro inesperado.';
         if (errorDetails) {
             if (error === null || error === undefined || error === '' || error === 'null') {
-                errorDetails.textContent = 'No hay detalles técnicos disponibles.';
+                errorDetails.textContent = 'Não há detalhes técnicos disponíveis.';
             } else {
                 errorDetails.textContent = error?.message || error?.toString() || String(error);
             }
         }
 
-        // Mostrar modal solo si existe correctamente
+        // Mostrar modal apenas se existir corretamente
         if (errorModal) {
             const bsModal = new bootstrap.Modal(errorModal);
             bsModal.show();
@@ -288,7 +288,7 @@ class SistemaAlquileresApp {
     }
 
     /**
-     * Crear modal de error dinámicamente
+     * Criar modal de erro dinamicamente
      */
     createErrorModal() {
         const modal = document.createElement('div');
@@ -300,19 +300,19 @@ class SistemaAlquileresApp {
                     <div class="modal-header bg-danger text-white">
                         <h5 class="modal-title">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            Error del Sistema
+                            Erro do Sistema
                         </h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <p><strong>Mensaje:</strong></p>
+                        <p><strong>Mensagem:</strong></p>
                         <p id="error-message" class="text-danger"></p>
-                        <p><strong>Detalles técnicos:</strong></p>
+                        <p><strong>Detalhes técnicos:</strong></p>
                         <pre id="error-details" class="bg-light p-2 rounded"></pre>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="button" class="btn btn-primary" onclick="location.reload()">Recargar Página</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                        <button type="button" class="btn btn-primary" onclick="location.reload()">Recarregar Página</button>
                     </div>
                 </div>
             </div>
@@ -322,7 +322,7 @@ class SistemaAlquileresApp {
     }
 
     /**
-     * Obtener información del sistema
+     * Obter informações do sistema
      */
     getSystemInfo() {
         return {
@@ -335,33 +335,33 @@ class SistemaAlquileresApp {
     }
 }
 
-// Función de inicialización global
+// Função de inicialização global
 async function initApp() {
     try {
-        // Crear instancia de la aplicación
-        window.app = new SistemaAlquileresApp();
+        // Criar instância da aplicação
+        window.app = new SistemaAlugueisApp();
 
         // Inicializar
         await window.app.init();
 
     } catch (error) {
-        console.error('❌ Error fatal inicializando la aplicación:', error);
+        console.error('❌ Erro fatal inicializando a aplicação:', error);
 
-        // Mostrar error básico si no hay UI Manager
+        // Mostrar erro básico se não houver UI Manager
         if (typeof window.uiManager === 'undefined') {
-            alert('Error crítico: No se pudo inicializar el sistema. Por favor, recarga la página.');
+            alert('Erro crítico: Não foi possível inicializar o sistema. Por favor, recarregue a página.');
         }
     }
 }
 
-// Exponer funciones globales para compatibilidad
+// Expor funções globais para compatibilidade
 window.initApp = initApp;
 
-// Función de utilidad global para debug
+// Função de utilidade global para debug
 window.debugApp = () => {
     if (window.app) {
         console.table(window.app.getSystemInfo());
     } else {
-        console.warn('❌ Aplicación no inicializada');
+        console.warn('❌ Aplicação não inicializada');
     }
 };

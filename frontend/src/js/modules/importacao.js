@@ -45,7 +45,7 @@ class ImportacaoModule {
         const file = fileInput.files[0];
         const formData = new FormData();
         formData.append('file', file);
-        // ...resto de la función handleImport...
+        // ...resto da função handleImport...
 
         let endpoint = '';
         let loadingMsg = '';
@@ -84,8 +84,8 @@ class ImportacaoModule {
             this.uiManager?.hideLoading();
             if (response.success) {
                 this.uiManager?.showSuccess(response.data?.mensagem || successMsg);
-                // Atualiza listas se módulos estiverem disponíveis
-                // Eliminado: recarga de proprietarios en la pantalla de importar
+                // Atualiza listas se os módulos estiverem disponíveis
+                // Eliminado: recarga de proprietários na tela de importar
                 if (window.imoveisModule && tipo === 'imoveis' && typeof window.imoveisModule.loadImoveis === 'function') {
                     window.imoveisModule.loadImoveis();
                 }

@@ -6,7 +6,7 @@
 
 class ProprietariosModule {
     constructor() {
-        // ...existing code...
+        // ...código existente...
         this.apiService = window.apiService;
         this.uiManager = window.uiManager;
         this.proprietarios = [];
@@ -16,10 +16,10 @@ class ProprietariosModule {
 
     init() {
         if (this.initialized) return;
-        // ...existing code...
+        // ...código existente...
         this.bindEvents();
         this.initialized = true;
-        // ...existing code...
+        // ...código existente...
     }
 
     async load() {
@@ -28,20 +28,20 @@ class ProprietariosModule {
     }
 
     bindEvents() {
-        const btnNuevo = document.getElementById('btn-novo-proprietario');
-        if (btnNuevo) {
-            btnNuevo.addEventListener('click', () => this.showNewModal());
+        const btnNovo = document.getElementById('btn-novo-proprietario');
+        if (btnNovo) {
+            btnNovo.addEventListener('click', () => this.showNewModal());
         }
-        const formNuevo = document.getElementById('form-novo-proprietario');
-        if (formNuevo) {
-            formNuevo.addEventListener('submit', (e) => {
+        const formNovo = document.getElementById('form-novo-proprietario');
+        if (formNovo) {
+            formNovo.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const formData = new FormData(formNuevo);
+                const formData = new FormData(formNovo);
                 const data = Object.fromEntries(formData.entries());
-                this.handleCreateData(data, formNuevo);
+                this.handleCreateData(data, formNovo);
             });
         }
-        // ...existing code...
+        // ...código existente...
         const formEditar = document.getElementById('form-editar-proprietario');
         if (formEditar) {
             formEditar.addEventListener('submit', (e) => this.handleUpdate(e));
@@ -50,7 +50,7 @@ class ProprietariosModule {
         if (searchInput) {
             searchInput.addEventListener('input', (e) => this.filterProprietarios(e.target.value));
         }
-        // Registrar el evento solo cuando el DOM está listo
+        // Registrar o evento apenas quando o DOM estiver pronto
         document.addEventListener('DOMContentLoaded', () => {
             const modalNovo = document.getElementById('novo-proprietario-modal');
             if (modalNovo) {

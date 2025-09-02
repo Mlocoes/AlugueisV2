@@ -29,12 +29,12 @@ class AlugueisModule {
         try {
             const resp = await this.apiService.getAnosDisponiveisAlugueis();
             if (resp.success && resp.data && resp.data.anos && resp.data.anos.length) {
-                // Solo el año más reciente
+                // Apenas o ano mais recente
                 const anoMaisRecente = Math.max(...resp.data.anos);
                 this.anosDisponiveis = [anoMaisRecente];
                 this.anoSelecionado = anoMaisRecente;
                 this.populateAnoDropdown();
-                // Cargar automáticamente el mes más reciente
+                // Carregar automaticamente o mês mais recente
                 await this.loadMesReciente();
             } else {
                 this.anosDisponiveis = [];
@@ -48,7 +48,7 @@ class AlugueisModule {
 
     async loadMesReciente() {
         try {
-            // Usar fetch directo como fallback para obtener último período
+            // Usar fetch direto como fallback para obter o último período
             let ultimoPeriodo = null;
             try {
                 const response = await fetch('/api/alugueis/ultimo-periodo/', {
@@ -64,24 +64,24 @@ class AlugueisModule {
                 console.warn('Erro ao usar fetch direto:', fetchError);
             }
 
-            console.log('🔍 Ultimo periodo obtido:', ultimoPeriodo);
+            console.log('🔍 Último período obtido:', ultimoPeriodo);
 
             if (ultimoPeriodo?.success && ultimoPeriodo?.data?.ano && ultimoPeriodo?.data?.mes) {
                 this.mesSelecionado = ultimoPeriodo.data.mes;
-                console.log('🔍 Mes selecionado definido como:', this.mesSelecionado);
+                console.log('🔍 Mês selecionado definido como:', this.mesSelecionado);
                 this.populateMesDropdown();
-                // Cargar matriz automáticamente con el mes más reciente de la BD
+                // Carregar matriz automaticamente com o mês mais recente do BD
                 this.loadMatrizAlugueis(this.anoSelecionado, ultimoPeriodo.data.mes);
             } else {
-                // Si no hay datos, seleccionar "Todos os meses" por defecto
-                console.warn('Sem dados de ultimo periodo, usando todos os meses');
+                // Se não houver dados, selecionar "Todos os meses" por padrão
+                console.warn('Sem dados de último período, usando todos os meses');
                 this.mesSelecionado = 'todos';
                 this.populateMesDropdown();
                 this.loadMatrizAlugueis(this.anoSelecionado, 'todos');
             }
         } catch (error) {
-            console.warn('Erro ao carregar ultimo periodo, usando todos os meses:', error);
-            // Si hay error, seleccionar "Todos os meses" por defecto
+            console.warn('Erro ao carregar último período, usando todos os meses:', error);
+            // Se houver erro, selecionar "Todos os meses" por padrão
             this.mesSelecionado = 'todos';
             this.populateMesDropdown();
             this.loadMatrizAlugueis(this.anoSelecionado, 'todos');
@@ -95,12 +95,12 @@ class AlugueisModule {
         });
         anoSelect.disabled = this.anosDisponiveis.length === 0;
 
-        // Seleccionar automáticamente el año más reciente
+        // Selecionar automaticamente o ano mais recente
         if (this.anoSelecionado) {
             anoSelect.value = this.anoSelecionado;
         }
 
-        // Reset mês
+        // Resetar mês
         this.populateMesDropdown();
     }
 
@@ -109,9 +109,9 @@ class AlugueisModule {
         if (!mesSelect) return;
         mesSelect.innerHTML = '<option value="">Selecione o mês</option>';
         if (this.anosDisponiveis.length > 0) {
-            // Opción para todos los meses
+            // Opção para todos os meses
             mesSelect.innerHTML += '<option value="todos">Todos os meses</option>';
-            // Enero a Diciembre
+            // Janeiro a Dezembro
             const meses = [
                 { num: 1, nome: 'Janeiro' },
                 { num: 2, nome: 'Fevereiro' },
@@ -131,9 +131,9 @@ class AlugueisModule {
             });
             mesSelect.disabled = false;
 
-            // Seleccionar automáticamente el mes más reciente si está disponible
+            // Selecionar automaticamente o mês mais recente se estiver disponível
             if (this.mesSelecionado) {
-                console.log('🔍 Selecionando mes:', this.mesSelecionado);
+                console.log('🔍 Selecionando mês:', this.mesSelecionado);
                 mesSelect.value = this.mesSelecionado;
                 console.log('🔍 Valor do select após seleção:', mesSelect.value);
             }

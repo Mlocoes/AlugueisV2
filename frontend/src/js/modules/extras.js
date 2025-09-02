@@ -14,7 +14,7 @@ class ExtrasManager {
         this.allProprietarios = [];
         this.initialized = false;
         
-        // Control de operaciones para evitar bloqueos
+        // Controle de operações para evitar bloqueios
         this.isProcessing = false;
         this.pendingOperations = new Set();
         
@@ -25,23 +25,23 @@ class ExtrasManager {
     }
 
     /**
-     * Helper para cerrar modales de forma segura para accesibilidad
+     * Helper para fechar modais de forma segura para acessibilidade
      */
     safeCloseModal(modalId, buttonId = null) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
 
-        // 1. Remover foco de todos los elementos dentro del modal
+        // 1. Remover foco de todos os elementos dentro do modal
         const focusedElements = modal.querySelectorAll(':focus');
         focusedElements.forEach(element => element.blur());
 
-        // 2. Remover foco del botón específico si se proporciona
+        // 2. Remover foco do botão específico se fornecido
         if (buttonId) {
             const button = document.getElementById(buttonId);
             if (button) button.blur();
         }
 
-        // 3. Remover foco de botones comunes del modal
+        // 3. Remover foco de botões comuns do modal
         const commonButtons = modal.querySelectorAll('.btn-secondary, .btn-primary, button[data-bs-dismiss="modal"]');
         commonButtons.forEach(button => {
             if (button.matches(':focus')) {
@@ -49,7 +49,7 @@ class ExtrasManager {
             }
         });
 
-        // Cerrar modal directamente - Bootstrap maneja aria-hidden automáticamente
+        // Fechar modal diretamente - Bootstrap lida com aria-hidden automaticamente
         const bootstrapModal = bootstrap.Modal.getInstance(modal);
         if (bootstrapModal) {
             bootstrapModal.hide();
@@ -57,23 +57,23 @@ class ExtrasManager {
     }
 
     /**
-     * Ejecutar operación con prevención de duplicados (simplificado)
+     * Executar operação com prevenção de duplicados (simplificado)
      */
     async executeOperation(operationId, operation) {
-        // Evitar operaciones duplicadas
+        // Evitar operações duplicadas
         if (this.pendingOperations.has(operationId)) {
-            console.warn(`⚠️ Operación ${operationId} ya en progreso, ignorando duplicado`);
+            console.warn(`⚠️ Operação ${operationId} já em progresso, ignorando duplicado`);
             return null;
         }
 
         this.pendingOperations.add(operationId);
         
         try {
-            // Ejecutar directamente sin setTimeout innecesario
+            // Executar diretamente sem setTimeout desnecessário
             const result = await operation();
             return result;
         } catch (error) {
-            console.error(`Error en operación ${operationId}:`, error);
+            console.error(`Erro na operação ${operationId}:`, error);
             throw error;
         } finally {
             this.pendingOperations.delete(operationId);
@@ -81,7 +81,7 @@ class ExtrasManager {
     }
 
     /**
-     * Recargar datos de forma optimizada
+     * Recarregar dados de forma otimizada
      */
     async optimizedReload(type = 'all') {
         const reloadId = `reload-${type}-${Date.now()}`;
@@ -106,7 +106,7 @@ class ExtrasManager {
     }
 
     /**
-     * Mostrar estado de loading en botón
+     * Mostrar estado de carregamento no botão
      */
     setButtonLoading(selector, loading = true) {
         const buttons = document.querySelectorAll(selector);
@@ -121,7 +121,7 @@ class ExtrasManager {
                 button.disabled = false;
                 const icon = button.querySelector('i');
                 if (icon) {
-                    // Restaurar icono original basado en el atributo title
+                    // Restaurar ícone original baseado no atributo title
                     const title = button.getAttribute('title');
                     if (title === 'Excluir') {
                         icon.className = 'fas fa-trash';
@@ -166,28 +166,28 @@ class ExtrasManager {
             this.carregarProprietariosAlias(e.target.value);
         });
 
-        // Limpar currentTransferencia quando modal fechar
+        // Limpar currentTransferencia quando o modal fechar
         document.getElementById('modal-transferencias')?.addEventListener('hidden.bs.modal', () => {
             this.currentTransferencia = null;
             console.log('🧹 Modal fechado - currentTransferencia limpo');
         });
 
-        // Event listeners para botones de cancelar para manejo de foco
+        // Event listeners para botões de cancelar para gerenciamento de foco
         const setupCancelButtonHandlers = () => {
-            // Botones de cancelar en modales
+            // Botões de cancelar nos modais
             const cancelButtons = document.querySelectorAll('button[data-bs-dismiss="modal"], .btn-secondary');
             cancelButtons.forEach(button => {
                 button.addEventListener('click', () => {
-                    // Remover foco inmediatamente del botón
+                    // Remover foco imediatamente do botão
                     setTimeout(() => button.blur(), 10);
                 });
             });
         };
 
-        // Configurar handlers iniciales
+        // Configurar handlers iniciais
         setupCancelButtonHandlers();
 
-        // Reconfigurar handlers cuando se muestren los modales (por si el DOM cambió)
+        // Reconfigurar handlers quando os modais forem exibidos (caso o DOM tenha mudado)
         document.addEventListener('shown.bs.modal', setupCancelButtonHandlers);
 
         console.log('🎯 Eventos do módulo Extras configurados');
@@ -418,10 +418,10 @@ class ExtrasManager {
     }
 
     /**
-     * Popular selects de proprietários para ambos os modales
+     * Popular selects de proprietários para ambos os modais
      */
     populateProprietariosSelects() {
-        // Para el modal de Alias (solo proprietários pertenecentes)
+        // Para o modal de Alias (apenas proprietários pertencentes)
         const proprietariosSelect = document.getElementById('alias-proprietarios');
         if (proprietariosSelect) {
             proprietariosSelect.innerHTML = '';
@@ -433,11 +433,11 @@ class ExtrasManager {
             });
         }
 
-        // Para el modal de Transferências (combo de aliases y otros selects)
+        // Para o modal de Transferências (combo de aliases e outros selects)
         const aliasCombo = document.getElementById('transferencia-alias');
         if (aliasCombo) {
             aliasCombo.innerHTML = '<option value="">Selecione um alias...</option>';
-            // Se llenará cuando se carguen los alias
+            // Será preenchido quando os aliases forem carregados
         }
 
         const origemSelect = document.getElementById('transferencia-origem');
@@ -481,18 +481,18 @@ class ExtrasManager {
             document.getElementById('alias-ativo').checked = true;
         }
 
-        // Limpar alerts
+        // Limpar alertas
         const alerts = document.getElementById('alias-alerts');
         if (alerts) alerts.innerHTML = '';
 
-        // Crear instancia del modal
+        // Criar instância do modal
         const bootstrapModal = new bootstrap.Modal(modal);
         
-        // Configurar eventos más robustos - usando once para evitar acumulación
+        // Configurar eventos mais robustos - usando 'once' para evitar acúmulo
         modal.addEventListener('shown.bs.modal', () => {
-            // Permitir que Bootstrap termine de configurar el modal primero
+            // Permitir que o Bootstrap termine de configurar o modal primeiro
             setTimeout(() => {
-                // Enfocar el primer input disponible después de que el modal se muestre
+                // Focar no primeiro input disponível após o modal ser exibido
                 const firstInput = modal.querySelector('input[type="text"]:not([disabled]), select:not([disabled])');
                 if (firstInput && !firstInput.matches(':focus')) {
                     firstInput.focus();
@@ -501,7 +501,7 @@ class ExtrasManager {
         }, { once: true });
 
         modal.addEventListener('hide.bs.modal', () => {
-            // Remover foco antes de que el modal se oculte
+            // Remover foco antes que o modal seja oculto
             const focusedElement = modal.querySelector(':focus');
             if (focusedElement) {
                 focusedElement.blur();
@@ -509,7 +509,7 @@ class ExtrasManager {
         }, { once: true });
 
         modal.addEventListener('hidden.bs.modal', () => {
-            // Bootstrap maneja aria-hidden automáticamente, no necesitamos interferir
+            // O Bootstrap lida com aria-hidden automaticamente, não precisamos interferir
             modal.removeAttribute('aria-modal');
         }, { once: true });
 
@@ -524,7 +524,7 @@ class ExtrasManager {
         document.getElementById('alias-nome').value = extra.alias || '';
         document.getElementById('alias-ativo').checked = extra.ativo !== false;
 
-        // Selecionar proprietários múltiplos
+        // Selecionar múltiplos proprietários
         const proprietariosSelect = document.getElementById('alias-proprietarios');
         if (proprietariosSelect && extra.id_proprietarios) {
             try {
@@ -545,15 +545,15 @@ class ExtrasManager {
         const modal = document.getElementById('modal-transferencias');
         const form = document.getElementById('form-transferencias');
         
-        // Si NO estamos editando, limpiar todo
+        // Se NÃO estivermos editando, limpar tudo
         if (!this.currentTransferencia) {
             form.reset();
             
-            // Limpiar campo de nome da transferencia
+            // Limpar campo de nome da transferência
             const nomeInput = document.getElementById('transferencia-nome');
             if (nomeInput) nomeInput.value = '';
             
-            // Inicializar data de criação con la fecha actual
+            // Inicializar data de criação com a data atual
             const dataCriacaoInput = document.getElementById('transferencia-data-criacao');
             if (dataCriacaoInput) {
                 const hoje = new Date();
@@ -565,26 +565,26 @@ class ExtrasManager {
             const dataFimInput = document.getElementById('transferencia-data-fim');
             if (dataFimInput) dataFimInput.value = '';
             
-            // Ocultar container de proprietários hasta seleccionar alias
+            // Ocultar contêiner de proprietários até selecionar alias
             const container = document.getElementById('transferencia-proprietarios-container');
             if (container) container.style.display = 'none';
         }
         
-        // Carregar aliases disponíveis (siempre)
+        // Carregar aliases disponíveis (sempre)
         this.carregarAliasParaTransferencia();
 
-        // Limpar alerts
+        // Limpar alertas
         const alerts = document.getElementById('transferencia-alerts');
         if (alerts) alerts.innerHTML = '';
 
-        // Crear instancia del modal
+        // Criar instância do modal
         const bootstrapModal = new bootstrap.Modal(modal);
         
-        // Configurar eventos más robustos - usando once para evitar acumulación
+        // Configurar eventos mais robustos - usando 'once' para evitar acúmulo
         modal.addEventListener('shown.bs.modal', () => {
-            // Permitir que Bootstrap termine de configurar el modal primero
+            // Permitir que o Bootstrap termine de configurar o modal primeiro
             setTimeout(() => {
-                // Enfocar el primer select disponible después de que el modal se muestre
+                // Focar no primeiro select disponível após o modal ser exibido
                 const firstSelect = modal.querySelector('select:not([disabled])');
                 if (firstSelect && !firstSelect.matches(':focus')) {
                     firstSelect.focus();
@@ -593,7 +593,7 @@ class ExtrasManager {
         }, { once: true });
 
         modal.addEventListener('hide.bs.modal', () => {
-            // Remover foco antes de que el modal se oculte
+            // Remover foco antes que o modal seja oculto
             const focusedElement = modal.querySelector(':focus');
             if (focusedElement) {
                 focusedElement.blur();
@@ -601,7 +601,7 @@ class ExtrasManager {
         }, { once: true });
 
         modal.addEventListener('hidden.bs.modal', () => {
-            // Bootstrap maneja aria-hidden automáticamente
+            // O Bootstrap lida com aria-hidden automaticamente
             modal.removeAttribute('aria-modal');
         }, { once: true });
 
@@ -662,7 +662,7 @@ class ExtrasManager {
                 for (const id of proprietarioIds) {
                     const proprietario = this.allProprietarios.find(p => p.id === parseInt(id));
                     if (proprietario) {
-                        // Se estamos editando, buscar o valor salvo
+                        // Se estivermos editando, buscar o valor salvo
                         let valorSalvo = '';
                         if (this.currentTransferencia && this.currentTransferencia.id_proprietarios) {
                             try {
@@ -673,7 +673,7 @@ class ExtrasManager {
                                     console.log(`💰 Valor salvo para ${proprietario.nome}:`, valorSalvo);
                                 }
                             } catch (error) {
-                                console.error('Erro ao parsing id_proprietarios:', error);
+                                console.error('Erro ao fazer parsing de id_proprietarios:', error);
                             }
                         }
                         
@@ -749,16 +749,16 @@ class ExtrasManager {
             if (response && response.success) {
                 this.showSuccess(this.currentExtra ? 'Alias atualizado com sucesso!' : 'Alias criado com sucesso!');
                 
-                // Cerrar modal de forma segura para accesibilidad
+                // Fechar modal de forma segura para acessibilidade
                 this.safeCloseModal('modal-alias', 'btn-salvar-alias');
                 
-                // Recarregar dados en background sin bloquear
+                // Recarregar dados em background sem bloquear
                 setTimeout(async () => {
                     try {
                         await this.loadExtras();
                         await this.loadTransferencias();
                     } catch (error) {
-                        console.error('Error recargando datos:', error);
+                        console.error('Erro ao recarregar dados:', error);
                     }
                 }, 10);
             }
@@ -799,7 +799,7 @@ class ExtrasManager {
 
             // Validar que data_fim seja posterior à data_criacao (se informada)
             if (dataFim && dataCriacao && new Date(dataFim) < new Date(dataCriacao)) {
-                this.showAlert('Data fim deve ser posterior à data criação', 'danger', 'transferencia-alerts');
+                this.showAlert('Data de fim deve ser posterior à data de criação', 'danger', 'transferencia-alerts');
                 return;
             }
 
@@ -855,18 +855,18 @@ class ExtrasManager {
                     'Transferência atualizada com sucesso!' : 
                     'Transferência criada com sucesso!');
                 
-                // Reset currentTransferencia
+                // Resetar currentTransferencia
                 this.currentTransferencia = null;
                 
-                // Cerrar modal de forma segura para accesibilidad
+                // Fechar modal de forma segura para acessibilidade
                 this.safeCloseModal('modal-transferencias', 'btn-salvar-transferencia');
                 
-                // Recarregar dados en background sin bloquear
+                // Recarregar dados em background sem bloquear
                 setTimeout(async () => {
                     try {
                         await this.loadTransferencias();
                     } catch (error) {
-                        console.error('Error recargando transferencias:', error);
+                        console.error('Erro ao recarregar transferências:', error);
                     }
                 }, 10);
             }
@@ -900,20 +900,20 @@ class ExtrasManager {
      */
     async excluirAlias(id) {
         try {
-            // Buscar el extra sin operaciones pesadas
+            // Buscar o extra sem operações pesadas
             const extra = this.allExtras.find(e => e.id === id);
             if (!extra) {
                 this.showError('Alias não encontrado');
                 return;
             }
 
-            // Usar setTimeout para hacer el confirm no bloqueante
+            // Usar setTimeout para tornar o confirm não bloqueante
             setTimeout(async () => {
                 if (!confirm(`Tem certeza que deseja excluir o alias "${extra.alias}"?`)) {
                     return;
                 }
 
-                // Ejecutar la eliminación en background
+                // Executar a exclusão em background
                 this.executeDeleteAlias(id);
             }, 0);
             
@@ -924,10 +924,10 @@ class ExtrasManager {
     }
 
     /**
-     * Ejecutar eliminación de alias sin bloquear UI
+     * Executar exclusão de alias sem bloquear a UI
      */
     async executeDeleteAlias(id) {
-        // Evitar operaciones múltiples
+        // Evitar operações múltiplas
         if (this.pendingOperations.has(`delete-alias-${id}`)) {
             return;
         }
@@ -938,14 +938,14 @@ class ExtrasManager {
         try {
             console.log('🗑️ Excluindo alias:', id);
 
-            // API call sin bloquear el UI
+            // Chamada de API sem bloquear a UI
             const response = await this.apiService.delete(`/api/extras/${id}`);
             
             if (response && response.success) {
-                // Actualizar datos localmente sin renderizar inmediatamente
+                // Atualizar dados localmente sem renderizar imediatamente
                 this.allExtras = this.allExtras.filter(e => e.id !== id);
                 
-                // Mostrar éxito y renderizar en próximo tick
+                // Mostrar sucesso e renderizar no próximo tick
                 this.showSuccess('Alias excluído com sucesso!');
                 setTimeout(() => {
                     this.renderExtrasTable(this.allExtras);
@@ -1032,7 +1032,7 @@ class ExtrasManager {
             // Popular o modal com os dados da transferência
             this.showTransferenciasModal();
             
-            // Aguardar o modal ser mostrado e os aliases serem carregados
+            // Aguardar o modal ser exibido e os aliases serem carregados
             setTimeout(async () => {
                 try {
                     // Aguardar que os aliases sejam carregados
@@ -1060,7 +1060,7 @@ class ExtrasManager {
                             if (dataCriacaoInput) {
                                 const data = new Date(transferencia.data_criacao);
                                 dataCriacaoInput.value = data.toISOString().split('T')[0];
-                                console.log('📅 Data criação preenchida:', dataCriacaoInput.value);
+                                console.log('📅 Data de criação preenchida:', dataCriacaoInput.value);
                             }
                         }
                         
@@ -1069,7 +1069,7 @@ class ExtrasManager {
                             if (dataFimInput) {
                                 const data = new Date(transferencia.data_fim);
                                 dataFimInput.value = data.toISOString().split('T')[0];
-                                console.log('📅 Data fim preenchida:', dataFimInput.value);
+                                console.log('📅 Data de fim preenchida:', dataFimInput.value);
                             }
                         }
                         
@@ -1094,20 +1094,20 @@ class ExtrasManager {
      */
     async excluirTransferencia(id) {
         try {
-            // Buscar la transferencia sin operaciones pesadas
+            // Buscar a transferência sem operações pesadas
             const transferencia = this.allTransferencias.find(t => t.id === id);
             if (!transferencia) {
                 this.showError('Transferência não encontrada');
                 return;
             }
 
-            // Usar setTimeout para hacer el confirm no bloqueante
+            // Usar setTimeout para tornar o confirm não bloqueante
             setTimeout(async () => {
                 if (!confirm(`Tem certeza que deseja excluir a transferência "${transferencia.nome_transferencia}"?`)) {
                     return;
                 }
 
-                // Ejecutar la eliminación en background
+                // Executar a exclusão em background
                 this.executeDeleteTransferencia(id);
             }, 0);
             
@@ -1118,10 +1118,10 @@ class ExtrasManager {
     }
 
     /**
-     * Ejecutar eliminación de transferencia sin bloquear UI
+     * Executar exclusão de transferência sem bloquear a UI
      */
     async executeDeleteTransferencia(id) {
-        // Evitar operaciones múltiples
+        // Evitar operações múltiplas
         if (this.pendingOperations.has(`delete-transferencia-${id}`)) {
             return;
         }
@@ -1132,14 +1132,14 @@ class ExtrasManager {
         try {
             console.log('🗑️ Excluindo transferência:', id);
 
-            // API call sin bloquear el UI
+            // Chamada de API sem bloquear a UI
             const response = await this.apiService.delete(`/api/transferencias/${id}`);
             
             if (response && (response.message || response.success !== false)) {
-                // Actualizar datos localmente sin renderizar inmediatamente
+                // Atualizar dados localmente sem renderizar imediatamente
                 this.allTransferencias = this.allTransferencias.filter(t => t.id !== id);
                 
-                // Mostrar éxito y renderizar en próximo tick
+                // Mostrar sucesso e renderizar no próximo tick
                 this.showSuccess('Transferência excluída com sucesso!');
                 setTimeout(() => {
                     this.renderTransferenciasTable(this.allTransferencias);
@@ -1173,7 +1173,7 @@ class ExtrasManager {
         
         alertsContainer.appendChild(alert);
         
-        // Auto remover após 5 segundos
+        // Auto-remover após 5 segundos
         setTimeout(() => {
             if (alert && alert.parentNode) {
                 alert.remove();
@@ -1186,7 +1186,7 @@ class ExtrasManager {
 document.addEventListener('DOMContentLoaded', function() {
     window.extrasManager = new ExtrasManager();
     
-    // Disponibilizar também como extrasModule para o UI manager
+    // Disponibilizar também como extrasModule para o gerenciador de UI
     window.extrasModule = window.extrasManager;
     
     console.log('✅ ExtrasManager inicializado');

@@ -1,6 +1,6 @@
 /**
- * Módulo Dashboard - Gestión del dashboard principal
- * Muestra estadísticas, gráficos y resumen del sistema
+ * Módulo Dashboard - Gestão do dashboard principal
+ * Exibe estatísticas, gráficos e resumo do sistema
  */
 
 class DashboardModule {
@@ -12,43 +12,43 @@ class DashboardModule {
     }
 
     /**
-     * Cargar datos del dashboard
+     * Carregar dados do dashboard
      */
     async load() {
-        // Timeout de seguridad para evitar carga infinita
+        // Timeout de segurança para evitar carregamento infinito
         const loadingTimeout = setTimeout(() => {
             window.uiManager?.hideLoading();
-        }, 10000); // 10 segundos máximo
+        }, 10000); // 10 segundos no máximo
 
         try {
-            window.uiManager?.showLoading('Cargando dashboard...');
+            window.uiManager?.showLoading('Carregando dashboard...');
 
-            // Cargar datos en paralelo
+            // Carregar dados em paralelo
             const results = await Promise.all([
                 window.apiService.getProprietarios(),
                 window.apiService.getImoveis(),
                 window.apiService.getAlugueis()
             ]);
 
-            // Extraer datos de las respuestas
+            // Extrair dados das respostas
             const propietarios = results[0]?.success ? results[0].data : [];
-            const inmuebles = results[1]?.success ? results[1].data : [];
-            const alquileres = results[2]?.success ? results[2].data : [];
+            const imoveis = results[1]?.success ? results[1].data : [];
+            const alugueis = results[2]?.success ? results[2].data : [];
 
-            this.data = { propietarios, inmuebles, alquileres };
+            this.data = { propietarios, imoveis, alugueis };
 
-            // Actualizar estadísticas primero
+            // Atualizar estatísticas primeiro
             this.updateStats();
 
-            // Esperar un poco para asegurar que el DOM esté listo
+            // Esperar um pouco para garantir que o DOM esteja pronto
             await new Promise(resolve => setTimeout(resolve, 100));
 
-            // Crear gráficos después de que los datos estén listos
+            // Criar gráficos depois que os dados estiverem prontos
             await this.createCharts();
 
         } catch (error) {
-            // ...existing code...
-            window.uiManager?.showAlert('Error cargando datos del dashboard: ' + error.message, 'error');
+            // ...código existente...
+            window.uiManager?.showAlert('Erro ao carregar dados do dashboard: ' + error.message, 'error');
         } finally {
             clearTimeout(loadingTimeout);
             window.uiManager?.hideLoading();
@@ -56,42 +56,42 @@ class DashboardModule {
     }
 
     /**
-     * Actualizar estadísticas del dashboard
+     * Atualizar estatísticas do dashboard
      */
     updateStats() {
-        const { propietarios = [], inmuebles = [], alquileres = [] } = this.data;
+        const { propietarios = [], imoveis = [], alugueis = [] } = this.data;
 
-        // ...existing code...
+        // ...código existente...
 
         // Atualizar contadores
         this.updateCounter('dashboard-total-proprietarios', propietarios.length);
-        this.updateCounter('dashboard-total-inmuebles', inmuebles.length);
+        this.updateCounter('dashboard-total-inmuebles', imoveis.length);
 
         // Novo: valor financeiro total dos aluguéis do ano corrente
-        const totalAlugueisAno = this.valorFinanceiroAlugueisAnoCorrente(alquileres);
+        const totalAlugueisAno = this.valorFinanceiroAlugueisAnoCorrente(alugueis);
         this.updateCounter('dashboard-alugueis-ano-corrente', `R$ ${totalAlugueisAno.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`);
 
-        // Calcular ingresos mensais
-        const ingresos = this.calculateMonthlyIncome(alquileres);
-        this.updateCounter('dashboard-ingresos-mensuales', `R$ ${ingresos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`);
+        // Calcular receitas mensais
+        const receitas = this.calculateMonthlyIncome(alugueis);
+        this.updateCounter('dashboard-ingresos-mensuales', `R$ ${receitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`);
 
-        // ...existing code...
+        // ...código existente...
     }
 
     /**
      * Soma o valor financeiro total dos aluguéis do maior ano disponível nos dados
      */
-    valorFinanceiroAlugueisAnoCorrente(alquileres) {
-        if (!alquileres || alquileres.length === 0) return 0;
+    valorFinanceiroAlugueisAnoCorrente(alugueis) {
+        if (!alugueis || alugueis.length === 0) return 0;
         // Encontrar o maior ano disponível
-        let maxAno = Math.max(...alquileres.map(a => a.ano || 0));
-        return alquileres
+        let maxAno = Math.max(...alugueis.map(a => a.ano || 0));
+        return alugueis
             .filter(a => a.ano === maxAno)
             .reduce((total, a) => total + (a.valor_liquido_proprietario || 0), 0);
     }
 
     /**
-     * Actualizar contador individual
+     * Atualizar contador individual
      */
     updateCounter(elementId, value) {
         const element = document.getElementById(elementId);
@@ -101,16 +101,16 @@ class DashboardModule {
     }
 
     /**
-     * Calcular ingresos do último mês disponível nos dados
+     * Calcular receitas do último mês disponível nos dados
      */
-    calculateMonthlyIncome(alquileres) {
-        if (!alquileres || alquileres.length === 0) return 0;
+    calculateMonthlyIncome(alugueis) {
+        if (!alugueis || alugueis.length === 0) return 0;
         // Encontrar o maior ano e mês disponível
-        let maxAno = Math.max(...alquileres.map(a => a.ano || 0));
-        let mesesDoAno = alquileres.filter(a => a.ano === maxAno).map(a => a.mes || 0);
+        let maxAno = Math.max(...alugueis.map(a => a.ano || 0));
+        let mesesDoAno = alugueis.filter(a => a.ano === maxAno).map(a => a.mes || 0);
         let maxMes = Math.max(...mesesDoAno);
         // Somar todos os valores desse mês/ano
-        return alquileres.reduce((total, aluguel) => {
+        return alugueis.reduce((total, aluguel) => {
             if (aluguel.ano === maxAno && aluguel.mes === maxMes) {
                 return total + (aluguel.valor_liquido_proprietario || 0);
             }
@@ -119,33 +119,33 @@ class DashboardModule {
     }
 
     /**
-     * Crear gráficos del dashboard
+     * Criar gráficos do dashboard
      */
     async createCharts() {
         try {
-            // Checar se os canvas existem antes de criar os gráficos
+            // Verificar se os canvas existem antes de criar os gráficos
             const incomeCanvas = document.getElementById('ingresosChart');
             const distributionCanvas = document.getElementById('distribucionChart');
             if (!incomeCanvas || !distributionCanvas) {
-                // ...existing code...
+                // ...código existente...
                 return;
             }
-            // ...existing code...
-            // Primeiro destruimos todos os gráficos existentes
+            // ...código existente...
+            // Primeiro destruímos todos os gráficos existentes
             this.destroyAllCharts();
             // Depois criamos os novos
             this.createIncomeChart();
             this.createDistributionChart();
-            // ...existing code...
-            this.chartRetries = 0; // Reset contador
+            // ...código existente...
+            this.chartRetries = 0; // Resetar contador
         } catch (error) {
-            // ...existing code...
-            // No lanzar el error para no bloquear el resto del dashboard
+            // ...código existente...
+            // Não lançar o erro para não bloquear o resto do dashboard
         }
     }
 
     /**
-     * Destruir todos los gráficos existentes
+     * Destruir todos os gráficos existentes
      */
     destroyAllCharts() {
         try {
@@ -158,22 +158,22 @@ class DashboardModule {
                 this.charts.distribution.destroy();
                 this.charts.distribution = null;
             }
-            // ...existing code...
+            // ...código existente...
         } catch (error) {
-            // ...existing code...
+            // ...código existente...
         }
     }    /**
-     * Crear gráfico de ingresos
+     * Criar gráfico de receitas
      */
     createIncomeChart() {
         let canvas = document.getElementById('ingresosChart');
         if (!canvas) {
-            // ...existing code...
+            // ...código existente...
             return;
         }
 
         try {
-            // Destruir gráfico previo si existe
+            // Destruir gráfico anterior se existir
             if (this.charts.income) {
                 this.charts.income.destroy();
                 this.charts.income = null;
@@ -187,24 +187,24 @@ class DashboardModule {
 
             const chartData = this.processIncomeData();
             if (!chartData || !chartData.labels || !chartData.values) {
-                // ...existing code...
+                // ...código existente...
                 return;
             }
 
             const ctx = canvas.getContext('2d');
             if (!ctx) {
-                // ...existing code...
+                // ...código existente...
                 return;
             }
 
-            // ...existing code...
+            // ...código existente...
 
             this.charts.income = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: chartData.labels,
                     datasets: [{
-                        label: 'Ingresos ($)',
+                        label: 'Receitas (R$)',
                         data: chartData.values,
                         borderColor: '#36A2EB',
                         backgroundColor: 'rgba(54, 162, 235, 0.1)',
@@ -246,7 +246,7 @@ class DashboardModule {
                             },
                             ticks: {
                                 callback: function (value) {
-                                    return '$' + value.toLocaleString();
+                                    return 'R$' + value.toLocaleString();
                                 }
                             }
                         }
@@ -255,23 +255,23 @@ class DashboardModule {
             });
 
         } catch (error) {
-            // ...existing code...
-            // ...existing code...
+            // ...código existente...
+            // ...código existente...
         }
     }
 
     /**
-     * Crear gráfico de distribución
+     * Criar gráfico de distribuição
      */
     createDistributionChart() {
         let canvas = document.getElementById('distribucionChart');
         if (!canvas) {
-            console.warn('❌ Canvas distribucionChart no encontrado');
+            console.warn('❌ Canvas distribucionChart não encontrado');
             return;
         }
 
         try {
-            // Destruir gráfico previo si existe
+            // Destruir gráfico anterior se existir
             if (this.charts.distribution) {
                 this.charts.distribution.destroy();
                 this.charts.distribution = null;
@@ -285,17 +285,17 @@ class DashboardModule {
 
             const chartData = this.processDistributionData();
             if (!chartData || !chartData.labels || !chartData.values) {
-                console.warn('❌ Datos del gráfico de distribución inválidos');
+                console.warn('❌ Dados do gráfico de distribuição inválidos');
                 return;
             }
 
             const ctx = canvas.getContext('2d');
             if (!ctx) {
-                console.warn('❌ No se pudo obtener contexto 2D del canvas de distribución');
+                console.warn('❌ Não foi possível obter contexto 2D do canvas de distribuição');
                 return;
             }
 
-            console.log('📊 Creando gráfico de distribución con datos:', chartData);
+            console.log('📊 Criando gráfico de distribuição com dados:', chartData);
 
             this.charts.distribution = new Chart(ctx, {
                 type: 'doughnut',
@@ -333,22 +333,22 @@ class DashboardModule {
             });
 
         } catch (error) {
-            console.error('❌ Error creando gráfico de distribución:', error);
+            console.error('❌ Erro criando gráfico de distribuição:', error);
             console.error('Stack trace:', error.stack);
         }
     }
 
     /**
-     * Procesar datos para gráfico de ingresos
+     * Processar dados para gráfico de receitas
      */
     processIncomeData() {
-        const { alquileres = [] } = this.data;
-        if (!alquileres.length) {
+        const { alugueis = [] } = this.data;
+        if (!alugueis.length) {
             return { labels: [], values: [] };
         }
         // Agrupar receitas por ano-mês
         const monthlyIncome = {};
-        alquileres.forEach(aluguel => {
+        alugueis.forEach(aluguel => {
             if (aluguel.valor_liquido_proprietario && aluguel.mes && aluguel.ano) {
                 const monthKey = `${aluguel.ano}-${aluguel.mes.toString().padStart(2, '0')}`;
                 if (!monthlyIncome[monthKey]) monthlyIncome[monthKey] = 0;
@@ -372,26 +372,26 @@ class DashboardModule {
     }
 
     /**
-     * Procesar datos para gráfico de distribución por tipo de inmueble
+     * Processar dados para gráfico de distribuição por tipo de imóvel
      */
     processDistributionData() {
-        const { inmuebles = [] } = this.data;
+        const { imoveis = [] } = this.data;
         const typeCount = {};
 
-        inmuebles.forEach(inmueble => {
-            // Extraer tipo del nombre del inmueble (Apartamento, Casa, Comercial, etc.)
-            let tipo = 'Sin clasificar';
-            if (inmueble.nombre) {
-                if (inmueble.nombre.toLowerCase().includes('apartamento')) {
+        imoveis.forEach(imovel => {
+            // Extrair tipo do nome do imóvel (Apartamento, Casa, Comercial, etc.)
+            let tipo = 'Sem classificação';
+            if (imovel.nome) {
+                if (imovel.nome.toLowerCase().includes('apartamento')) {
                     tipo = 'Apartamento';
-                } else if (inmueble.nombre.toLowerCase().includes('casa')) {
+                } else if (imovel.nome.toLowerCase().includes('casa')) {
                     tipo = 'Casa';
-                } else if (inmueble.nombre.toLowerCase().includes('comercial')) {
+                } else if (imovel.nome.toLowerCase().includes('comercial')) {
                     tipo = 'Comercial';
-                } else if (inmueble.nombre.toLowerCase().includes('studio')) {
+                } else if (imovel.nome.toLowerCase().includes('studio')) {
                     tipo = 'Studio';
                 } else {
-                    tipo = 'Otro';
+                    tipo = 'Outro';
                 }
             }
             typeCount[tipo] = (typeCount[tipo] || 0) + 1;
@@ -404,17 +404,17 @@ class DashboardModule {
     }
 
     /**
-     * Refrescar el dashboard
+     * Atualizar o dashboard
      */
     async refresh() {
         await this.load();
     }
 }
 
-// Exponer globalmente
+// Expor globalmente
 window.DashboardModule = DashboardModule;
 
-// Crear instancia global solo si no existe
+// Criar instância global apenas se não existir
 if (!window.dashboardModule) {
     window.dashboardModule = new DashboardModule();
 }
