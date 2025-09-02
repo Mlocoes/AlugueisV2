@@ -122,7 +122,7 @@ class RelatoriosManager {
             data.forEach(proprietario => {
                 const option = document.createElement('option');
                 option.value = proprietario.id;
-                option.textContent = proprietario.nome_completo;
+                option.textContent = `${proprietario.nome} ${proprietario.sobrenome || ''}`.trim();
                 proprietarioSelect.appendChild(option);
             });
             

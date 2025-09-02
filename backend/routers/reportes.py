@@ -10,7 +10,6 @@ from pydantic import BaseModel
 
 from config import get_db
 from models_final import *
-from routers.auth import verify_token
 
 router = APIRouter(prefix="/api/reportes", tags=["reportes"])
 
@@ -25,14 +24,22 @@ class ResumenMensualItem(BaseModel):
     class Config:
         from_attributes = True
 
-class ResumenProprietarioItem(BaseModel):
-    nome_proprietario: str
-    total_anual: float
-    quantidade_registros: int
-    media_mensal: float
+@router.get("/anos-disponiveis")
+async def get_anos_disponiveis(
+    db: Session = Depends(get_db)
+):
+    """
+    Obtém lista de anos disponíveis nos dados
+    """
+    try:
+        anos = db.query(func.distinct(AluguelSimples.ano))\
+                .order_by(AluguelSimples.ano.desc()).all()
+        
+        return [ano[0] for ano in anos if ano[0] is not None]
 
-    class Config:
-        from_attributes = True
+    except Exception as e:
+        print(f"Erro ao obter anos disponíveis: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro interno do servidor: {str(e)}")
 
 @router.get("/resumen-mensual", response_model=List[ResumenMensualItem])
 async def get_resumen_mensual(
@@ -41,8 +48,6 @@ async def get_resumen_mensual(
     proprietario_id: Optional[int] = None,
     nome_proprietario: Optional[str] = None,
     db: Session = Depends(get_db)
-    # Remover temporalmente la autenticación para debug
-    # current_user=Depends(verify_token)
 ):
     """
     Obtém resumo mensal de aluguéis agrupado por proprietário
@@ -50,7 +55,7 @@ async def get_resumen_mensual(
     try:
         # Query base usando JOIN para obter dados dos proprietários e aluguéis
         query = db.query(
-            Proprietario.nome_completo.label('nome_proprietario'),
+            func.concat(Proprietario.nome, ' ', func.coalesce(Proprietario.sobrenome, '')).label('nome_proprietario'),
             AluguelSimples.mes,
             AluguelSimples.ano,
             func.sum(AluguelSimples.valor_liquido_proprietario).label('valor_total'),
@@ -58,7 +63,7 @@ async def get_resumen_mensual(
         ).select_from(AluguelSimples)\
         .join(Proprietario, AluguelSimples.proprietario_id == Proprietario.id)\
         .group_by(
-            Proprietario.nome_completo,
+            func.concat(Proprietario.nome, ' ', func.coalesce(Proprietario.sobrenome, '')),
             AluguelSimples.mes,
             AluguelSimples.ano
         )
@@ -74,13 +79,15 @@ async def get_resumen_mensual(
             query = query.filter(AluguelSimples.proprietario_id == proprietario_id)
             
         if nome_proprietario is not None:
-            query = query.filter(Proprietario.nome_completo.ilike(f"%{nome_proprietario}%"))
+            query = query.filter(
+                func.concat(Proprietario.nome, ' ', func.coalesce(Proprietario.sobrenome, '')).ilike(f"%{nome_proprietario}%")
+            )
 
         # Ordenar por ano, mês e nome
         query = query.order_by(
             AluguelSimples.ano.desc(),
             AluguelSimples.mes.desc(),
-            Proprietario.nome_completo
+            func.concat(Proprietario.nome, ' ', func.coalesce(Proprietario.sobrenome, ''))
         )
 
         result = query.all()
@@ -100,110 +107,4 @@ async def get_resumen_mensual(
 
     except Exception as e:
         print(f"Erro ao obter resumo mensal: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Erro interno do servidor: {str(e)}")
-
-@router.get("/resumen-propietario", response_model=List[ResumenProprietarioItem])
-async def get_resumen_propietario(
-    nome_proprietario: Optional[str] = None,
-    ano: Optional[int] = None,
-    db: Session = Depends(get_db)
-    # Remover temporalmente la autenticación para debug
-    # current_user=Depends(verify_token)
-):
-    """
-    Obtém resumo anual por proprietário
-    """
-    try:
-        # Query para resumo por proprietário
-        query = db.query(
-            Proprietario.nome_completo.label('nome_proprietario'),
-            func.sum(AluguelSimples.valor_liquido_proprietario).label('total_anual'),
-            func.count(AluguelSimples.id).label('quantidade_registros'),
-            func.avg(AluguelSimples.valor_liquido_proprietario).label('media_mensal')
-        ).select_from(AluguelSimples)\
-        .join(Proprietario, AluguelSimples.proprietario_id == Proprietario.id)\
-        .group_by(Proprietario.nome_completo)
-
-        # Aplicar filtros
-        if nome_proprietario is not None:
-            query = query.filter(Proprietario.nome_completo.ilike(f"%{nome_proprietario}%"))
-            
-        if ano is not None:
-            query = query.filter(AluguelSimples.ano == ano)
-
-        # Ordenar por total anual descendente
-        query = query.order_by(func.sum(AluguelSimples.valor_liquido_proprietario).desc())
-
-        result = query.all()
-        
-        # Converter para lista de dicionários
-        resumo_list = []
-        for row in result:
-            resumo_list.append({
-                "nome_proprietario": row.nome_proprietario,
-                "total_anual": float(row.total_anual) if row.total_anual else 0.0,
-                "quantidade_registros": row.quantidade_registros if row.quantidade_registros else 0,
-                "media_mensal": float(row.media_mensal) if row.media_mensal else 0.0
-            })
-
-        return resumo_list
-
-    except Exception as e:
-        print(f"Erro ao obter resumo por proprietário: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Erro interno do servidor: {str(e)}")
-
-@router.get("/totais-gerais")
-async def get_totais_gerais(
-    db: Session = Depends(get_db)
-    # Remover temporalmente la autenticación para debug
-    # current_user=Depends(verify_token)
-):
-    """
-    Obtém totais gerais do sistema
-    """
-    try:
-        # Total de proprietários
-        total_proprietarios = db.query(Proprietario).count()
-        
-        # Total de imóveis
-        total_imoveis = db.query(Imovel).count()
-        
-        # Total de aluguéis (valor)
-        total_alugueis_valor = db.query(func.sum(AluguelSimples.valor_liquido_proprietario)).scalar() or 0
-        
-        # Total de registros de aluguéis
-        total_registros = db.query(AluguelSimples).count()
-        
-        # Média mensal
-        media_mensal = float(total_alugueis_valor / total_registros) if total_registros > 0 else 0
-        
-        return {
-            "total_proprietarios": total_proprietarios,
-            "total_imoveis": total_imoveis,
-            "total_alugueis_valor": float(total_alugueis_valor),
-            "total_registros": total_registros,
-            "media_mensal": media_mensal
-        }
-
-    except Exception as e:
-        print(f"Erro ao obter totais gerais: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Erro interno do servidor: {str(e)}")
-
-@router.get("/anos-disponiveis")
-async def get_anos_disponiveis(
-    db: Session = Depends(get_db)
-    # Remover temporalmente la autenticación para debug
-    # current_user=Depends(verify_token)
-):
-    """
-    Obtém lista de anos disponíveis nos dados
-    """
-    try:
-        anos = db.query(func.distinct(AluguelSimples.ano))\
-                .order_by(AluguelSimples.ano.desc()).all()
-        
-        return [ano[0] for ano in anos if ano[0] is not None]
-
-    except Exception as e:
-        print(f"Erro ao obter anos disponíveis: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erro interno do servidor: {str(e)}")
