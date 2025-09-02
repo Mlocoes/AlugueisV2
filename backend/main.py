@@ -11,7 +11,7 @@ from sqlalchemy import func
 from config import APP_CONFIG, CORS_CONFIG, get_db
 from models_final import AluguelSimples, Imovel
 from routers import alugueis, estadisticas, importacao, upload, auth
-from routers import proprietarios, imoveis, participacoes
+from routers import proprietarios, imoveis, participacoes, reportes
 from routers.auth import verify_token
 
 # Configuração da aplicação
@@ -28,6 +28,7 @@ app.include_router(upload.router)
 app.include_router(proprietarios.router)
 app.include_router(imoveis.router)
 app.include_router(participacoes.router)
+app.include_router(reportes.router)
 
 # =====================================================
 # ENDPOINTS PRINCIPAIS
