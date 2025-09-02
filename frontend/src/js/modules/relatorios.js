@@ -3,13 +3,35 @@ class RelatoriosManager {
     constructor() {
         this.currentData = [];
         this.filteredData = [];
+        this.apiService = null;
         this.init();
     }
 
     init() {
         console.log('RelatoriosManager initialized');
-        this.setupEventListeners();
-        this.loadInitialData();
+        
+        // Esperar a que ApiService esteja disponível
+        this.waitForApiService().then(() => {
+            this.setupEventListeners();
+            this.loadInitialData();
+        });
+    }
+
+    async waitForApiService() {
+        let attempts = 0;
+        const maxAttempts = 50;
+        
+        while (attempts < maxAttempts) {
+            if (window.apiService) {
+                this.apiService = window.apiService;
+                console.log('✅ ApiService conectado ao RelatoriosManager');
+                return;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+        
+        console.error('❌ ApiService não disponível após', maxAttempts * 100, 'ms');
     }
 
     setupEventListeners() {
@@ -63,12 +85,12 @@ class RelatoriosManager {
 
     async loadYears() {
         try {
-            const response = await fetch('/api/reportes/anos-disponiveis', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token') || 'test'}`
-                }
-            });
-            const anos = await response.json();
+            if (!this.apiService) {
+                console.error('ApiService não disponível');
+                return;
+            }
+
+            const anos = await this.apiService.get('/api/reportes/anos-disponiveis');
             
             const anoSelect = document.getElementById('relatorios-ano-select');
             anoSelect.innerHTML = '<option value="">Todos os anos</option>';
@@ -87,12 +109,12 @@ class RelatoriosManager {
 
     async loadProprietarios() {
         try {
-            const response = await fetch('/api/proprietarios/', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token') || 'test'}`
-                }
-            });
-            const data = await response.json();
+            if (!this.apiService) {
+                console.error('ApiService não disponível');
+                return;
+            }
+
+            const data = await this.apiService.get('/api/proprietarios/');
             
             const proprietarioSelect = document.getElementById('relatorios-proprietario-select');
             proprietarioSelect.innerHTML = '<option value="">Todos os proprietários</option>';
@@ -100,7 +122,7 @@ class RelatoriosManager {
             data.forEach(proprietario => {
                 const option = document.createElement('option');
                 option.value = proprietario.id;
-                option.textContent = proprietario.nome_completo || `${proprietario.nome} ${proprietario.sobrenome}`.trim();
+                option.textContent = proprietario.nome_completo;
                 proprietarioSelect.appendChild(option);
             });
             
@@ -111,6 +133,11 @@ class RelatoriosManager {
 
     async loadRelatoriosData() {
         try {
+            if (!this.apiService) {
+                console.error('ApiService não disponível');
+                return;
+            }
+
             // Construir parâmetros de consulta
             const params = new URLSearchParams();
             
@@ -122,17 +149,8 @@ class RelatoriosManager {
             if (mes) params.append('mes', mes);
             if (proprietarioId) params.append('proprietario_id', proprietarioId);
             
-            const response = await fetch(`/api/reportes/resumen-mensual?${params.toString()}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token') || 'test'}`
-                }
-            });
+            const data = await this.apiService.get(`/api/reportes/resumen-mensual?${params.toString()}`);
             
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
             this.currentData = data;
             this.filteredData = [...data];
             
