@@ -94,38 +94,14 @@ class SistemaAlquileresApp {
                 return;
             }
 
-            // Usar solo la lógica de hostname y AppConfig
-            if (!window.AppConfig || typeof window.AppConfig.updateBaseURL !== 'function') {
-                console.error('❌ window.AppConfig no está disponible');
-                return;
-            }
-            const currentHost = window.location.hostname;
-            if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-                window.AppConfig.updateBaseURL(`http://${currentHost}:8000`);
-                console.log(`📡 Detectado desde URL, usando: ${window.AppConfig.getBaseURL()}`);
-            } else {
-                window.AppConfig.updateBaseURL('http://localhost:8000');
-            }
+            // DESHABILITADO: Usar detección automática - siempre usar proxy nginx
+            console.log('🌐 Usando proxy nginx - configuración automática de URL deshabilitada');
+            console.log(`� BaseURL actual: ${window.AppConfig.getBaseURL()}`);
+            
+            // No modificar baseUrl - mantener la configuración de proxy nginx
         } catch (error) {
-            console.warn('⚠️ Error en configuración de red, usando configuración por defecto:', error);
-            // Fallback inteligente basado en la URL actual
-            const currentHost = window.location.hostname;
-            if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-                // Verificar que AppConfig existe
-                if (window.AppConfig && typeof window.AppConfig.updateBaseURL === 'function') {
-                    window.AppConfig.updateBaseURL(`http://${currentHost}:8000`);
-                    console.log(`📡 Fallback URL detectada: ${window.AppConfig.getBaseURL()}`);
-                } else {
-                    console.error('❌ window.AppConfig no está disponible');
-                }
-            } else {
-                // Verificar que AppConfig existe
-                if (window.AppConfig && typeof window.AppConfig.updateBaseURL === 'function') {
-                    window.AppConfig.updateBaseURL('http://localhost:8000');
-                } else {
-                    console.error('❌ window.AppConfig no está disponible');
-                }
-            }
+            console.warn('⚠️ Error en configuración de red, manteniendo configuración de proxy:', error);
+            // No hacer fallback a IPs directas - mantener proxy nginx
         }
     }    /**
      * Verificar conexión con el backend

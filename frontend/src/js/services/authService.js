@@ -1,5 +1,5 @@
 /**
- * Serviço de Autenticação
+ * Serviço de autenticação
  * Gerencia login, logout e verificação de token
  */
 
@@ -13,97 +13,111 @@ class AuthService {
 
         // NÃO carregar token automaticamente - será feito pelo loginManager
         console.log('🔐 AuthService inicializado - aguardando validação manual');
-    }    /**
+    }
+
+    /**
      * Realizar login
      */
     async login(usuario, senha) {
         try {
-            const baseUrl = window.AppConfig?.api?.baseUrl || 'http://localhost:8000';
-            const response = await fetch(`${baseUrl}/auth/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    usuario: usuario,
-                    senha: senha
-                })
+            // Usar ApiService para mantener consistencia con proxy
+            if (!window.apiService) {
+                throw new Error('ApiService não disponível');
+            }
+            
+            const response = await window.apiService.post('/api/auth/login', {
+                usuario: usuario,
+                senha: senha
             });
 
-            if (!response.ok) {
-                if (response.status === 401) {
-                    throw new Error('Usuário ou senha inválidos');
-                }
-                throw new Error('Erro no servidor');
+            if (response.success && response.data) {
+                const data = response.data;
+                // Salvar dados de autenticação APENAS na memória da sessão
+                this.token = data.access_token;
+                this.usuario = data.usuario;
+                this.tipo = data.tipo_usuario;  // API usa 'tipo_usuario' não 'tipo'
+
+                // NÃO salvar no localStorage para forçar login a cada recarregamento
+                console.log('🔐 Dados salvos apenas na sessão (não no localStorage)');
+
+                return {
+                    success: true,
+                    token: this.token,
+                    usuario: this.usuario,
+                    tipo: this.tipo
+                };
+            } else {
+                throw new Error(response.error || 'Erro no login');
             }
-
-            const data = await response.json();
-
-            // Salvar dados de autenticação APENAS na memória da sessão
-            this.token = data.access_token;
-            this.usuario = data.usuario;
-            this.tipo = data.tipo_usuario;  // API usa 'tipo_usuario' não 'tipo'
-
-            // NÃO salvar no localStorage para forçar login a cada recarregamento
-            console.log('🔐 Dados salvos apenas na sessão (não no localStorage)');
-
-            return {
-                success: true,
-                usuario: data.usuario,
-                tipo: data.tipo_usuario  // API usa 'tipo_usuario' não 'tipo'
-            };
-
         } catch (error) {
             console.error('Erro no login:', error);
-            return {
-                success: false,
-                error: error.message
-            };
+            this.clearSession();
+            throw error;
         }
+    }
+
+    /**
+     * Limpar dados da sessão
+     */
+    clearSession() {
+        this.token = null;
+        this.usuario = null;
+        this.tipo = null;
     }
 
     /**
      * Realizar logout
      */
     logout() {
-        this.token = null;
-        this.usuario = null;
-        this.tipo = null;
+        console.log('🚪 Fazendo logout...');
+        
+        // Limpar dados da sessão
+        this.clearSession();
+        
+        // Limpar localStorage caso exista algo
+        try {
+            localStorage.removeItem(this.tokenKey);
+            localStorage.removeItem(this.userKey);
+        } catch (error) {
+            console.warn('Erro ao limpar localStorage:', error);
+        }
 
-        // Remover do localStorage
-        localStorage.removeItem(this.tokenKey);
-        localStorage.removeItem(this.userKey);
-
-        // Recarregar página
-        window.location.reload();
+        console.log('✅ Logout realizado com sucesso');
+        return { success: true };
     }
 
     /**
-     * Verificar se o usuário está autenticado (apenas dados em memória)
+     * Verificar se o usuário está autenticado
      */
     isAuthenticated() {
-        const hasData = this.token !== null && this.usuario !== null;
-        console.log(`🔍 Verificação de autenticação: ${hasData ? 'Autenticado' : 'Não autenticado'}`);
-        return hasData;
+        const hasToken = !!this.token;
+        const hasUser = !!this.usuario;
+        console.log(`🔍 Verificação de autenticação: ${hasToken && hasUser ? 'Autenticado' : 'Não autenticado'}`);
+        return hasToken && hasUser;
     }
 
     /**
-     * Verificar se há dados salvos no localStorage (sem carregá-los)
+     * Verificar se há dados salvos
      */
     hasSavedData() {
-        const token = localStorage.getItem(this.tokenKey);
-        const userData = localStorage.getItem(this.userKey);
-        return !!(token && userData);
+        try {
+            return localStorage.getItem(this.tokenKey) !== null;
+        } catch (error) {
+            console.warn('Erro ao verificar localStorage:', error);
+            return false;
+        }
     }
 
     /**
-     * Obter token de autorização para requests
+     * Obter header de autorização
      */
     getAuthHeader() {
         if (this.token) {
-            return `Bearer ${this.token}`;
+            return {
+                'Authorization': `Bearer ${this.token}`
+            };
         }
-        return null;
+        return {};
     }
 
     /**
@@ -112,85 +126,73 @@ class AuthService {
     getUserData() {
         return {
             usuario: this.usuario,
-            tipo: this.tipo
+            tipo: this.tipo,
+            token: this.token
         };
     }
 
     /**
-     * Salvar token no localStorage
+     * Salvar token no localStorage (não usado nesta política)
      */
     saveTokenToStorage() {
-        if (this.token) {
-            localStorage.setItem(this.tokenKey, this.token);
-            localStorage.setItem(this.userKey, JSON.stringify({
-                usuario: this.usuario,
-                tipo: this.tipo
-            }));
-        }
+        // Intencionalmente vazio - não salvar no localStorage
+        console.log('🚫 Não salvando no localStorage - política de segurança');
     }
 
     /**
-     * Carregar token do localStorage
+     * Carregar token do localStorage (não usado nesta política)
      */
     loadTokenFromStorage() {
-        try {
-            const token = localStorage.getItem(this.tokenKey);
-            const userData = localStorage.getItem(this.userKey);
-
-            if (token && userData) {
-                this.token = token;
-                const user = JSON.parse(userData);
-                this.usuario = user.usuario;
-                this.tipo = user.tipo;
-
-                // NÃO validar automaticamente aqui - será feito pelo loginManager
-                console.log('📁 Token carregado do localStorage (aguardando validação)');
-            }
-        } catch (error) {
-            console.error('Erro ao carregar token:', error);
-            this.clearStorage();
-        }
+        // Intencionalmente vazio - não carregar do localStorage
+        console.log('🚫 Não carregando do localStorage - política de segurança');
+        return false;
     }
 
     /**
-     * Validar se o token ainda é válido
+     * Validar token com o servidor
      */
     async validateToken() {
-        if (!this.token) return false;
-
         try {
-            const baseUrl = window.AppConfig?.api?.baseUrl || 'http://localhost:8000';
-            const response = await fetch(`${baseUrl}/auth/verify`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': this.getAuthHeader()
-                }
-            });
-
-            if (!response.ok) {
-                this.clearStorage();
+            if (!this.token) {
+                console.log('🔍 Sem token para validar');
                 return false;
             }
 
-            return true;
+            if (!window.apiService) {
+                console.warn('ApiService não disponível para validação');
+                return false;
+            }
+
+            const response = await window.apiService.get('/api/auth/validate');
+            
+            if (response.success) {
+                console.log('✅ Token válido');
+                return true;
+            } else {
+                console.log('❌ Token inválido');
+                this.clearSession();
+                return false;
+            }
         } catch (error) {
-            console.error('Erro ao validar token:', error);
-            this.clearStorage();
+            console.error('❌ Erro ao validar token:', error);
+            this.clearSession();
             return false;
         }
     }
 
     /**
-     * Limpar dados de autenticação
+     * Limpar storage completamente
      */
     clearStorage() {
-        this.token = null;
-        this.usuario = null;
-        this.tipo = null;
-        localStorage.removeItem(this.tokenKey);
-        localStorage.removeItem(this.userKey);
+        try {
+            localStorage.removeItem(this.tokenKey);
+            localStorage.removeItem(this.userKey);
+            console.log('🧹 Storage limpo');
+        } catch (error) {
+            console.warn('Erro ao limpar storage:', error);
+        }
     }
 }
 
-// Criar instância global
+// Inicializar serviço globalmente
 window.authService = new AuthService();

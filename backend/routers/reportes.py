@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from config import get_db
 from models_final import *
 
-router = APIRouter(prefix="/api/reportes", tags=["reportes"])
+router = APIRouter(prefix="/reportes", tags=["reportes"])
 
 # Modelos Pydantic para responses
 class ResumenMensualItem(BaseModel):

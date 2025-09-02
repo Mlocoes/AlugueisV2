@@ -9,34 +9,24 @@ const AppConfig = {
         baseUrl: '', // Usar ruta relativa para aprovechar el proxy nginx
         port: '8000',
         endpoints: {
-            auth: '/auth/',
-            proprietarios: '/proprietarios/',
-            imoveis: '/imoveis/',
-            alugueis: '/alugueis/',
-            participacoes: '/participacoes/',
-            relatorios: '/relatorios/',
-            distribuicoes: '/distribuicoes/',
-            health: '/health'
+            auth: '/api/auth/',
+            proprietarios: '/api/proprietarios/',
+            imoveis: '/api/imoveis/',
+            alugueis: '/api/alugueis/',
+            participacoes: '/api/participacoes/',
+            relatorios: '/api/reportes/',
+            distribuicoes: '/api/distribuicoes/',
+            health: '/api/health'
         }
     },
 
     // Método para inicializar configuração de rede
     async initNetwork() {
-        if (window.networkConfig) {
-            await window.networkConfig.detectServerIP();
-            this.api.baseUrl = window.networkConfig.getBaseURL();
-            console.log(`🌐 API configurada para: ${this.api.baseUrl}`);
-
-            // Mostrar informações de rede
-            const networkInfo = window.networkConfig.getNetworkInfo();
-            if (networkInfo.canAccessFromNetwork) {
-                console.log(`📡 Sistema acessível pela rede em: ${networkInfo.baseURL}`);
-                console.log(`💡 Outras máquinas podem acessar via: http://${networkInfo.serverIP}:3000 (após servir o frontend)`);
-            }
-        } else {
-            this.api.baseUrl = 'http://localhost:8000';
-            console.warn('⚠️ NetworkConfig não disponível, usando localhost');
-        }
+        // Desabilitado para usar proxy nginx
+        console.log('🌐 Usando proxy nginx, configuración de red deshabilitada');
+        
+        // No modificar baseUrl para mantener el proxy relativo
+        // this.api.baseUrl permanece como cadena vacía
     },
 
     // UI Configuration
@@ -89,7 +79,7 @@ const AppConfig = {
 
     // Método para obtener la URL base actual
     getBaseURL() {
-        return this.api.baseUrl || 'http://localhost:8000';
+        return this.api.baseUrl; // Retorna cadena vacía para uso con proxy nginx
     }
 };
 

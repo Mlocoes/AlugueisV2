@@ -13,7 +13,8 @@ class RelatoriosManager {
         // Esperar a que ApiService esteja disponível
         this.waitForApiService().then(() => {
             this.setupEventListeners();
-            this.loadInitialData();
+            // No cargar datos iniciales automáticamente
+            // Solo cargarán cuando se active la pestaña de relatórios
         });
     }
 
@@ -66,6 +67,30 @@ class RelatoriosManager {
         });
     }
 
+    /**
+     * Método para cargar datos cuando se activa la pestaña (llamado por UI manager)
+     */
+    async load() {
+        console.log('🔄 Cargando datos de relatórios...');
+        try {
+            // Solo cargar si hay ApiService y el usuario está autenticado
+            if (!this.apiService) {
+                console.warn('⚠️ ApiService não disponível para relatórios');
+                return;
+            }
+
+            // Verificar autenticación antes de cargar
+            if (window.authService && !window.authService.isAuthenticated()) {
+                console.warn('⚠️ Usuario não autenticado - não carregando relatórios');
+                return;
+            }
+
+            await this.loadInitialData();
+        } catch (error) {
+            console.error('❌ Erro ao carregar relatórios:', error);
+        }
+    }
+
     async loadInitialData() {
         try {
             // Carregar anos disponíveis
@@ -90,7 +115,13 @@ class RelatoriosManager {
                 return;
             }
 
-            const anos = await this.apiService.get('/api/reportes/anos-disponiveis');
+            const response = await this.apiService.get('/api/reportes/anos-disponiveis');
+            const anos = response.success ? response.data : response;
+            
+            if (!Array.isArray(anos)) {
+                console.error('Resposta de anos não é um array:', anos);
+                return;
+            }
             
             const anoSelect = document.getElementById('relatorios-ano-select');
             anoSelect.innerHTML = '<option value="">Todos os anos</option>';
@@ -114,7 +145,13 @@ class RelatoriosManager {
                 return;
             }
 
-            const data = await this.apiService.get('/api/proprietarios/');
+            const response = await this.apiService.get('/api/proprietarios/');
+            const data = response.success ? response.data : response;
+            
+            if (!Array.isArray(data)) {
+                console.error('Resposta de proprietarios não é um array:', data);
+                return;
+            }
             
             const proprietarioSelect = document.getElementById('relatorios-proprietario-select');
             proprietarioSelect.innerHTML = '<option value="">Todos os proprietários</option>';
@@ -149,7 +186,13 @@ class RelatoriosManager {
             if (mes) params.append('mes', mes);
             if (proprietarioId) params.append('proprietario_id', proprietarioId);
             
-            const data = await this.apiService.get(`/api/reportes/resumen-mensual?${params.toString()}`);
+            const response = await this.apiService.get(`/api/reportes/resumen-mensual?${params.toString()}`);
+            const data = response.success ? response.data : response;
+            
+            if (!Array.isArray(data)) {
+                console.error('Resposta de relatórios não é um array:', data);
+                return;
+            }
             
             this.currentData = data;
             this.filteredData = [...data];
@@ -375,6 +418,8 @@ class RelatoriosManager {
 // Inicializar quando o DOM estiver pronto
 document.addEventListener('DOMContentLoaded', function() {
     window.relatoriosManager = new RelatoriosManager();
+    // Disponibilizar também como relatoriosModule para o UI manager
+    window.relatoriosModule = window.relatoriosManager;
 });
 
 // Função para mostrar tab (compatibilidade com sistema existente)
