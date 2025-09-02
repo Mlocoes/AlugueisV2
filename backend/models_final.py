@@ -350,6 +350,144 @@ class AluguelSimplesValidator:
     def calcular_valor_liquido(valor_aluguel: float, taxa_admin: float) -> float:
         return valor_aluguel - taxa_admin
 
+# ============================================
+# EXTRAS - SISTEMA DE ALIAS
+# ============================================
+
+class Extra(Base):
+    """Tabela de Extras - Sistema de Alias para Proprietários"""
+    __tablename__ = 'extras'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    uuid = Column(UUID(as_uuid=True), default=func.uuid_generate_v4(), unique=True, nullable=False)
+    alias = Column(String(200), nullable=False, unique=True)
+    id_proprietarios = Column(Text, nullable=True)  # JSON array de IDs dos proprietários
+    data_criacao = Column(DateTime, default=func.current_timestamp())
+    ativo = Column(Boolean, default=True, nullable=False)
+    
+    def __repr__(self):
+        return f"<Extra(alias='{self.alias}')>"
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'uuid': str(self.uuid),
+            'alias': self.alias,
+            'id_proprietarios': self.id_proprietarios,
+            'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
+            'ativo': self.ativo
+        }
+
+# ============================================
+# TRANSFERENCIAS
+# ============================================
+
+class Transferencia(Base):
+    """Tabela de Transferências"""
+    __tablename__ = 'transferencias'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    uuid = Column(UUID(as_uuid=True), default=func.uuid_generate_v4(), unique=True, nullable=False)
+    alias_id = Column(Integer, ForeignKey('extras.id'), nullable=False)
+    nome_transferencia = Column(String(300), nullable=False)
+    valor_total = Column(Numeric(10, 2), nullable=False, default=0.0)
+    id_proprietarios = Column(Text, nullable=True)  # JSON: [{"id": 1, "valor": 100.50}]
+    origem_id_proprietario = Column(Integer, ForeignKey('proprietarios.id'), nullable=True)
+    destino_id_proprietario = Column(Integer, ForeignKey('proprietarios.id'), nullable=True)
+    data_criacao = Column(DateTime, default=func.current_timestamp())
+    data_fim = Column(DateTime, nullable=True)
+    ativo = Column(Boolean, default=True, nullable=False)
+    data_cadastro = Column(DateTime, default=func.current_timestamp())
+    
+    # Relacionamentos
+    alias = relationship("Extra", backref="transferencias")
+    proprietario_origem = relationship("Proprietario", foreign_keys=[origem_id_proprietario])
+    proprietario_destino = relationship("Proprietario", foreign_keys=[destino_id_proprietario])
+    
+    def __repr__(self):
+        return f"<Transferencia(nome='{self.nome_transferencia}', valor={self.valor_total})>"
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'uuid': str(self.uuid),
+            'alias_id': self.alias_id,
+            'alias': self.alias.alias if self.alias else None,
+            'nome_transferencia': self.nome_transferencia,
+            'valor_total': float(self.valor_total) if self.valor_total else 0.0,
+            'id_proprietarios': self.id_proprietarios,
+            'origem_id_proprietario': self.origem_id_proprietario,
+            'destino_id_proprietario': self.destino_id_proprietario,
+            'proprietario_origem': self.proprietario_origem.nome if self.proprietario_origem else None,
+            'proprietario_destino': self.proprietario_destino.nome if self.proprietario_destino else None,
+            'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
+            'data_fim': self.data_fim.isoformat() if self.data_fim else None,
+            'ativo': self.ativo,
+            'data_cadastro': self.data_cadastro.isoformat() if self.data_cadastro else None
+        }
+
+# Pydantic models para Extra
+class ExtraBase(BaseModel):
+    alias: str
+    id_proprietarios: Optional[str] = None
+    ativo: Optional[bool] = True
+
+class ExtraCreate(ExtraBase):
+    pass
+
+class ExtraUpdate(ExtraBase):
+    alias: Optional[str] = None
+
+class ExtraResponse(BaseModel):
+    id: int
+    uuid: str
+    alias: str
+    id_proprietarios: Optional[str] = None
+    data_criacao: Optional[str] = None
+    ativo: bool
+
+    class Config:
+        from_attributes = True
+
+# Pydantic models para Transferencia
+class TransferenciaBase(BaseModel):
+    alias_id: int
+    nome_transferencia: str
+    valor_total: Optional[float] = 0.0
+    id_proprietarios: Optional[str] = None
+    origem_id_proprietario: Optional[int] = None
+    destino_id_proprietario: Optional[int] = None
+    data_criacao: Optional[str] = None
+    data_fim: Optional[str] = None
+    ativo: Optional[bool] = True
+
+class TransferenciaCreate(TransferenciaBase):
+    pass
+
+class TransferenciaUpdate(TransferenciaBase):
+    alias_id: Optional[int] = None
+    nome_transferencia: Optional[str] = None
+
+class TransferenciaResponse(BaseModel):
+    id: int
+    uuid: str
+    alias_id: int
+    alias: Optional[str] = None
+    nome_transferencia: str
+    valor_total: float
+    id_proprietarios: Optional[str] = None
+    origem_id_proprietario: Optional[int] = None
+    destino_id_proprietario: Optional[int] = None
+    proprietario_origem: Optional[str] = None
+    proprietario_destino: Optional[str] = None
+    data_criacao: Optional[str] = None
+    data_fim: Optional[str] = None
+    ativo: bool
+    data_cadastro: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 class ResumenCalculator:
     """Calculadora de resumos e estatísticas"""
     

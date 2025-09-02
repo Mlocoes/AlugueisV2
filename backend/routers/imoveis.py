@@ -8,7 +8,7 @@ from models_final import Imovel, AluguelSimples, Usuario
 from config import get_db
 from .auth import verify_token
 
-router = APIRouter(prefix="/imoveis", tags=["imoveis"])
+router = APIRouter(prefix="/api/imoveis", tags=["imoveis"])
 
 @router.get("/")
 def listar_imoveis(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):

@@ -13,7 +13,7 @@ import calendar
 # Assuming CalculoService is in this path
 from services.calculo_service import CalculoService
 
-router = APIRouter(prefix="/alugueis", tags=["alugueis"])
+router = APIRouter(prefix="/api/alugueis", tags=["alugueis"])
 
 @router.post("/importar/", response_model=dict)
 async def importar_alugueis(file: UploadFile = File(...), db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):

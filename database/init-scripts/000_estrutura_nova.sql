@@ -104,6 +104,32 @@ CREATE TABLE IF NOT EXISTS log_importacoes (
     tempo_processamento INTERVAL
 );
 
+-- Tabela de extras (aliases de propietários)
+CREATE TABLE IF NOT EXISTS extras (
+    id SERIAL PRIMARY KEY,
+    uuid UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
+    alias VARCHAR(200) UNIQUE NOT NULL,
+    id_proprietarios TEXT,
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ativo BOOLEAN DEFAULT TRUE NOT NULL
+);
+
+-- Tabela de transferencias (separada dos aliases)
+CREATE TABLE IF NOT EXISTS transferencias (
+    id SERIAL PRIMARY KEY,
+    uuid UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
+    alias_id INTEGER NOT NULL REFERENCES extras(id) ON DELETE CASCADE,
+    nome_transferencia VARCHAR(300) NOT NULL,
+    valor_total DECIMAL(10,2) NOT NULL DEFAULT 0,
+    id_proprietarios TEXT, -- JSON con [{"id": 1, "valor": 100.50}, {"id": 2, "valor": 200.75}]
+    origem_id_proprietario INTEGER REFERENCES proprietarios(id),
+    destino_id_proprietario INTEGER REFERENCES proprietarios(id),
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data_fim TIMESTAMP,
+    ativo BOOLEAN DEFAULT TRUE NOT NULL,
+    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Eliminar restrição única antiga
 ALTER TABLE participacoes DROP CONSTRAINT IF EXISTS participacoes_proprietario_id_imovel_id_key;
 -- Criar restrição única nova para versões históricas
@@ -129,3 +155,31 @@ CREATE INDEX IF NOT EXISTS idx_participacoes_imovel ON participacoes(imovel_id);
 CREATE INDEX IF NOT EXISTS idx_alugueis_simples_imovel ON alugueis_simples(imovel_id);
 CREATE INDEX IF NOT EXISTS idx_alugueis_simples_proprietario ON alugueis_simples(proprietario_id);
 CREATE INDEX IF NOT EXISTS idx_alugueis_simples_data ON alugueis_simples(ano, mes);
+CREATE INDEX IF NOT EXISTS idx_extras_alias ON extras(alias);
+CREATE INDEX IF NOT EXISTS idx_transferencias_alias_id ON transferencias(alias_id);
+CREATE INDEX IF NOT EXISTS idx_transferencias_data_criacao ON transferencias(data_criacao);
+CREATE INDEX IF NOT EXISTS idx_transferencias_ativo ON transferencias(ativo);
+
+-- Comentários sobre campos das tabelas
+COMMENT ON TABLE extras IS 'Tabela para aliases (grupos de proprietários)';
+COMMENT ON COLUMN extras.id_proprietarios IS 'JSON array com IDs dos proprietários pertencentes ao alias';
+
+COMMENT ON TABLE transferencias IS 'Tabela para armazenar transferências cadastradas com IDs únicos';
+COMMENT ON COLUMN transferencias.alias_id IS 'ID do alias (grupo de proprietários) ao qual a transferência pertence';
+COMMENT ON COLUMN transferencias.nome_transferencia IS 'Nome identificador da transferência';
+COMMENT ON COLUMN transferencias.valor_total IS 'Valor total da transferência (soma de todos os proprietários)';
+COMMENT ON COLUMN transferencias.id_proprietarios IS 'JSON array com objetos {id: number, valor: number} dos proprietários e seus valores';
+COMMENT ON COLUMN transferencias.origem_id_proprietario IS 'ID do proprietário origem para transferências individuais';
+COMMENT ON COLUMN transferencias.destino_id_proprietario IS 'ID do proprietário destino para transferências individuais';
+COMMENT ON COLUMN transferencias.data_criacao IS 'Data de criação da transferência';
+COMMENT ON COLUMN transferencias.data_fim IS 'Data de fim ou conclusão da transferência';
+CREATE INDEX IF NOT EXISTS idx_extras_origem ON extras(origem_id_proprietario);
+CREATE INDEX IF NOT EXISTS idx_extras_destino ON extras(destino_id_proprietario);
+
+-- Comentários sobre campos da tabela extras
+COMMENT ON COLUMN extras.id_proprietarios IS 'JSON array com IDs dos proprietários pertencentes ao alias';
+COMMENT ON COLUMN extras.valor_transferencia IS 'Valor total da transferência cadastrada';
+COMMENT ON COLUMN extras.nome_transferencia IS 'Nome identificador da transferência cadastrada';
+COMMENT ON COLUMN extras.origem_id_proprietario IS 'ID do proprietário origem para transferências individuais';
+COMMENT ON COLUMN extras.destino_id_proprietario IS 'ID do proprietário destino para transferências individuais';
+COMMENT ON COLUMN extras.data_fim IS 'Data de fim ou última atualização da transferência';

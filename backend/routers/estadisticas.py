@@ -10,7 +10,7 @@ from config import get_db
 from models_final import AluguelSimples, LogImportacao, ResumenCalculator, Imovel as Inmueble, Usuario
 from .auth import verify_token
 
-router = APIRouter(prefix="/estadisticas", tags=["estadísticas"])
+router = APIRouter(prefix="/api/estadisticas", tags=["estadísticas"])
 
 @router.get("/generales")
 async def estadisticas_generales(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):

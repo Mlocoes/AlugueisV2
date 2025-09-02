@@ -9,7 +9,7 @@ from models_final import Participacao, Proprietario, Imovel, Usuario
 from config import get_db
 from .auth import verify_token, is_admin
 
-router = APIRouter(prefix="/participacoes", tags=["participacoes"])
+router = APIRouter(prefix="/api/participacoes", tags=["participacoes"])
 
 @router.get("/datas", response_model=Dict)
 def listar_datas_participacoes(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):

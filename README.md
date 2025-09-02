@@ -1,53 +1,537 @@
-# 🏠 Sistema de Aluguéis V1
+# 🏠 Sistema de Gestão de Aluguéis V1
 
-**Sistema completo e profissional para gestão de aluguéis, proprietários, imóveis e participações. Arquitetura moderna, escalável e automatizada.**
+**Plataforma completa e profissional para gestão de aluguéis, proprietários, imóveis e participações. Arquitetura moderna, escalável e com interface responsiva para desktop e mobile.**
 
-### 🆕 Atualização Agosto 2025
-- Corrigido: Dashboard móvel agora mostra corretamente o valor total de aluguel do último mês.
-- Corrigido: Tela de imóveis móvel mostra corretamente o status "Alugado" conforme o campo `ativo` do banco de dados.
-- Corrigido: Tela de aluguéis móvel mostra os valores reais usando o campo `valor_liquido_proprietario`.
-- Todos os cálculos e exibições de valores foram revisados para garantir consistência com os dados do backend.
-
-[![Versão](https://img.shields.io/badge/versão-2.0-blue.svg)](./VERSION)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104.1-green.svg)](https://fastapi.tiangolo.com/)
+[![Versão](https://img.shields.io/badge/versão-1.0-blue.svg)](./VERSION)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-ready-blue.svg)](https://www.docker.com/)
 [![Licença](https://img.shields.io/badge/licença-MIT-green.svg)](./LICENSE)
 
 ---
 
-## 📋 Resumo Executivo
+## 📋 Visão Geral
 
-SistemaAlugueisV2 é uma solução completa para gestão imobiliária, automatizando processos de aluguel, importação de dados, relatórios financeiros e administração de proprietários e imóveis. Inclui backend robusto, frontend moderno, scripts de automação e documentação técnica.
+O Sistema de Gestão de Aluguéis V1 é uma solução completa para administração imobiliária, oferecendo funcionalidades robustas para gestão de proprietários, imóveis, aluguéis mensais e participações societárias. A plataforma conta com backend modular FastAPI, frontend responsivo e versão mobile PWA.
+
+### ✨ Características Principais
+
+- �️ **Arquitetura Modular**: Backend organizado por módulos específicos
+- 🔐 **Autenticação Segura**: Sistema JWT com login obrigatório
+- 📱 **Interface Responsiva**: Desktop e versão mobile PWA
+- 📊 **Dashboard Interativo**: Gráficos e métricas em tempo real
+- 📈 **Relatórios Avançados**: Filtros por período e proprietário
+- 📤 **Importação Excel**: Drag & drop com validação automática
+- 🔄 **Scroll Vertical**: Interface consistente em todas as telas
+- 🐳 **Docker Ready**: Orquestração completa com Docker Compose
 
 ---
 
-## 🏗️ Estrutura do Projeto
+## 🏗️ Arquitetura do Sistema
+
+### Estrutura de Pastas
 
 ```text
-SistemaAlquileresV2/
-├── backend/           # API FastAPI modular
-├── frontend/          # Frontend moderno e modular
-├── database/          # Scripts, backups e migrações
-├── scripts/           # Automação e manutenção
-├── docs/              # Documentação técnica
-├── logs/              # Logs do sistema
-├── storage/           # Arquivos e uploads
-├── docker-compose.yml # Orquestração de containers
-├── run_script.sh      # Script mestre de gestão
-└── README.md          # Documentação principal
+AlugueisV1/
+├── backend/                    # API FastAPI modular
+│   ├── main.py                # Aplicação principal
+│   ├── config.py              # Configurações
+│   ├── models_final.py        # Modelos de dados
+│   ├── database.py            # Conexão BD
+│   ├── requirements.txt       # Dependências Python
+│   ├── routers/              # Endpoints organizados
+│   │   ├── auth.py           # Autenticação JWT
+│   │   ├── alugueis.py       # CRUD aluguéis
+│   │   ├── proprietarios.py  # CRUD proprietários
+│   │   ├── imoveis.py        # CRUD imóveis
+│   │   ├── participacoes.py  # Sistema participações
+│   │   ├── reportes.py       # Relatórios e estatísticas
+│   │   └── importacao.py     # Importação Excel
+│   └── migrations/           # Migrações BD
+├── frontend/                 # Interface web principal
+│   ├── index.html           # Página principal
+│   ├── mobile/              # Versão PWA mobile
+│   │   ├── index.html       # Interface mobile
+│   │   ├── manifest.json    # Configuração PWA
+│   │   ├── sw.js           # Service Worker
+│   │   └── js/             # Scripts mobile
+│   └── src/
+│       ├── css/
+│       │   └── main.css     # Estilos globais
+│       └── js/
+│           ├── app.js       # Aplicação principal
+│           ├── core/
+│           │   ├── config.js    # Configurações
+│           │   └── ui-manager.js # Gerenciador UI
+│           ├── modules/         # Módulos funcionais
+│           │   ├── dashboard.js
+│           │   ├── loginManager.js
+│           │   ├── proprietarios.js
+│           │   ├── imoveis.js
+│           │   ├── alugueis.js
+│           │   ├── participacoes.js
+│           │   ├── relatorios.js
+│           │   └── importacao.js
+│           └── services/       # Serviços
+│               ├── api.js      # Cliente API
+│               └── authService.js # Autenticação
+├── database/                # Scripts BD e backups
+├── docs/                    # Documentação técnica
+├── scripts/                 # Scripts automação
+├── docker-compose.yml       # Orquestração containers
+├── nginx-frontend.conf      # Configuração proxy
+└── install.sh              # Script instalação
 ```
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## 🛠️ Stack Tecnológica
 
 ### Backend
-- **FastAPI** (Python 3.10+)
-- **SQLAlchemy** (ORM)
-- **PostgreSQL 15+**
-- **Pandas** (processamento de Excel)
-- **Uvicorn** (ASGI server)
+- **🐍 Python 3.10+** - Linguagem principal
+- **⚡ FastAPI** - Framework web moderno
+- **🗄️ PostgreSQL 15+** - Banco de dados principal
+- **🔗 SQLAlchemy** - ORM para Python  
+- **📊 Pandas** - Processamento dados Excel
+- **🔐 JWT** - Autenticação segura
+- **📝 Pydantic** - Validação de dados
+- **🚀 Uvicorn** - Servidor ASGI
+
+### Frontend
+- **🌐 HTML5/CSS3/JavaScript ES6+** - Tecnologias web
+- **🎨 Bootstrap 5** - Framework CSS
+- **📊 Chart.js** - Gráficos interativos
+- **📱 PWA** - Progressive Web App
+- **🔄 Fetch API** - Comunicação com backend
+- **📋 Modular Architecture** - Organização por módulos
+
+### DevOps & Infraestrutura
+- **🐳 Docker & Docker Compose** - Containerização
+- **🌐 Nginx** - Proxy reverso e servidor web
+- **📁 Volume Persistence** - Dados persistentes
+- **📊 Health Checks** - Monitoramento de saúde
+- **📝 Logging** - Sistema de logs centralizado
+
+---
+
+## 🚀 Instalação e Configuração
+
+### Pré-requisitos
+
+- **Docker** & **Docker Compose** instalados
+- **Git** para clonagem do repositório
+- Portas disponíveis: `3000` (frontend), `8000` (backend), `5432` (PostgreSQL)
+
+### Instalação Rápida
+
+1. **Clone o repositório**
+   ```bash
+   git clone https://github.com/Mlocoes/AlugueisV1.git
+   cd AlugueisV1
+   ```
+
+2. **Configure as variáveis de ambiente**
+   ```bash
+   cp .env.example .env
+   # Edite o arquivo .env conforme necessário
+   ```
+
+3. **Inicie o sistema completo**
+   ```bash
+   chmod +x install.sh
+   ./install.sh
+   ```
+
+4. **Acesse a aplicação**
+   - 🌐 **Frontend Desktop**: [http://localhost:3000](http://localhost:3000)
+   - 📱 **Versão Mobile**: [http://localhost:3000/mobile](http://localhost:3000/mobile)  
+   - 🔧 **API Backend**: [http://localhost:8000](http://localhost:8000)
+   - 📚 **Documentação API**: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+### Usuário Padrão
+
+- **Usuário**: `admin`
+- **Senha**: `admin`
+
+---
+
+## 🧩 Módulos e Funcionalidades
+
+### 🏠 Gestão de Proprietários
+- ✅ CRUD completo de proprietários
+- 📋 Dados pessoais, contato e informações bancárias
+- 🔍 Sistema de busca avançada
+- 📱 Interface responsiva com scroll vertical
+
+### 🏢 Gestão de Imóveis  
+- ✅ CRUD completo de imóveis
+- 🏠 Informações detalhadas: localização, características, valores
+- 📐 Área total, área construída, quartos, banheiros
+- 🏷️ Status: ativo/inativo para controle de disponibilidade
+
+### 💰 Gestão de Aluguéis
+- ✅ Registro mensal por proprietário e imóvel
+- 💵 Valores: bruto, líquido, taxas e deduções
+- 📅 Controle por mês/ano com matriz visual
+- 🔢 Cálculos automáticos de valores
+
+### 📊 Sistema de Participações
+- ✅ Gestão de co-propriedade e sociedade
+- 🔄 Controle por versões com histórico
+- 📈 Percentuais de participação por imóvel
+- 👥 Múltiplos proprietários por imóvel
+
+### 📈 Dashboard e Relatórios
+- 📊 Gráficos interativos com Chart.js
+- 📋 Resumos por proprietário e período
+- 🔍 Filtros avançados (ano, proprietário)
+- ⚡ Métricas em tempo real
+- 📱 Interface limpa sem elementos desnecessários
+
+### 📤 Importação de Dados
+- 📥 Upload via drag & drop
+- 📋 Templates Excel pré-formatados
+- ✅ Validação automática de dados
+- 📝 Log detalhado de importações
+- 🔄 Auditoria completa do processo
+
+### 🔐 Sistema de Autenticação
+- 🛡️ Login obrigatório com JWT
+- 🔑 Sessões seguras (não persistidas)
+- 👤 Controle de tipos de usuário
+- 🚪 Logout automático ao recarregar página
+
+---
+
+## 📱 Versão Mobile (PWA)
+
+### Características PWA
+- 📱 **Progressive Web App** completa
+- 🔄 **Service Worker** para cache offline
+- 📲 **Instalável** como app nativo
+- 🎨 **Interface otimizada** para mobile
+- 🧭 **Navegação inferior** intuitiva
+
+### Funcionalidades Mobile
+- 📊 Dashboard com métricas adaptadas
+- 👥 Gestão de proprietários simplificada
+- 🏢 Visualização de imóveis otimizada
+- 💰 Controle de aluguéis mobile-friendly
+- 📈 Participações com interface touch
+
+---
+
+## 🔗 API Endpoints Principais
+
+### Autenticação
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST   | `/auth/login` | Login de usuário |
+| POST   | `/auth/validate` | Validar token |
+
+### Proprietários
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET    | `/proprietarios/` | Listar proprietários |
+| POST   | `/proprietarios/` | Criar proprietário |
+| PUT    | `/proprietarios/{id}` | Atualizar proprietário |
+| DELETE | `/proprietarios/{id}` | Excluir proprietário |
+
+### Imóveis
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET    | `/imoveis/` | Listar imóveis |
+| POST   | `/imoveis/` | Criar imóvel |
+| PUT    | `/imoveis/{id}` | Atualizar imóvel |
+| DELETE | `/imoveis/{id}` | Excluir imóvel |
+
+### Aluguéis
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET    | `/alugueis/` | Listar aluguéis |
+| POST   | `/alugueis/` | Criar aluguel |
+| PUT    | `/alugueis/{id}` | Atualizar aluguel |
+| DELETE | `/alugueis/{id}` | Excluir aluguel |
+
+### Participações
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET    | `/participacoes/` | Listar participações |
+| POST   | `/participacoes/nova-versao` | Criar nova versão |
+| PUT    | `/participacoes/{id}` | Atualizar participação |
+
+### Relatórios
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET    | `/reportes/anos-disponiveis` | Anos disponíveis |
+| GET    | `/reportes/resumen-mensual` | Resumo mensal |
+
+### Importação
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST   | `/importacao/excel` | Importar Excel |
+| GET    | `/importacao/templates` | Download templates |
+
+---
+
+## 📊 Esquema de Banco de Dados
+
+### Tabelas Principais
+
+#### 👥 `proprietarios`
+- Dados pessoais completos
+- Informações de contato
+- Dados bancários
+- Timestamps de auditoria
+
+#### 🏢 `imoveis`
+- Informações da propriedade
+- Localização detalhada
+- Características físicas
+- Status ativo/inativo
+
+#### 💰 `alugueis_simples`
+- Registros mensais únicos
+- Valores bruto e líquido
+- Associação proprietário-imóvel
+- Controle por mês/ano
+
+#### 📈 `participacoes`
+- Sistema de co-propriedade
+- Percentuais por imóvel
+- Controle por versões
+- Histórico de alterações
+
+#### 📋 `log_importacoes`
+- Auditoria de importações
+- Status e resultados
+- Timestamps detalhados
+- Rastreamento de erros
+
+### Relacionamentos
+- **1:N** - Um proprietário pode ter múltiplos aluguéis
+- **1:N** - Um imóvel pode ter múltiplos aluguéis
+- **N:M** - Participações conectam proprietários e imóveis
+- **Unique Constraints** - Aluguel único por proprietário/imóvel/período
+
+---
+
+## 🔧 Comandos e Scripts
+
+### Docker Compose
+```bash
+# Iniciar serviços
+docker-compose up -d
+
+# Ver logs
+docker-compose logs -f
+
+# Parar serviços  
+docker-compose down
+
+# Reconstruir imagens
+docker-compose build --no-cache
+
+# Status dos serviços
+docker-compose ps
+```
+
+### Desenvolvimento
+```bash
+# Modo desenvolvimento backend
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+# Modo desenvolvimento frontend
+cd frontend
+python -m http.server 3000
+```
+
+### Banco de Dados
+```bash
+# Conectar ao PostgreSQL
+docker-compose exec postgres psql -U alugueisv1_usuario -d alugueisv1_db
+
+# Backup
+docker-compose exec postgres pg_dump -U alugueisv1_usuario alugueisv1_db > backup.sql
+
+# Restore
+docker-compose exec -T postgres psql -U alugueisv1_usuario -d alugueisv1_db < backup.sql
+```
+
+---
+
+## ⚡ Troubleshooting
+
+### Problemas Comuns
+
+#### **Porta já em uso**
+```bash
+# Verificar processos
+sudo netstat -tlnp | grep ':3000\|:8000\|:5432'
+
+# Parar containers
+docker-compose down
+
+# Limpar sistema Docker
+docker system prune -f
+```
+
+#### **Erro de conexão com banco**
+```bash
+# Reiniciar apenas PostgreSQL
+docker-compose restart postgres
+
+# Ver logs do banco
+docker-compose logs postgres -f
+
+# Verificar saúde do container
+docker-compose ps
+```
+
+#### **Frontend não carrega**
+```bash
+# Verificar status
+curl -I http://localhost:3000
+
+# Reconstruir frontend
+docker-compose build frontend --no-cache
+docker-compose up -d frontend
+```
+
+#### **Erro na importação Excel**
+- Verifique se o arquivo segue o template fornecido
+- Confirme que as colunas obrigatórias estão presentes
+- Verifique a codificação do arquivo (UTF-8)
+- Consulte os logs em `docker-compose logs backend`
+
+### Logs e Monitoramento
+```bash
+# Logs de todos os serviços
+docker-compose logs -f
+
+# Logs específicos
+docker-compose logs backend -f
+docker-compose logs frontend -f
+docker-compose logs postgres -f
+
+# Status e recursos
+docker stats
+```
+
+---
+
+## 📚 Funcionalidades Recentes
+
+### ✅ Melhorias Implementadas
+- 🗑️ **Elementos removidos**: Total Proprietários, Valor Total, Média por Registro
+- 🚫 **Botões eliminados**: Atualizar Relatório, Exportar Excel, Copiar  
+- 📏 **Scroll vertical**: Aplicado consistentemente em todas as telas
+- 🎯 **Interface limpa**: Relatórios simplificados e focados
+- 🔧 **Correções de erro**: Eliminadas referências a elementos removidos
+
+### 📱 PWA Mobile
+- 📲 Instalável como aplicativo nativo
+- 🔄 Cache offline com Service Worker
+- 🧭 Navegação inferior otimizada
+- 📊 Interface adaptada para touch
+- ⚡ Performance otimizada
+
+---
+
+## 🚀 Roadmap Futuro
+
+### Curto Prazo
+- [ ] 🔐 Expansão do sistema de roles/permissões
+- [ ] 📊 Novos tipos de relatórios e gráficos
+- [ ] 🔄 Sincronização offline para PWA
+- [ ] 📧 Sistema de notificações
+
+### Médio Prazo  
+- [ ] 📱 App mobile nativo (React Native/Flutter)
+- [ ] 🌐 API GraphQL complementar
+- [ ] 🔗 Integrações bancárias
+- [ ] 📄 Geração de contratos PDF
+
+### Longo Prazo
+- [ ] 🤖 Análise preditiva com IA
+- [ ] ⛓️ Integração blockchain para contratos
+- [ ] 🌍 Versão multi-idioma
+- [ ] 🏢 Sistema multi-empresa
+
+---
+
+## 🤝 Contribuição
+
+### Como Contribuir
+1. 🍴 Faça fork do repositório
+2. 🌿 Crie uma branch (`git checkout -b feature/nova-funcionalidade`)
+3. ✍️ Faça commits descritivos
+4. 📤 Push e abra Pull Request
+5. 📋 Siga os padrões de código
+
+### Padrões de Desenvolvimento
+- **Python**: Seguir PEP 8
+- **JavaScript**: ES6+ com comentários JSDoc
+- **Commits**: Mensagens claras e descritivas
+- **Testes**: Incluir testes quando aplicável
+- **Documentação**: Atualizar README quando relevante
+
+---
+
+## 📄 Licença
+
+Este projeto está licenciado sob a **MIT License** - veja o arquivo [LICENSE](LICENSE) para detalhes.
+
+### Permissões
+- ✅ Uso comercial
+- ✅ Modificação  
+- ✅ Distribuição
+- ✅ Uso privado
+
+### Limitações
+- ❌ Responsabilidade
+- ❌ Garantia
+
+---
+
+## � Créditos e Agradecimentos
+
+### Desenvolvido por
+- **Mlocoes** - [GitHub](https://github.com/Mlocoes)
+
+### Tecnologias Utilizadas
+- [FastAPI](https://fastapi.tiangolo.com/) - Framework web Python
+- [PostgreSQL](https://www.postgresql.org/) - Banco de dados
+- [Bootstrap](https://getbootstrap.com/) - Framework CSS
+- [Chart.js](https://www.chartjs.org/) - Biblioteca de gráficos
+- [Docker](https://www.docker.com/) - Containerização
+
+### Agradecimentos
+- Comunidade open source
+- Contribuidores do projeto
+- Usuários e testadores
+
+---
+
+⭐ **Se este projeto foi útil, considere dar uma estrela no GitHub!** ⭐
+
+---
+
+## 📞 Suporte
+
+Para suporte, dúvidas ou sugestões:
+
+- 🐛 **Issues**: [GitHub Issues](https://github.com/Mlocoes/AlugueisV1/issues)
+- 💬 **Discussões**: [GitHub Discussions](https://github.com/Mlocoes/AlugueisV1/discussions)
+- 📧 **E-mail**: [Contato do desenvolvedor]
+
+**Documentação completa**: Consulte a pasta `/docs` para documentação técnica detalhada.
+
+---
+
+*Última atualização: Setembro 2025*
 - **JWT** (autenticação)
 
 ### Frontend

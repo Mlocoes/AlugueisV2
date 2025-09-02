@@ -78,7 +78,7 @@ class UIManager {
         console.log(`🔄 Cambiando a pestaña: ${tabName}`);
 
         // Lista de pestañas válidas
-        const validTabs = ['dashboard', 'proprietarios', 'imoveis', 'participacoes', 'alugueis', 'relatorios', 'importar'];
+        const validTabs = ['dashboard', 'proprietarios', 'imoveis', 'participacoes', 'alugueis', 'relatorios', 'importar', 'extras'];
 
         if (!validTabs.includes(tabName)) {
             console.warn(`❌ Pestaña inválida: ${tabName}`);
@@ -89,6 +89,14 @@ class UIManager {
         if (tabName === 'importar') {
             if (!this.checkImportPermission()) {
                 this.showAccessDeniedAlert();
+                return false;
+            }
+        }
+
+        // Verificar permissões para a aba extras (apenas admins)
+        if (tabName === 'extras') {
+            if (!this.checkAdminPermission()) {
+                this.showAccessDeniedAlert('Acesso negado. Apenas administradores podem acessar a funcionalidade de Extras.');
                 return false;
             }
         }
@@ -157,6 +165,11 @@ class UIManager {
                         window.participacoesModule.init();
                     }
                     break;
+                case 'extras':
+                    if (window.extrasModule && typeof window.extrasModule.init === 'function') {
+                        window.extrasModule.init();
+                    }
+                    break;
             }
         } catch (error) {
             console.error(`❌ Error inicializando módulo ${tabName}:`, error);
@@ -191,6 +204,30 @@ class UIManager {
 
         const hasPermission = this.checkImportPermission();
         const parentLi = importNavItem.closest('li');
+
+        if (parentLi) {
+            if (hasPermission) {
+                parentLi.style.display = 'block';
+                parentLi.setAttribute('title', '');
+            } else {
+                parentLi.style.display = 'none';
+                parentLi.setAttribute('title', 'Somente administradores podem acessar esta área');
+            }
+        }
+
+        // Atualizar visibilidade da aba de extras
+        this.updateExtrasTabVisibility();
+    }
+
+    /**
+     * Atualizar visibilidade da aba de extras baseada nos permisos do usuário (apenas admins)
+     */
+    updateExtrasTabVisibility() {
+        const extrasNavItem = document.querySelector(`[onclick="showTab('extras')"]`);
+        if (!extrasNavItem) return;
+
+        const hasPermission = this.checkAdminPermission();
+        const parentLi = extrasNavItem.closest('li');
 
         if (parentLi) {
             if (hasPermission) {
@@ -282,6 +319,11 @@ class UIManager {
                         await window.importacaoModule.load();
                     } else {
                         console.log('📤 Módulo de importação pronto');
+                    }
+                    break;
+                case 'extras':
+                    if (window.extrasModule && typeof window.extrasModule.load === 'function') {
+                        await window.extrasModule.load();
                     }
                     break;
                 default:
@@ -541,16 +583,15 @@ class UIManager {
     }    /**
      * Mostrar alerta de acesso negado
      */
-    showAccessDeniedAlert() {
+    showAccessDeniedAlert(customMessage = null) {
         const userData = window.authService?.getUserData();
         const userName = userData?.usuario || 'Usuário';
         const userType = userData?.tipo || 'desconhecido';
 
-        this.showAlert(
-            `Acesso Negado: ${userName}, somente usuários administradores podem acessar a área de importação. Seu tipo de usuário: ${userType}`,
-            'warning',
-            5000
-        );
+        const message = customMessage || 
+            `Acesso Negado: ${userName}, somente usuários administradores podem acessar a área de importação. Seu tipo de usuário: ${userType}`;
+
+        this.showAlert(message, 'warning', 5000);
     }
 }
 

@@ -13,7 +13,7 @@ from passlib.context import CryptContext
 from config import get_db, SECRET_KEY
 from models_final import Usuario
 
-router = APIRouter(prefix="/auth", tags=["authentication"])
+router = APIRouter(prefix="/api/auth", tags=["authentication"])
 security = HTTPBearer()
 
 # Configuração de Segurança

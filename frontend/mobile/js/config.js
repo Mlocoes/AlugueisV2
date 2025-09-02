@@ -5,16 +5,16 @@
 
 const MobileConfig = {
     api: {
-        baseUrl: 'http://192.168.0.7:8000',
+        baseUrl: 'http://192.168.0.7:3000',
         endpoints: {
-            auth: '/auth/',
-            proprietarios: '/proprietarios/',
-            imoveis: '/imoveis/',
-            alugueis: '/alugueis/',
-            participacoes: '/participacoes/',
-            relatorios: '/relatorios/',
-            distribuicoes: '/distribuicoes/',
-            health: '/health'
+            auth: '/api/auth/',
+            proprietarios: '/api/proprietarios/',
+            imoveis: '/api/imoveis/',
+            alugueis: '/api/alugueis/',
+            participacoes: '/api/participacoes/',
+            relatorios: '/api/relatorios/',
+            distribuicoes: '/api/distribuicoes/',
+            health: '/api/health'
         }
     },
 

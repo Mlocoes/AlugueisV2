@@ -31,9 +31,9 @@ class NetworkConfig {
             }
         }
 
-        // Fallback para localhost
-        this.serverIP = '127.0.0.1';
-        console.log(`🏠 Usando fallback localhost: ${this.serverIP}`);
+        // Fallback para IP local
+        this.serverIP = '192.168.0.7';
+        console.log(`🏠 Usando fallback IP local: ${this.serverIP}`);
         return this.serverIP;
     }
 
@@ -60,7 +60,7 @@ class NetworkConfig {
      * IP por defecto
      */
     getDefaultIP() {
-        return 'localhost';
+        return '192.168.0.7';
     }
 
     /**

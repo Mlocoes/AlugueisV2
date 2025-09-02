@@ -18,7 +18,8 @@ class MobileAuthService {
         try {
             showLoading(true);
 
-            const response = await fetch(`${this.config.api.baseUrl}/auth/login`, {
+            const fullUrl = `${this.config.api.baseUrl}${this.config.api.endpoints.auth}login`;
+            const response = await fetch(fullUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -105,7 +106,7 @@ class MobileAuthService {
         if (!this.token) return false;
 
         try {
-            const response = await fetch(`${this.config.api.baseUrl}/auth/verify`, {
+            const response = await fetch(`${this.config.api.baseUrl}${this.config.api.endpoints.auth}verify`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${this.token}`

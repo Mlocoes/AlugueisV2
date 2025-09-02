@@ -11,7 +11,7 @@ from config import get_db
 from models_final import Proprietario, Imovel, AluguelSimples, LogImportacao, Usuario
 from .auth import is_admin
 
-router = APIRouter(prefix="/importacao", tags=["importacao"])
+router = APIRouter(prefix="/api/importacao", tags=["importacao"])
 
 @router.post("/importar-excel/")
 async def importar_proprietarios_excel(file: UploadFile = File(...), db: Session = Depends(get_db), admin_user: Usuario = Depends(is_admin)):

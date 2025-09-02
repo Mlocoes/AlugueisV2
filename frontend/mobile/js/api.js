@@ -101,11 +101,11 @@ class MobileApiService {
      * Proprietários
      */
     async getProprietarios() {
-        return await this.get('/proprietarios/');
+        return await this.get(this.config.api.endpoints.proprietarios);
     }
 
     async createProprietario(data) {
-        return await this.post('/proprietarios/', data);
+        return await this.post(this.config.api.endpoints.proprietarios, data);
     }
 
     async updateProprietario(id, data) {
@@ -120,11 +120,11 @@ class MobileApiService {
      * Imóveis
      */
     async getImoveis() {
-        return await this.get('/imoveis/');
+        return await this.get(this.config.api.endpoints.imoveis);
     }
 
     async createImovel(data) {
-        return await this.post('/imoveis/', data);
+        return await this.post(this.config.api.endpoints.imoveis, data);
     }
 
     async updateImovel(id, data) {
@@ -139,42 +139,42 @@ class MobileApiService {
      * Aluguéis
      */
     async getAlugueis() {
-        return await this.get('/alugueis/listar');
+        return await this.get(`${this.config.api.endpoints.alugueis}listar`);
     }
 
     async createAluguel(data) {
-        return await this.post('/alugueis/', data);
+        return await this.post(this.config.api.endpoints.alugueis, data);
     }
 
     async updateAluguel(id, data) {
-        return await this.put(`/alugueis/${id}`, data);
+        return await this.put(`${this.config.api.endpoints.alugueis}${id}`, data);
     }
 
     async deleteAluguel(id) {
-        return await this.delete(`/alugueis/${id}`);
+        return await this.delete(`${this.config.api.endpoints.alugueis}${id}`);
     }
 
     /**
      * Participações
      */
     async getParticipacoes() {
-        return await this.get('/participacoes/');
+        return await this.get(this.config.api.endpoints.participacoes);
     }
 
     async getParticipacao(id) {
-        return await this.get(`/participacoes/${id}`);
+        return await this.get(`${this.config.api.endpoints.participacoes}${id}`);
     }
 
     async createParticipacao(data) {
-        return await this.post('/participacoes/', data);
+        return await this.post(this.config.api.endpoints.participacoes, data);
     }
 
     async updateParticipacao(id, data) {
-        return await this.put(`/participacoes/${id}`, data);
+        return await this.put(`${this.config.api.endpoints.participacoes}${id}`, data);
     }
 
     async deleteParticipacao(id) {
-        return await this.delete(`/participacoes/${id}`);
+        return await this.delete(`${this.config.api.endpoints.participacoes}${id}`);
     }
 
     /**
@@ -182,7 +182,7 @@ class MobileApiService {
      */
     async checkHealth() {
         try {
-            const response = await fetch(`${this.config.api.baseUrl}/health`);
+            const response = await fetch(`${this.config.api.baseUrl}${this.config.api.endpoints.health}`);
             return await response.json();
         } catch (error) {
             console.error('Erro ao verificar saúde do servidor:', error);

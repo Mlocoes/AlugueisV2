@@ -8,7 +8,7 @@ from models_final import Proprietario, AluguelSimples, Usuario
 from config import get_db
 from .auth import verify_token, verify_token_flexible
 
-router = APIRouter(prefix="/proprietarios", tags=["proprietarios"])
+router = APIRouter(prefix="/api/proprietarios", tags=["proprietarios"])
 
 def get_nome_completo(p: Proprietario):
     return f"{p.nome} {p.sobrenome}".strip() if p.sobrenome else p.nome
