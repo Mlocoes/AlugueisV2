@@ -4,9 +4,9 @@
  */
 
 const AppConfig = {
-    // API Configuration - IP será detectada automaticamente
+    // API Configuration - Usar proxy de nginx en lugar de IP directa
     api: {
-        baseUrl: 'http://192.168.0.7:8000', // Forzado a IP del servidor
+        baseUrl: '', // Usar ruta relativa para aprovechar el proxy nginx
         port: '8000',
         endpoints: {
             auth: '/auth/',
@@ -97,6 +97,6 @@ const AppConfig = {
 window.AppConfig = AppConfig;
 
 // Auto-inicialización de la configuración de red
-// Forzar la base URL en todos los dispositivos
-AppConfig.updateBaseURL('http://192.168.0.7:8000');
-console.log(`🌐 URL base forzada para todos los clientes: ${AppConfig.getBaseURL()}`);
+// Usar proxy nginx en lugar de IP directa
+// AppConfig.updateBaseURL('http://192.168.0.7:8000');
+console.log(`🌐 URL base configurada: ${AppConfig.getBaseURL() || 'relativa (proxy nginx)'}`);

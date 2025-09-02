@@ -41,7 +41,8 @@ async def get_resumen_mensual(
     proprietario_id: Optional[int] = None,
     nome_proprietario: Optional[str] = None,
     db: Session = Depends(get_db)
-    # current_user=Depends(verify_token)  # Temporalmente deshabilitado para pruebas
+    # Remover temporalmente la autenticación para debug
+    # current_user=Depends(verify_token)
 ):
     """
     Obtém resumo mensal de aluguéis agrupado por proprietário
@@ -49,7 +50,7 @@ async def get_resumen_mensual(
     try:
         # Query base usando JOIN para obter dados dos proprietários e aluguéis
         query = db.query(
-            func.concat(Proprietario.nome, ' ', func.coalesce(Proprietario.sobrenome, '')).label('nome_proprietario'),
+            Proprietario.nome_completo.label('nome_proprietario'),
             AluguelSimples.mes,
             AluguelSimples.ano,
             func.sum(AluguelSimples.valor_liquido_proprietario).label('valor_total'),
@@ -57,8 +58,7 @@ async def get_resumen_mensual(
         ).select_from(AluguelSimples)\
         .join(Proprietario, AluguelSimples.proprietario_id == Proprietario.id)\
         .group_by(
-            Proprietario.nome,
-            Proprietario.sobrenome,
+            Proprietario.nome_completo,
             AluguelSimples.mes,
             AluguelSimples.ano
         )
@@ -74,15 +74,13 @@ async def get_resumen_mensual(
             query = query.filter(AluguelSimples.proprietario_id == proprietario_id)
             
         if nome_proprietario is not None:
-            query = query.filter(
-                func.concat(Proprietario.nome, ' ', func.coalesce(Proprietario.sobrenome, '')).ilike(f"%{nome_proprietario}%")
-            )
+            query = query.filter(Proprietario.nome_completo.ilike(f"%{nome_proprietario}%"))
 
         # Ordenar por ano, mês e nome
         query = query.order_by(
             AluguelSimples.ano.desc(),
             AluguelSimples.mes.desc(),
-            Proprietario.nome
+            Proprietario.nome_completo
         )
 
         result = query.all()
@@ -109,7 +107,8 @@ async def get_resumen_propietario(
     nome_proprietario: Optional[str] = None,
     ano: Optional[int] = None,
     db: Session = Depends(get_db)
-    # current_user=Depends(verify_token)  # Temporalmente deshabilitado para pruebas
+    # Remover temporalmente la autenticación para debug
+    # current_user=Depends(verify_token)
 ):
     """
     Obtém resumo anual por proprietário
@@ -117,19 +116,17 @@ async def get_resumen_propietario(
     try:
         # Query para resumo por proprietário
         query = db.query(
-            func.concat(Proprietario.nome, ' ', func.coalesce(Proprietario.sobrenome, '')).label('nome_proprietario'),
+            Proprietario.nome_completo.label('nome_proprietario'),
             func.sum(AluguelSimples.valor_liquido_proprietario).label('total_anual'),
             func.count(AluguelSimples.id).label('quantidade_registros'),
             func.avg(AluguelSimples.valor_liquido_proprietario).label('media_mensal')
         ).select_from(AluguelSimples)\
         .join(Proprietario, AluguelSimples.proprietario_id == Proprietario.id)\
-        .group_by(Proprietario.nome, Proprietario.sobrenome)
+        .group_by(Proprietario.nome_completo)
 
         # Aplicar filtros
         if nome_proprietario is not None:
-            query = query.filter(
-                func.concat(Proprietario.nome, ' ', func.coalesce(Proprietario.sobrenome, '')).ilike(f"%{nome_proprietario}%")
-            )
+            query = query.filter(Proprietario.nome_completo.ilike(f"%{nome_proprietario}%"))
             
         if ano is not None:
             query = query.filter(AluguelSimples.ano == ano)
@@ -158,7 +155,8 @@ async def get_resumen_propietario(
 @router.get("/totais-gerais")
 async def get_totais_gerais(
     db: Session = Depends(get_db)
-    # current_user=Depends(verify_token)  # Temporalmente deshabilitado para pruebas
+    # Remover temporalmente la autenticación para debug
+    # current_user=Depends(verify_token)
 ):
     """
     Obtém totais gerais do sistema
@@ -194,7 +192,8 @@ async def get_totais_gerais(
 @router.get("/anos-disponiveis")
 async def get_anos_disponiveis(
     db: Session = Depends(get_db)
-    # current_user=Depends(verify_token)  # Temporalmente deshabilitado para pruebas
+    # Remover temporalmente la autenticación para debug
+    # current_user=Depends(verify_token)
 ):
     """
     Obtém lista de anos disponíveis nos dados
