@@ -50,21 +50,6 @@ class RelatoriosManager {
         document.getElementById('relatorios-proprietario-select')?.addEventListener('change', () => {
             this.filterData();
         });
-
-        // Evento para gerar relatório
-        document.getElementById('btn-gerar-relatorio')?.addEventListener('click', () => {
-            this.generateReport();
-        });
-
-        // Evento para exportar Excel
-        document.getElementById('btn-exportar-excel')?.addEventListener('click', () => {
-            this.exportToExcel();
-        });
-
-        // Evento para copiar para clipboard
-        document.getElementById('btn-copiar-clipboard')?.addEventListener('click', () => {
-            this.copyToClipboard();
-        });
     }
 
     /**
@@ -238,7 +223,6 @@ class RelatoriosManager {
                 <td>${index + 1}</td>
                 <td class="fw-bold">${item.nome_proprietario}</td>
                 <td class="text-center">${item.mes}/${item.ano}</td>
-                <td class="text-end fw-bold text-primary">R$ ${this.formatMoney(item.valor_total)}</td>
                 <td class="text-center">
                     <span class="badge bg-success">
                         <i class="fas fa-building me-1"></i>${item.quantidade_imoveis || 1} imóvel(is)
@@ -250,127 +234,8 @@ class RelatoriosManager {
     }
 
     updateSummary() {
-        if (!this.filteredData || this.filteredData.length === 0) {
-            document.getElementById('total-proprietarios').textContent = '0';
-            document.getElementById('total-valor').textContent = 'R$ 0,00';
-            document.getElementById('media-valor').textContent = 'R$ 0,00';
-            return;
-        }
-        
-        const totalProprietarios = new Set(this.filteredData.map(item => item.nome_proprietario)).size;
-        const totalValor = this.filteredData.reduce((sum, item) => sum + parseFloat(item.valor_total), 0);
-        const mediaValor = totalValor / this.filteredData.length;
-        
-        document.getElementById('total-proprietarios').textContent = totalProprietarios.toString();
-        document.getElementById('total-valor').textContent = `R$ ${this.formatMoney(totalValor)}`;
-        document.getElementById('media-valor').textContent = `R$ ${this.formatMoney(mediaValor)}`;
-    }
-
-    async generateReport() {
-        const button = document.getElementById('btn-gerar-relatorio');
-        const originalText = button.innerHTML;
-        
-        try {
-            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Gerando...';
-            button.disabled = true;
-            
-            await this.loadRelatoriosData();
-            
-            this.showSuccess('Relatório gerado com sucesso!');
-            
-        } catch (error) {
-            console.error('Erro ao gerar relatório:', error);
-            this.showError('Erro ao gerar relatório');
-        } finally {
-            button.innerHTML = originalText;
-            button.disabled = false;
-        }
-    }
-
-    async exportToExcel() {
-        if (!this.filteredData || this.filteredData.length === 0) {
-            this.showWarning('Não há dados para exportar');
-            return;
-        }
-
-        try {
-            // Preparar dados para exportação
-            const exportData = this.filteredData.map((item, index) => ({
-                'Nº': index + 1,
-                'Nome do Proprietário': item.nome_proprietario,
-                'Período': `${item.mes}/${item.ano}`,
-                'Valor Total': `R$ ${this.formatMoney(item.valor_total)}`,
-                'Quantidade de Imóveis': item.quantidade_imoveis || 1
-            }));
-
-            // Converter para CSV
-            const csvContent = this.convertToCSV(exportData);
-            
-            // Criar e baixar arquivo
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            
-            const now = new Date();
-            const timestamp = now.toISOString().slice(0, 10);
-            
-            link.setAttribute('href', url);
-            link.setAttribute('download', `relatorio-alugueis-${timestamp}.csv`);
-            link.style.visibility = 'hidden';
-            
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            this.showSuccess('Relatório exportado com sucesso!');
-            
-        } catch (error) {
-            console.error('Erro ao exportar relatório:', error);
-            this.showError('Erro ao exportar relatório');
-        }
-    }
-
-    async copyToClipboard() {
-        if (!this.filteredData || this.filteredData.length === 0) {
-            this.showWarning('Não há dados para copiar');
-            return;
-        }
-
-        try {
-            // Criar texto formatado para clipboard
-            let clipboardText = 'Nº\tNome do Proprietário\tPeríodo\tValor Total\tQuantidade de Imóveis\n';
-            
-            this.filteredData.forEach((item, index) => {
-                clipboardText += `${index + 1}\t${item.nome_proprietario}\t${item.mes}/${item.ano}\tR$ ${this.formatMoney(item.valor_total)}\t${item.quantidade_imoveis || 1}\n`;
-            });
-            
-            await navigator.clipboard.writeText(clipboardText);
-            this.showSuccess('Dados copiados para a área de transferência!');
-            
-        } catch (error) {
-            console.error('Erro ao copiar dados:', error);
-            this.showError('Erro ao copiar dados');
-        }
-    }
-
-    convertToCSV(data) {
-        if (!data || data.length === 0) return '';
-        
-        const headers = Object.keys(data[0]);
-        const csvHeader = headers.join(',');
-        
-        const csvRows = data.map(row => 
-            headers.map(header => {
-                let value = row[header] || '';
-                // Escapar aspas duplas e envolver em aspas se contém vírgula
-                if (value.toString().includes(',') || value.toString().includes('"')) {
-                    value = '"' + value.toString().replace(/"/g, '""') + '"';
-                }
-                return value;
-            }).join(',')
-        );
-        
-        return [csvHeader, ...csvRows].join('\n');
+    // Elementos resumen eliminados, no se actualiza nada
+    return;
     }
 
     formatMoney(value) {
