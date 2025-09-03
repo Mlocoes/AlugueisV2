@@ -23,6 +23,40 @@ def verify_admin_access(current_user = Depends(is_admin)):
     """Verificar se o usuário é administrador"""
     return current_user
 
+# Rutas específicas (deben ir ANTES de las rutas dinámicas)
+@router.get("/proprietarios/disponiveis")
+async def listar_proprietarios_disponiveis(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(verify_admin_access)
+):
+    """Listar proprietários disponíveis para seleção em alias"""
+    try:
+        proprietarios = db.query(Proprietario).all()
+        data = [{"id": p.id, "nome": p.nome, "sobrenome": p.sobrenome} for p in proprietarios]
+        return {"success": True, "data": data}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao listar proprietários disponíveis: {str(e)}")
+
+@router.get("/estatisticas")
+async def obter_estatisticas_alias(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(verify_admin_access)
+):
+    """Obter estatísticas dos alias"""
+    try:
+        total_alias = db.query(func.count(Alias.id)).scalar()
+        
+        return {
+            "total_alias": total_alias,
+            "endpoint": "alias",
+            "status": "ok"
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao obter estatísticas: {str(e)}")
+
+# Rutas generales
 @router.get("/", response_model=List[AliasResponse])
 async def listar_extras(
     skip: int = Query(0, ge=0, description="Número de registros para pular"),

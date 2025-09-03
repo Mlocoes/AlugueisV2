@@ -53,25 +53,25 @@ class ImportacaoModule {
         let errorMsg = '';
         switch (tipo) {
             case 'proprietarios':
-                endpoint = '/proprietarios/importar/';
+                endpoint = '/api/proprietarios/importar/';
                 loadingMsg = 'Importando proprietários...';
                 successMsg = 'Proprietários importados com sucesso.';
                 errorMsg = 'Erro ao importar proprietários';
                 break;
             case 'imoveis':
-                endpoint = '/imoveis/importar/';
+                endpoint = '/api/imoveis/importar/';
                 loadingMsg = 'Importando imóveis...';
                 successMsg = 'Imóveis importados com sucesso.';
                 errorMsg = 'Erro ao importar imóveis';
                 break;
             case 'participacoes':
-                endpoint = '/participacoes/importar/';
+                endpoint = '/api/participacoes/importar/';
                 loadingMsg = 'Importando participações...';
                 successMsg = 'Participações importadas com sucesso.';
                 errorMsg = 'Erro ao importar participações';
                 break;
             case 'alugueis':
-                endpoint = '/alugueis/importar/';
+                endpoint = '/api/alugueis/importar/';
                 loadingMsg = 'Importando aluguéis...';
                 successMsg = 'Aluguéis importados com sucesso.';
                 errorMsg = 'Erro ao importar aluguéis';

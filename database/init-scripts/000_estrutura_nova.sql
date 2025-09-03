@@ -1,4 +1,9 @@
--- SCRIPT DE INICIALIZAÇÃO DO BANCO DE DADOS - SISTEMA DE ALUGUEIS V2
+-- SCRIPT DE INICIALIZAÇÃO OPTIMIZADO - SISTEMA DE ALUGUEIS V2
+-- Versión actualizada con estructura optimizada
+
+-- Extensiones necesarias
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- Tabela de usuários para autenticação
 CREATE TABLE IF NOT EXISTS usuarios (
     id SERIAL PRIMARY KEY,
@@ -7,20 +12,176 @@ CREATE TABLE IF NOT EXISTS usuarios (
     tipo_de_usuario VARCHAR(20) NOT NULL CHECK (tipo_de_usuario IN ('administrador', 'usuario')),
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
--- Todas as tabelas e campos em português
 
--- Criação do usuário de banco
+-- Tabela de proprietários (OPTIMIZADA - sin ativo, data_atualizacao)
+CREATE TABLE IF NOT EXISTS proprietarios (
+    id SERIAL PRIMARY KEY,
+    uuid UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
+    nome VARCHAR(150) NOT NULL,
+    sobrenome VARCHAR(150),
+    documento VARCHAR(50) UNIQUE,
+    tipo_documento VARCHAR(20),
+    endereco TEXT,
+    telefone VARCHAR(20),
+    email VARCHAR(100),
+    banco VARCHAR(100),
+    agencia VARCHAR(20),
+    conta VARCHAR(30),
+    tipo_conta VARCHAR(20),
+    observacoes TEXT,
+    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
+-- Tabela de imóveis (OPTIMIZADA - sin ativo, iptu_anual→iptu_mensal, campos nuevos)
+CREATE TABLE IF NOT EXISTS imoveis (
+    id SERIAL PRIMARY KEY,
+    uuid UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
+    nome VARCHAR(200) NOT NULL UNIQUE,
+    endereco VARCHAR(300) NOT NULL,
+    tipo_imovel VARCHAR(50),
+    area_total DECIMAL(10,2),
+    area_construida DECIMAL(10,2),
+    valor_cadastral DECIMAL(15,2),
+    valor_mercado DECIMAL(15,2),
+    iptu_mensal DECIMAL(10,2),
+    condominio_mensal DECIMAL(10,2),
+    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- Campos nuevos optimizados
+    numero_quartos INTEGER,
+    numero_banheiros INTEGER,
+    tem_garagem BOOLEAN DEFAULT FALSE,
+    numero_vagas_garagem INTEGER DEFAULT 0,
+    andar INTEGER,
+    numero_apartamento VARCHAR(10),
+    cep VARCHAR(10),
+    bairro VARCHAR(100),
+    cidade VARCHAR(100) DEFAULT 'São Paulo',
+    estado VARCHAR(50) DEFAULT 'SP',
+    status_imovel VARCHAR(20) DEFAULT 'Disponível'
+);
+
+-- Tabela de participações (OPTIMIZADA - sin ativo, observacoes)
+CREATE TABLE IF NOT EXISTS participacoes (
+    id SERIAL PRIMARY KEY,
+    uuid UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
+    proprietario_id INTEGER NOT NULL REFERENCES proprietarios(id) ON DELETE CASCADE,
+    imovel_id INTEGER NOT NULL REFERENCES imoveis(id) ON DELETE CASCADE,
+    porcentagem DECIMAL(5,2) NOT NULL CHECK (porcentagem >= 0 AND porcentagem <= 100),
+    data_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(proprietario_id, imovel_id, data_registro)
+);
+
+-- Tabela de alugueis (OPTIMIZADA - sin data_atualizacao, observacoes)
+CREATE TABLE IF NOT EXISTS alugueis (
+    id SERIAL PRIMARY KEY,
+    uuid UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
+    imovel_id INTEGER NOT NULL REFERENCES imoveis(id) ON DELETE CASCADE,
+    proprietario_id INTEGER NOT NULL REFERENCES proprietarios(id) ON DELETE CASCADE,
+    mes INTEGER NOT NULL CHECK (mes >= 1 AND mes <= 12),
+    ano INTEGER NOT NULL CHECK (ano >= 2020 AND ano <= 2060),
+    taxa_administracao_total DECIMAL(12,2) NOT NULL DEFAULT 0 CHECK (taxa_administracao_total >= 0),
+    taxa_administracao_proprietario DECIMAL(12,2) DEFAULT 0 CHECK (taxa_administracao_proprietario >= 0),
+    valor_liquido_proprietario DECIMAL(12,2) DEFAULT 0,
+    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(imovel_id, proprietario_id, mes, ano)
+);
+
+-- Tabela de alias (antes extras) - SISTEMA DE GRUPOS DE PROPRIETÁRIOS
+CREATE TABLE IF NOT EXISTS alias (
+    id SERIAL PRIMARY KEY,
+    uuid UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
+    alias VARCHAR(200) NOT NULL UNIQUE,
+    id_proprietarios TEXT -- JSON array de IDs dos proprietários
+);
+
+-- Tabela de transferências
+CREATE TABLE IF NOT EXISTS transferencias (
+    id SERIAL PRIMARY KEY,
+    uuid UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
+    alias_id INTEGER NOT NULL REFERENCES alias(id) ON DELETE CASCADE,
+    nome_transferencia VARCHAR(300) NOT NULL,
+    valor_total DECIMAL(10,2) NOT NULL DEFAULT 0.0,
+    id_proprietarios TEXT, -- JSON: [{"id": 1, "valor": 100.50}]
+    origem_id_proprietario INTEGER REFERENCES proprietarios(id),
+    destino_id_proprietario INTEGER REFERENCES proprietarios(id),
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data_fim TIMESTAMP
+);
+
+-- Tabela de log de importações
+CREATE TABLE IF NOT EXISTS log_importacoes (
+    id SERIAL PRIMARY KEY,
+    nome_arquivo VARCHAR(255) NOT NULL,
+    data_importacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    registros_processados INTEGER DEFAULT 0,
+    registros_sucesso INTEGER DEFAULT 0,
+    registros_erro INTEGER DEFAULT 0,
+    detalhes_erro TEXT,
+    estado VARCHAR(50) DEFAULT 'INICIADO',
+    tempo_processamento INTERVAL
+);
+
+-- ÍNDICES OPTIMIZADOS
+CREATE INDEX IF NOT EXISTS idx_proprietarios_nome ON proprietarios(nome);
+CREATE INDEX IF NOT EXISTS idx_proprietarios_documento ON proprietarios(documento);
+CREATE INDEX IF NOT EXISTS idx_imoveis_nome ON imoveis(nome);
+CREATE INDEX IF NOT EXISTS idx_imoveis_tipo ON imoveis(tipo_imovel);
+CREATE INDEX IF NOT EXISTS idx_participacoes_proprietario ON participacoes(proprietario_id);
+CREATE INDEX IF NOT EXISTS idx_participacoes_imovel ON participacoes(imovel_id);
+CREATE INDEX IF NOT EXISTS idx_alugueis_imovel ON alugueis(imovel_id);
+CREATE INDEX IF NOT EXISTS idx_alugueis_proprietario ON alugueis(proprietario_id);
+CREATE INDEX IF NOT EXISTS idx_alugueis_data ON alugueis(ano, mes);
+CREATE INDEX IF NOT EXISTS idx_alias_alias ON alias(alias);
+CREATE INDEX IF NOT EXISTS idx_transferencias_alias_id ON transferencias(alias_id);
+CREATE INDEX IF NOT EXISTS idx_transferencias_data_criacao ON transferencias(data_criacao);
+
+-- COMENTÁRIOS
+COMMENT ON TABLE alias IS 'Tabela para alias (grupos de proprietários) - antes extras';
+COMMENT ON COLUMN alias.id_proprietarios IS 'JSON array com IDs dos proprietários pertencentes ao alias';
+COMMENT ON TABLE transferencias IS 'Tabela para armazenar transferências cadastradas';
+COMMENT ON COLUMN transferencias.id_proprietarios IS 'JSON array com objetos {id: number, valor: number}';
+
+-- FUNÇÃO OPTIMIZADA PARA CÁLCULO DE TAXA (sin usar campo ativo eliminado)
+CREATE OR REPLACE FUNCTION calcular_taxa_proprietario_automatico()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Buscar a participação mais recente do proprietário no imóvel
+    SELECT (porcentagem / 100.0) * NEW.taxa_administracao_total
+    INTO NEW.taxa_administracao_proprietario
+    FROM participacoes 
+    WHERE proprietario_id = NEW.proprietario_id 
+    AND imovel_id = NEW.imovel_id 
+    ORDER BY data_registro DESC
+    LIMIT 1;
+    
+    -- Se não encontrou participação, usar 100% (participação completa)
+    IF NEW.taxa_administracao_proprietario IS NULL THEN
+        NEW.taxa_administracao_proprietario := NEW.taxa_administracao_total;
+    END IF;
+    
+    -- Calcular valor líquido
+    NEW.valor_liquido_proprietario := COALESCE(NEW.valor_liquido_proprietario, 0) - NEW.taxa_administracao_proprietario;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- TRIGGERS OPTIMIZADOS
+CREATE OR REPLACE TRIGGER trigger_calcular_taxa_proprietario_insert
+    BEFORE INSERT ON alugueis
+    FOR EACH ROW
+    EXECUTE FUNCTION calcular_taxa_proprietario_automatico();
+
+CREATE OR REPLACE TRIGGER trigger_calcular_taxa_proprietario_update
+    BEFORE UPDATE OF taxa_administracao_total, proprietario_id, imovel_id ON alugueis
+    FOR EACH ROW
+    EXECUTE FUNCTION calcular_taxa_proprietario_automatico();
+
+-- MENSAJE DE ÉXITO
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'alquileresv2_user') THEN
-        CREATE ROLE alquileresv2_user LOGIN PASSWORD 'alquileresv2_pass';
-    END IF;
-END$$;
-
--- Garantir que o banco existe e dar permissões
-
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    RAISE NOTICE '✅ Base de datos optimizada creada correctamente - AlugueisV2';
+END $$;
 
 -- Tabela de proprietários
 CREATE TABLE IF NOT EXISTS proprietarios (

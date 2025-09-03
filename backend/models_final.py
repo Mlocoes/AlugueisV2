@@ -54,9 +54,8 @@ class Imovel(Base):
     area_construida = Column(Numeric(10,2), nullable=True)
     valor_cadastral = Column(Numeric(15,2), nullable=True)
     valor_mercado = Column(Numeric(15,2), nullable=True)
-    iptu_mensal = Column(Numeric(10,2), nullable=True)  # Renombrado de iptu_anual
+    iptu_mensal = Column(Numeric(10,2), nullable=True)
     condominio_mensal = Column(Numeric(10,2), nullable=True)
-    alugado = Column(Boolean, default=False)  # Renombrado de ativo
     data_cadastro = Column(DateTime, default=func.current_timestamp())
     # Campos nuevos
     numero_quartos = Column(Integer, nullable=True)
@@ -91,7 +90,6 @@ class Imovel(Base):
             'valor_mercado': float(self.valor_mercado) if self.valor_mercado else None,
             'iptu_mensal': float(self.iptu_mensal) if self.iptu_mensal else None,
             'condominio_mensal': float(self.condominio_mensal) if self.condominio_mensal else None,
-            'alugado': self.alugado,
             'data_cadastro': self.data_cadastro.isoformat() if self.data_cadastro else None,
             'numero_quartos': self.numero_quartos,
             'numero_banheiros': self.numero_banheiros,
@@ -127,9 +125,7 @@ class Proprietario(Base):
     agencia = Column(String(20), nullable=True)
     conta = Column(String(30), nullable=True)
     tipo_conta = Column(String(20), nullable=True)  # Corrente, Poupança
-    nacionalidade = Column(String(50), nullable=True, default='Brasileira')
-    estado_civil = Column(String(20), nullable=True)
-    profissao = Column(String(100), nullable=True)
+    observacoes = Column(Text, nullable=True)
     data_cadastro = Column(DateTime, default=func.current_timestamp())
     
     # Relacionamentos
@@ -155,9 +151,7 @@ class Proprietario(Base):
                 'agencia': self.agencia if hasattr(self, 'agencia') else None,
                 'conta': self.conta if hasattr(self, 'conta') else None,
                 'tipo_conta': self.tipo_conta if hasattr(self, 'tipo_conta') else None,
-                'nacionalidade': self.nacionalidade if hasattr(self, 'nacionalidade') else None,
-                'estado_civil': self.estado_civil if hasattr(self, 'estado_civil') else None,
-                'profissao': self.profissao if hasattr(self, 'profissao') else None,
+                'observacoes': self.observacoes if hasattr(self, 'observacoes') else None,
                 'data_cadastro': self.data_cadastro.isoformat() if hasattr(self, 'data_cadastro') and self.data_cadastro else None
             }
         except Exception as e:
