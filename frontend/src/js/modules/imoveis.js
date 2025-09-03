@@ -9,15 +9,15 @@ class ImoveisModule {
         this.imoveis = [];
         this.currentEditId = null;
         this.initialized = false;
-        this.imovelToDeleteId = null; // <-- Nuevo campo para guardar el id a eliminar
+        this.imovelToDeleteId = null; // <-- Novo campo para guardar o id a ser eliminado
     }
 
 
     init() {
         if (this.initialized) return;
-        // ...existing code...
+        // ...código existente...
         this.bindEvents();
-            // Interceptar submit del formulario de Importar (Novo Imóvel)
+            // Interceptar submit do formulário de Importar (Novo Imóvel)
             const formNovoImportar = document.getElementById('form-novo-imovel-importar');
             if (formNovoImportar) {
                 formNovoImportar.addEventListener('submit', (e) => {
@@ -36,7 +36,7 @@ class ImoveisModule {
     }
 
     bindEvents() {
-        // Botón y modal para novo imóvel
+        // Botão e modal para novo imóvel
         const btnNovo = document.getElementById('btn-novo-imovel');
         if (btnNovo) {
             btnNovo.addEventListener('click', () => this.showNewModal());
@@ -50,12 +50,12 @@ class ImoveisModule {
                 this.handleCreateData(data, formNovo);
             });
         }
-        // Formulario de edición
+        // Formulário de edição
         const form = document.getElementById('edit-imovel-form');
         if (form) {
             form.addEventListener('submit', (event) => this.handleUpdate(event));
         }
-        // Integrar el botón de confirmación del modal visual
+        // Integrar o botão de confirmação do modal visual
         const btnConfirmarExclusao = document.getElementById('btn-confirmar-exclusao-imovel');
         if (btnConfirmarExclusao) {
             btnConfirmarExclusao.addEventListener('click', () => {

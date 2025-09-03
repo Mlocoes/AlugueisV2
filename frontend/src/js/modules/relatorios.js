@@ -8,13 +8,13 @@ class RelatoriosManager {
     }
 
     init() {
-        console.log('RelatoriosManager initialized');
+        console.log('RelatoriosManager inicializado');
         
-        // Esperar a que ApiService esteja disponível
+        // Esperar que o ApiService esteja disponível
         this.waitForApiService().then(() => {
             this.setupEventListeners();
-            // No cargar datos iniciales automáticamente
-            // Solo cargarán cuando se active la pestaña de relatórios
+            // Não carregar dados iniciais automaticamente
+            // Apenas carregarão quando a aba de relatórios for ativada
         });
     }
 
@@ -53,20 +53,20 @@ class RelatoriosManager {
     }
 
     /**
-     * Método para cargar datos cuando se activa la pestaña (llamado por UI manager)
+     * Método para carregar dados quando a aba é ativada (chamado pelo UI manager)
      */
     async load() {
-        console.log('🔄 Cargando datos de relatórios...');
+        console.log('🔄 Carregando dados de relatórios...');
         try {
-            // Solo cargar si hay ApiService y el usuario está autenticado
+            // Apenas carregar se houver ApiService e o usuário estiver autenticado
             if (!this.apiService) {
                 console.warn('⚠️ ApiService não disponível para relatórios');
                 return;
             }
 
-            // Verificar autenticación antes de cargar
+            // Verificar autenticação antes de carregar
             if (window.authService && !window.authService.isAuthenticated()) {
-                console.warn('⚠️ Usuario não autenticado - não carregando relatórios');
+                console.warn('⚠️ Usuário não autenticado - não carregando relatórios');
                 return;
             }
 

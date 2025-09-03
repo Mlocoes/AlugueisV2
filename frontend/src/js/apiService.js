@@ -1,6 +1,6 @@
-// API Service - Updated 2025-08-21 15:30
+// API Service - Atualizado em 2025-08-21 15:30
 window.apiService = {
-    // Função auxiliar para obter headers com autenticação
+    // Função auxiliar para obter cabeçalhos com autenticação
     getHeaders() {
         const headers = {
             'Content-Type': 'application/json'
