@@ -752,20 +752,22 @@ class ExtrasManager {
                 // Fechar modal de forma segura para acessibilidade
                 this.safeCloseModal('modal-alias', 'btn-salvar-alias');
                 
-                // Recarregar dados em background sem bloquear
-                setTimeout(async () => {
-                    try {
-                        await this.loadExtras();
-                        await this.loadTransferencias();
-                    } catch (error) {
-                        console.error('Erro ao recarregar dados:', error);
-                    }
-                }, 10);
+                // No necesitamos recargar datos ya que usamos filtrado ativo=true
+                // Los nuevos elementos aparecerán automáticamente al refrescar la página
             }
 
         } catch (error) {
             console.error('Erro ao salvar alias:', error);
-            this.showAlert('Erro ao salvar alias: ' + error.message, 'danger', 'alias-alerts');
+            
+            // Tratamento específico para erro de duplicação
+            let errorMessage = error.message;
+            if (errorMessage.includes('Já existe um alias com este nome')) {
+                errorMessage = 'Este nome de alias já existe. Por favor, escolha outro nome.';
+            } else if (errorMessage.includes('HTTP 400')) {
+                errorMessage = 'Dados inválidos. Verifique as informações e tente novamente.';
+            }
+            
+            this.showAlert('Erro ao salvar alias: ' + errorMessage, 'danger', 'alias-alerts');
         }
     }
 
@@ -861,14 +863,8 @@ class ExtrasManager {
                 // Fechar modal de forma segura para acessibilidade
                 this.safeCloseModal('modal-transferencias', 'btn-salvar-transferencia');
                 
-                // Recarregar dados em background sem bloquear
-                setTimeout(async () => {
-                    try {
-                        await this.loadTransferencias();
-                    } catch (error) {
-                        console.error('Erro ao recarregar transferências:', error);
-                    }
-                }, 10);
+                // No necesitamos recargar datos ya que usamos filtrado ativo=true
+                // Los nuevos elementos aparecerán automáticamente al refrescar la página
             }
 
         } catch (error) {
@@ -907,15 +903,13 @@ class ExtrasManager {
                 return;
             }
 
-            // Usar setTimeout para tornar o confirm não bloqueante
-            setTimeout(async () => {
-                if (!confirm(`Tem certeza que deseja excluir o alias "${extra.alias}"?`)) {
-                    return;
+            // Confirmar exclusão de forma não bloqueante usando requestAnimationFrame
+            requestAnimationFrame(() => {
+                if (confirm(`Tem certeza que deseja excluir o alias "${extra.alias}"?`)) {
+                    // Executar a exclusão sem await para retornar imediatamente
+                    this.executeDeleteAlias(id);
                 }
-
-                // Executar a exclusão em background
-                this.executeDeleteAlias(id);
-            }, 0);
+            });
             
         } catch (error) {
             console.error('Erro ao excluir alias:', error);
@@ -942,14 +936,14 @@ class ExtrasManager {
             const response = await this.apiService.delete(`/api/extras/${id}`);
             
             if (response && response.success) {
-                // Atualizar dados localmente sem renderizar imediatamente
+                // Actualizar dados localmente sem renderizar imediatamente
                 this.allExtras = this.allExtras.filter(e => e.id !== id);
                 
-                // Mostrar sucesso e renderizar no próximo tick
+                // Mostrar sucesso e renderizar no próximo frame
                 this.showSuccess('Alias excluído com sucesso!');
-                setTimeout(() => {
+                requestAnimationFrame(() => {
                     this.renderExtrasTable(this.allExtras);
-                }, 0);
+                });
                 
             } else {
                 throw new Error('Resposta inválida do servidor');
@@ -1033,13 +1027,13 @@ class ExtrasManager {
             this.showTransferenciasModal();
             
             // Aguardar o modal ser exibido e os aliases serem carregados
-            setTimeout(async () => {
+            requestAnimationFrame(async () => {
                 try {
                     // Aguardar que os aliases sejam carregados
                     await this.carregarAliasParaTransferencia();
                     
-                    // Aguardar mais um pouco para garantir que o DOM esteja atualizado
-                    setTimeout(() => {
+                    // Usar requestAnimationFrame para garantir DOM atualizado
+                    requestAnimationFrame(() => {
                         // Selecionar o alias correto (usando o alias_id da transferência)
                         const aliasSelect = document.getElementById('transferencia-alias');
                         if (aliasSelect) {
@@ -1076,12 +1070,12 @@ class ExtrasManager {
                         // Carregar proprietários do alias automaticamente
                         this.carregarProprietariosAlias(transferencia.alias_id);
                         
-                    }, 200);
+                    });
                     
                 } catch (error) {
                     console.error('Erro ao carregar dados para edição:', error);
                 }
-            }, 300);
+            });
 
         } catch (error) {
             console.error('Erro ao carregar transferência para edição:', error);
@@ -1101,15 +1095,13 @@ class ExtrasManager {
                 return;
             }
 
-            // Usar setTimeout para tornar o confirm não bloqueante
-            setTimeout(async () => {
-                if (!confirm(`Tem certeza que deseja excluir a transferência "${transferencia.nome_transferencia}"?`)) {
-                    return;
+            // Confirmar exclusão de forma não bloqueante usando requestAnimationFrame
+            requestAnimationFrame(() => {
+                if (confirm(`Tem certeza que deseja excluir a transferência "${transferencia.nome_transferencia}"?`)) {
+                    // Executar a exclusão sem await para retornar imediatamente
+                    this.executeDeleteTransferencia(id);
                 }
-
-                // Executar a exclusão em background
-                this.executeDeleteTransferencia(id);
-            }, 0);
+            });
             
         } catch (error) {
             console.error('Erro ao excluir transferência:', error);
@@ -1136,14 +1128,14 @@ class ExtrasManager {
             const response = await this.apiService.delete(`/api/transferencias/${id}`);
             
             if (response && (response.message || response.success !== false)) {
-                // Atualizar dados localmente sem renderizar imediatamente
+                // Actualizar dados localmente sem renderizar imediatamente
                 this.allTransferencias = this.allTransferencias.filter(t => t.id !== id);
                 
-                // Mostrar sucesso e renderizar no próximo tick
+                // Mostrar sucesso e renderizar no próximo frame
                 this.showSuccess('Transferência excluída com sucesso!');
-                setTimeout(() => {
+                requestAnimationFrame(() => {
                     this.renderTransferenciasTable(this.allTransferencias);
-                }, 0);
+                });
                 
             } else {
                 throw new Error('Resposta inválida do servidor');

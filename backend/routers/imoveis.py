@@ -78,9 +78,9 @@ def excluir_imovel(imovel_id: int, db: Session = Depends(get_db), current_user: 
 
 @router.get("/disponiveis/", response_model=List[Dict])
 def listar_imoveis_disponiveis(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
-    """Lista todos os imóveis ativos/disponíveis."""
+    """Lista todos os imóveis disponíveis (não alugados)."""
     try:
-        imoveis = db.query(Imovel).filter(Imovel.ativo == True).order_by(Imovel.nome).all()
+        imoveis = db.query(Imovel).filter(Imovel.alugado == False).order_by(Imovel.nome).all()
         return [i.to_dict() for i in imoveis]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -104,10 +104,20 @@ async def importar_imoveis(file: UploadFile = File(...), db: Session = Depends(g
             'Área Construida': 'area_construida',
             'Valor Cadastral': 'valor_cadastral',
             'Valor Mercado': 'valor_mercado',
-            'IPTU Anual': 'iptu_anual',
+            'IPTU Mensal': 'iptu_mensal',
             'Condomínio': 'condominio_mensal',
-            'Observações': 'observacoes',
-            'Ativo': 'ativo'
+            'Alugado': 'alugado',
+            'Quartos': 'numero_quartos',
+            'Banheiros': 'numero_banheiros',
+            'Garagem': 'tem_garagem',
+            'Vagas': 'numero_vagas_garagem',
+            'Andar': 'andar',
+            'Apartamento': 'numero_apartamento',
+            'CEP': 'cep',
+            'Bairro': 'bairro',
+            'Cidade': 'cidade',
+            'Estado': 'estado',
+            'Status': 'status_imovel'
         }
         if 'Nome' not in df.columns:
             raise HTTPException(

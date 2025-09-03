@@ -71,7 +71,7 @@ def criar_participacao(dados: Dict, db: Session = Depends(get_db), current_user:
         subquery = db.query(Participacao.data_registro).order_by(Participacao.data_registro.desc()).limit(1).subquery()
         participacoes_atuais = db.query(Participacao).filter(Participacao.data_registro == subquery).all()
 
-        # Criar novo conjunto, copiando todas as participações atuais, substituindo/adicionando a nova
+        # Crear novo conjunto, copiando todas as participações atuais, substituindo/adicionando a nova
         data_registro_novo = datetime.now()
         novas_participacoes = []
         for p in participacoes_atuais:
@@ -82,8 +82,6 @@ def criar_participacao(dados: Dict, db: Session = Depends(get_db), current_user:
                 imovel_id=p.imovel_id,
                 proprietario_id=p.proprietario_id,
                 porcentagem=p.porcentagem,
-                observacoes=p.observacoes,
-                ativo=p.ativo,
                 data_registro=data_registro_novo
             )
             novas_participacoes.append(nova)
@@ -93,8 +91,6 @@ def criar_participacao(dados: Dict, db: Session = Depends(get_db), current_user:
             imovel_id=dados["imovel_id"],
             proprietario_id=dados["proprietario_id"],
             porcentagem=dados["porcentagem"],
-            observacoes=dados.get("observacoes"),
-            ativo=True,
             data_registro=data_registro_novo
         )
         novas_participacoes.append(nova_participacao)
@@ -143,8 +139,6 @@ def atualizar_participacao(participacao_id: int, dados: Dict, db: Session = Depe
                 imovel_id=valores["imovel_id"],
                 proprietario_id=valores["proprietario_id"],
                 porcentagem=valores["porcentagem"],
-                observacoes=valores.get("observacoes"),
-                ativo=valores.get("ativo", True),
                 data_registro=data_registro_novo
             )
             novas_participacoes.append(nova)
@@ -153,8 +147,6 @@ def atualizar_participacao(participacao_id: int, dados: Dict, db: Session = Depe
                 imovel_id=p.imovel_id,
                 proprietario_id=p.proprietario_id,
                 porcentagem=p.porcentagem,
-                observacoes=p.observacoes,
-                ativo=p.ativo,
                 data_registro=data_registro_novo
             )
             novas_participacoes.append(nova)
@@ -255,8 +247,6 @@ async def importar_participacoes(file: UploadFile = File(...), db: Session = Dep
                     imovel_id=imovel.id,
                     proprietario_id=proprietario.id,
                     porcentagem=percentual,
-                    observacoes=None,
-                    ativo=True,
                     data_registro=data_registro_lote
                 )
                 novas_participacoes.append(nova_participacao)
@@ -286,7 +276,7 @@ async def importar_participacoes(file: UploadFile = File(...), db: Session = Dep
 def criar_nova_versao_participacoes(payload: Dict, db: Session = Depends(get_db), admin_user: Usuario = Depends(is_admin)):
     """Criar uma NOVA VERSÃO do conjunto de participações.
     Espera payload com a chave 'participacoes' contendo lista de itens:
-    [{ imovel_id, proprietario_id, porcentagem, observacoes?, ativo? }]
+    [{ imovel_id, proprietario_id, porcentagem }]
 
     Regras:
     - Somatório de porcentagem por imóvel deve ser 100 (±0.001 de tolerância).
@@ -334,9 +324,7 @@ def criar_nova_versao_participacoes(payload: Dict, db: Session = Depends(get_db)
             normalizados.append({
                 "imovel_id": imovel_id,
                 "proprietario_id": proprietario_id,
-                "porcentagem": porcentagem,
-                "observacoes": it.get("observacoes"),
-                "ativo": bool(it.get("ativo", True))
+                "porcentagem": porcentagem
             })
 
     # Removida validação de soma de porcentagens por imóvel. Apenas grava os valores recebidos.
@@ -359,8 +347,6 @@ def criar_nova_versao_participacoes(payload: Dict, db: Session = Depends(get_db)
                 imovel_id=it["imovel_id"],
                 proprietario_id=it["proprietario_id"],
                 porcentagem=it["porcentagem"],
-                observacoes=it.get("observacoes"),
-                ativo=it.get("ativo", True),
                 data_registro=data_registro_novo
             ))
 

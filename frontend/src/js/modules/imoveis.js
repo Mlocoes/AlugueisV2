@@ -83,9 +83,9 @@ class ImoveisModule {
     }
 
     async handleCreateData(data, formElement) {
-        // Adaptar campos según modelo Imovel
-        const allowed = ['nome', 'endereco', 'tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_anual', 'condominio_mensal', 'observacoes', 'ativo'];
-        const numericFields = ['area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_anual', 'condominio_mensal'];
+        // Adaptar campos según modelo Imovel actualizado
+        const allowed = ['nome', 'endereco', 'tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'alugado', 'numero_quartos', 'numero_banheiros', 'tem_garagem', 'numero_vagas_garagem', 'andar', 'numero_apartamento', 'cep', 'bairro', 'cidade', 'estado', 'status_imovel'];
+        const numericFields = ['area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem', 'andar'];
         const payload = {};
         for (const key of allowed) {
             if (key in data) {
@@ -93,7 +93,7 @@ class ImoveisModule {
                 if (val === '') { val = null; }
                 if (numericFields.includes(key)) {
                     payload[key] = val !== null ? Number(val) : null;
-                } else if (key === 'ativo') {
+                } else if (key === 'alugado' || key === 'tem_garagem') {
                     payload[key] = val === 'true' || val === true;
                 } else {
                     payload[key] = val;
@@ -165,8 +165,8 @@ class ImoveisModule {
         if (!tableBody) return;
 
         tableBody.innerHTML = this.imoveis.map(imovel => {
-            // Sensibiliza alugado correctamente usando o campo 'ativo'
-            const alugado = imovel.ativo ? '<span class="badge bg-success">Sim</span>' : '<span class="badge bg-secondary">Não</span>';
+            // Usando campo 'alugado' actualizado
+            const statusAlugado = imovel.alugado ? '<span class="badge bg-danger">Alugado</span>' : '<span class="badge bg-success">Disponível</span>';
             return `
                     <tr>
                         <td>${imovel.nome || ''}</td>
@@ -176,11 +176,10 @@ class ImoveisModule {
                         <td>${imovel.area_construida || ''}</td>
                         <td>${imovel.valor_cadastral || ''}</td>
                         <td>${imovel.valor_mercado || ''}</td>
-                        <td>${imovel.iptu_anual || ''}</td>
+                        <td>${imovel.iptu_mensal || ''}</td>
                         <td>${imovel.condominio_mensal || ''}</td>
-                        <td>${alugado}</td>
+                        <td>${statusAlugado}</td>
                         <td>${imovel.data_cadastro ? new Date(imovel.data_cadastro).toLocaleDateString() : ''}</td>
-                        <td>${imovel.observacoes || ''}</td>
                         <td>
                             <div class="btn-group btn-group-sm">
                                 <button class="btn btn-outline-warning admin-only" onclick="window.imoveisModule.editImovel(${imovel.id})" title="Editar">
@@ -239,7 +238,7 @@ class ImoveisModule {
         for (const key in imovel) {
             const input = form.elements[key];
             if (input) {
-                if (key === 'ativo') {
+                if (key === 'alugado' || key === 'tem_garagem') {
                     input.value = imovel[key] ? 'true' : 'false';
                 } else {
                     input.value = imovel[key];
@@ -260,9 +259,9 @@ class ImoveisModule {
         const formData = new FormData(form);
         const raw = Object.fromEntries(formData.entries());
 
-        // Campos permitidos por el backend (modelo Imovel)
-        const allowed = ['nome', 'endereco', 'tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_anual', 'condominio_mensal', 'observacoes', 'ativo'];
-        const numericFields = ['area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_anual', 'condominio_mensal'];
+        // Campos permitidos por el backend (modelo Imovel actualizado)
+        const allowed = ['nome', 'endereco', 'tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'alugado', 'numero_quartos', 'numero_banheiros', 'tem_garagem', 'numero_vagas_garagem', 'andar', 'numero_apartamento', 'cep', 'bairro', 'cidade', 'estado', 'status_imovel'];
+        const numericFields = ['area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem', 'andar'];
 
         // Construir payload filtrado y tipado
         const data = {};
@@ -272,7 +271,7 @@ class ImoveisModule {
                 if (val === '') { val = null; }
                 if (numericFields.includes(key)) {
                     data[key] = val !== null ? Number(val) : null;
-                } else if (key === 'ativo') {
+                } else if (key === 'alugado' || key === 'tem_garagem') {
                     data[key] = val === 'true' || val === true;
                 } else {
                     data[key] = val;

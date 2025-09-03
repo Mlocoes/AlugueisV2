@@ -97,9 +97,9 @@ AlugueisV2/
    ```
 
 3. **Acesse a aplicação**
-   - 🌐 **Frontend Desktop**: [http://localhost:3000](http://localhost:3000)
-   - 📱 **Versão Mobile**: [http://localhost:3000/mobile](http://localhost:3000/mobile)
-   - 📚 **Documentação API**: [http://localhost:8000/docs](http://localhost:8000/docs)
+   - 🌐 **Frontend Desktop**: [http://192.168.0.7:3000](http://192.168.0.7:3000)
+   - 📱 **Versão Mobile**: [http://192.168.0.7:3000/mobile](http://192.168.0.7:3000/mobile)
+   - 📚 **Documentação API**: [http://192.168.0.7:8000/docs](http://192.168.0.7:8000/docs)
 
 ### Usuário Padrão
 

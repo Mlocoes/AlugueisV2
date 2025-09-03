@@ -16,7 +16,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 echo "📁 Directorio: $PWD"
-echo "🌐 Servidor: http://localhost:3000"
+echo "🌐 Servidor: http://192.168.0.7:3000"
 echo "⚡ Presiona Ctrl+C para detener el servidor"
 echo ""
 

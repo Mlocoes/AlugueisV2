@@ -70,7 +70,6 @@ def atualizar_proprietario(proprietario_id: int, dados: Dict, db: Session = Depe
         if campo in campos_modelo:
             setattr(proprietario, campo, valor)
 
-    proprietario.data_atualizacao = datetime.now()
     db.commit()
     db.refresh(proprietario)
     return {

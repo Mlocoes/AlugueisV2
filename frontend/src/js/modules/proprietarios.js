@@ -107,7 +107,6 @@ class ProprietariosModule {
                     <td>${this.formatContact(prop.email, prop.telefone)}</td>
                     <td>${this.formatField(prop.endereco, 'Sem endereço')}</td>
                     <td><div class="small">${this.formatBankInfo(prop.banco, prop.agencia, prop.conta, prop.tipo_conta)}</div></td>
-                    <td><span class="badge bg-${prop.ativo ? 'success' : 'secondary'}">${prop.ativo ? 'Ativo' : 'Inativo'}</span></td>
                     <td><small class="text-muted">${new Date(prop.data_cadastro).toLocaleDateString()}</small></td>
                     <td>
                         <div class="btn-group btn-group-sm">
@@ -154,7 +153,7 @@ class ProprietariosModule {
         if (filteredData.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center text-muted py-4">
+                    <td colspan="6" class="text-center text-muted py-4">
                         <i class="fas fa-search fa-2x mb-2"></i>
                         <br>Não foram encontrados proprietários que correspondam a "${searchTerm}"
                     </td>
@@ -174,7 +173,6 @@ class ProprietariosModule {
                     <td>${this.formatContact(prop.email, prop.telefone)}</td>
                     <td>${this.formatField(prop.endereco, 'Sem endereço')}</td>
                     <td><div class="small">${this.formatBankInfo(prop.banco, prop.agencia, prop.conta, prop.tipo_conta)}</div></td>
-                    <td><span class="badge bg-${prop.ativo ? 'success' : 'secondary'}">${prop.ativo ? 'Ativo' : 'Inativo'}</span></td>
                     <td><small class="text-muted">${new Date(prop.data_cadastro).toLocaleDateString()}</small></td>
                     <td>
                         <div class="btn-group btn-group-sm">
@@ -201,9 +199,6 @@ class ProprietariosModule {
     }
 
     async handleCreateData(data, formElement) {
-        if ('ativo' in data) {
-            data.ativo = data.ativo === 'true';
-        }
         try {
             this.uiManager.showLoading('Criando proprietário...');
             const response = await this.apiService.createProprietario(data);
@@ -266,10 +261,6 @@ class ProprietariosModule {
                 input.value = proprietario[field] || '';
             }
         });
-        const ativoSelect = form.querySelector('[name="ativo"]');
-        if (ativoSelect) {
-            ativoSelect.value = proprietario.ativo ? 'true' : 'false';
-        }
     }
 
     async handleUpdate(event) {
@@ -280,9 +271,6 @@ class ProprietariosModule {
         }
         const formData = new FormData(event.target);
         const data = Object.fromEntries(formData.entries());
-        if ('ativo' in data) {
-            data.ativo = data.ativo === 'true';
-        }
         try {
             this.uiManager.showLoading('Atualizando proprietário...');
             const response = await this.apiService.updateProprietario(this.currentEditId, data);

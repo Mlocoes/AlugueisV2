@@ -57,14 +57,16 @@ class ApiService {
         return {
             baseUrl: window.AppConfig?.api?.baseUrl || '',
             endpoints: window.AppConfig?.api?.endpoints || {
-                proprietarios: '/proprietarios/',
-                imoveis: '/imoveis/',
-                alugueis: '/alugueis/',
-                participacoes: '/participacoes/',
-                relatorios: '/relatorios/',
-                distribuicoes: '/distribuicoes/',
-                health: '/health',
-                auth: '/auth/'
+                proprietarios: '/api/proprietarios/',
+                imoveis: '/api/imoveis/',
+                alugueis: '/api/alugueis/',
+                participacoes: '/api/participacoes/',
+                relatorios: '/api/relatorios/',
+                distribuicoes: '/api/distribuicoes/',
+                extras: '/api/extras/',
+                transferencias: '/api/transferencias/',
+                health: '/api/health',
+                auth: '/api/auth/'
             }
         };
     }
@@ -327,6 +329,45 @@ class ApiService {
     async cadastrarUsuario(data) {
         const config = this.getConfig();
         return this.post(`${config.endpoints.auth}cadastrar-usuario`, data);
+    }
+
+    // ===============================================
+    // IMÓVEIS - Métodos para gestión de inmuebles
+    // ===============================================
+    
+    async getImoveis() {
+        const config = this.getConfig();
+        return this.get(config.endpoints.imoveis);
+    }
+
+    async getImovel(id) {
+        const config = this.getConfig();
+        return this.get(`${config.endpoints.imoveis}${id}`);
+    }
+
+    async createImovel(data) {
+        const config = this.getConfig();
+        return this.post(config.endpoints.imoveis, data);
+    }
+
+    async updateImovel(id, data) {
+        const config = this.getConfig();
+        return this.put(`${config.endpoints.imoveis}${id}`, data);
+    }
+
+    async deleteImovel(id) {
+        const config = this.getConfig();
+        return this.delete(`${config.endpoints.imoveis}${id}`);
+    }
+
+    async getImoveisDisponiveis() {
+        const config = this.getConfig();
+        return this.get(`${config.endpoints.imoveis}disponiveis`);
+    }
+
+    async importarImoveis(formData) {
+        const config = this.getConfig();
+        return this.upload(`${config.endpoints.imoveis}importar/`, formData);
     }
 }
 

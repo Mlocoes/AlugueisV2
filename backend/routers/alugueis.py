@@ -112,7 +112,6 @@ async def importar_alugueis(file: UploadFile = File(...), db: Session = Depends(
                             existente.valor_liquido_proprietario = float(valor_liquido) if not pd.isna(valor_liquido) else existente.valor_liquido_proprietario
                             existente.taxa_administracao_total = float(taxa_adm_total) if not pd.isna(taxa_adm_total) else existente.taxa_administracao_total
                             # Outros campos do modelo podem ser ajustados se necessário
-                            existente.data_atualizacao = datetime.now()
                             db.commit()
                             importados += 1
                         else:
@@ -260,8 +259,9 @@ async def criar_aluguel(
             mes=mes,
             imovel_id=imovel_id,
             proprietario_id=proprietario_id,
-            valor_aluguel_proprietario=valor,
-            descricao=descricao
+            taxa_administracao_total=taxa_administracao_total if 'taxa_administracao_total' in locals() else 0.0,
+            valor_liquido_proprietario=valor_liquido if 'valor_liquido' in locals() else 0.0
+            # taxa_administracao_proprietario será calculado automáticamente por trigger
         )
         
         db.add(novo_aluguel)
@@ -318,7 +318,7 @@ async def obter_totais_por_imovel(
         # Obter totais agrupados por imóvel para o período especificado
         resultado = db.query(
             AluguelSimples.imovel_id,
-            func.sum(AluguelSimples.valor_aluguel_proprietario).label('total_valor'),
+            func.sum(AluguelSimples.valor_liquido_proprietario).label('total_valor'),
             func.count(AluguelSimples.id).label('quantidade_proprietarios')
         ).filter(
             AluguelSimples.ano == ano,
@@ -363,7 +363,7 @@ async def obter_totais_por_mes(
         resultado = db.query(
             AluguelSimples.ano,
             AluguelSimples.mes,
-            func.sum(AluguelSimples.valor_aluguel_proprietario).label('total_mes'),
+            func.sum(AluguelSimples.valor_liquido_proprietario).label('total_mes'),
             func.count(AluguelSimples.id).label('quantidade_alugueis')
         ).group_by(
             AluguelSimples.ano,

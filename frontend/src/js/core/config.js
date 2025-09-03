@@ -16,6 +16,8 @@ const AppConfig = {
             participacoes: '/api/participacoes/',
             relatorios: '/api/reportes/',
             distribuicoes: '/api/distribuicoes/',
+            extras: '/api/extras/',
+            transferencias: '/api/transferencias/',
             health: '/api/health'
         }
     },

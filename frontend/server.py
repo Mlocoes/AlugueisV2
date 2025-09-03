@@ -38,8 +38,8 @@ def main():
     port = 3000
     handler = OptimizedHTTPRequestHandler
     
-    with HTTPServer(('localhost', port), handler) as httpd:
-        print(f"Serving optimized frontend at http://localhost:{port}")
+    with HTTPServer(('0.0.0.0', port), handler) as httpd:
+        print(f"Serving optimized frontend at http://192.168.0.7:{port}")
         print(f"Working directory: {os.getcwd()}")
         try:
             httpd.serve_forever()

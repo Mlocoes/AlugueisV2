@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
 from config import get_db
-from models_final import Transferencia, TransferenciaCreate, TransferenciaUpdate, TransferenciaResponse, Extra
+from models_final import Transferencia, TransferenciaCreate, TransferenciaUpdate, TransferenciaResponse, Alias
 from routers.auth import is_admin
 
 router = APIRouter(
@@ -24,7 +24,7 @@ def listar_transferencias(db: Session = Depends(get_db), current_user = Depends(
     Listar todas as transferências ativas (apenas administradores)
     """
     try:
-        transferencias = db.query(Transferencia).filter(Transferencia.ativo == True).order_by(desc(Transferencia.id)).all()
+        transferencias = db.query(Transferencia).order_by(desc(Transferencia.id)).all()
         return [transferencia.to_dict() for transferencia in transferencias]
     except Exception as e:
         raise HTTPException(
@@ -57,7 +57,7 @@ def criar_transferencia(transferencia_data: TransferenciaCreate, db: Session = D
     """
     try:
         # Verificar se o alias existe
-        alias = db.query(Extra).filter(Extra.id == transferencia_data.alias_id, Extra.ativo == True).first()
+        alias = db.query(Alias).filter(Alias.id == transferencia_data.alias_id).first()
         if not alias:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -139,7 +139,7 @@ def atualizar_transferencia(transferencia_id: int, transferencia_data: Transfere
         
         # Verificar se o novo alias existe (se fornecido)
         if transferencia_data.alias_id:
-            alias = db.query(Extra).filter(Extra.id == transferencia_data.alias_id, Extra.ativo == True).first()
+            alias = db.query(Alias).filter(Alias.id == transferencia_data.alias_id).first()
             if not alias:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -159,8 +159,6 @@ def atualizar_transferencia(transferencia_id: int, transferencia_data: Transfere
             transferencia.origem_id_proprietario = transferencia_data.origem_id_proprietario
         if transferencia_data.destino_id_proprietario is not None:
             transferencia.destino_id_proprietario = transferencia_data.destino_id_proprietario
-        if transferencia_data.ativo is not None:
-            transferencia.ativo = transferencia_data.ativo
         
         # Converter datas se fornecidas como string
         if transferencia_data.data_criacao:
@@ -219,7 +217,6 @@ def excluir_transferencia(transferencia_id: int, db: Session = Depends(get_db), 
             )
         
         # Soft delete
-        transferencia.ativo = False
         db.commit()
         
         return {"message": "Transferência excluída com sucesso"}
@@ -240,7 +237,7 @@ def listar_transferencias_por_alias(alias_id: int, db: Session = Depends(get_db)
     """
     try:
         # Verificar se o alias existe
-        alias = db.query(Extra).filter(Extra.id == alias_id, Extra.ativo == True).first()
+        alias = db.query(Alias).filter(Alias.id == alias_id).first()
         if not alias:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

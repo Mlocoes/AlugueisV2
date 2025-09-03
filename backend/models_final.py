@@ -3,11 +3,11 @@ Modelos SQLAlchemy para a Estrutura Final Simplificada
 Sistema de Aluguéis V2 - Migrado para Português
 """
 from datetime import datetime, date
-from sqlalchemy import Column, Integer, String, Text, DateTime, Date, Numeric, Boolean, ForeignKey, func, UniqueConstraint, Interval
+from sqlalchemy import Column, Integer, String, Text, DateTime, Date, Numeric, Boolean, ForeignKey, func, UniqueConstraint, Interval, CheckConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, validator
 from typing import Optional, List
 
 Base = declarative_base()
@@ -54,11 +54,22 @@ class Imovel(Base):
     area_construida = Column(Numeric(10,2), nullable=True)
     valor_cadastral = Column(Numeric(15,2), nullable=True)
     valor_mercado = Column(Numeric(15,2), nullable=True)
-    iptu_anual = Column(Numeric(10,2), nullable=True)
+    iptu_mensal = Column(Numeric(10,2), nullable=True)  # Renombrado de iptu_anual
     condominio_mensal = Column(Numeric(10,2), nullable=True)
-    ativo = Column(Boolean, default=True)
+    alugado = Column(Boolean, default=False)  # Renombrado de ativo
     data_cadastro = Column(DateTime, default=func.current_timestamp())
-    observacoes = Column(Text, nullable=True)
+    # Campos nuevos
+    numero_quartos = Column(Integer, nullable=True)
+    numero_banheiros = Column(Integer, nullable=True)
+    tem_garagem = Column(Boolean, default=False)
+    numero_vagas_garagem = Column(Integer, default=0)
+    andar = Column(Integer, nullable=True)
+    numero_apartamento = Column(String(10), nullable=True)
+    cep = Column(String(10), nullable=True)
+    bairro = Column(String(100), nullable=True)
+    cidade = Column(String(100), default='São Paulo')
+    estado = Column(String(50), default='SP')
+    status_imovel = Column(String(20), default='Disponível')
     
     # Relacionamentos
     alugueis = relationship('AluguelSimples', back_populates='imovel')
@@ -78,11 +89,21 @@ class Imovel(Base):
             'area_construida': float(self.area_construida) if self.area_construida else None,
             'valor_cadastral': float(self.valor_cadastral) if self.valor_cadastral else None,
             'valor_mercado': float(self.valor_mercado) if self.valor_mercado else None,
-            'iptu_anual': float(self.iptu_anual) if self.iptu_anual else None,
+            'iptu_mensal': float(self.iptu_mensal) if self.iptu_mensal else None,
             'condominio_mensal': float(self.condominio_mensal) if self.condominio_mensal else None,
-            'ativo': self.ativo,
+            'alugado': self.alugado,
             'data_cadastro': self.data_cadastro.isoformat() if self.data_cadastro else None,
-            'observacoes': self.observacoes
+            'numero_quartos': self.numero_quartos,
+            'numero_banheiros': self.numero_banheiros,
+            'tem_garagem': self.tem_garagem,
+            'numero_vagas_garagem': self.numero_vagas_garagem,
+            'andar': self.andar,
+            'numero_apartamento': self.numero_apartamento,
+            'cep': self.cep,
+            'bairro': self.bairro,
+            'cidade': self.cidade,
+            'estado': self.estado,
+            'status_imovel': self.status_imovel
         }
 
 # ============================================
@@ -95,8 +116,8 @@ class Proprietario(Base):
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     uuid = Column(UUID(as_uuid=True), default=func.uuid_generate_v4(), unique=True, nullable=False)
-    nome = Column(String(100), nullable=False)
-    sobrenome = Column(String(100), nullable=True)
+    nome = Column(String(150), nullable=False)  # Ajustado para coincidir con la BD
+    sobrenome = Column(String(150), nullable=True)  # Ajustado para coincidir con la BD
     documento = Column(String(50), nullable=True, unique=True)
     tipo_documento = Column(String(20), nullable=True)  # CPF, CNPJ, RG, etc.
     endereco = Column(Text, nullable=True)
@@ -106,10 +127,10 @@ class Proprietario(Base):
     agencia = Column(String(20), nullable=True)
     conta = Column(String(30), nullable=True)
     tipo_conta = Column(String(20), nullable=True)  # Corrente, Poupança
-    observacoes = Column(Text, nullable=True)
-    ativo = Column(Boolean, default=True)
+    nacionalidade = Column(String(50), nullable=True, default='Brasileira')
+    estado_civil = Column(String(20), nullable=True)
+    profissao = Column(String(100), nullable=True)
     data_cadastro = Column(DateTime, default=func.current_timestamp())
-    data_atualizacao = Column(DateTime, default=func.current_timestamp(), onupdate=func.current_timestamp())
     
     # Relacionamentos
     alugueis = relationship('AluguelSimples', back_populates='proprietario')
@@ -134,10 +155,10 @@ class Proprietario(Base):
                 'agencia': self.agencia if hasattr(self, 'agencia') else None,
                 'conta': self.conta if hasattr(self, 'conta') else None,
                 'tipo_conta': self.tipo_conta if hasattr(self, 'tipo_conta') else None,
-                'observacoes': self.observacoes if hasattr(self, 'observacoes') else None,
-                'ativo': self.ativo if hasattr(self, 'ativo') else None,
-                'data_cadastro': self.data_cadastro.isoformat() if hasattr(self, 'data_cadastro') and self.data_cadastro else None,
-                'data_atualizacao': self.data_atualizacao.isoformat() if hasattr(self, 'data_atualizacao') and self.data_atualizacao else None
+                'nacionalidade': self.nacionalidade if hasattr(self, 'nacionalidade') else None,
+                'estado_civil': self.estado_civil if hasattr(self, 'estado_civil') else None,
+                'profissao': self.profissao if hasattr(self, 'profissao') else None,
+                'data_cadastro': self.data_cadastro.isoformat() if hasattr(self, 'data_cadastro') and self.data_cadastro else None
             }
         except Exception as e:
             return {'id': self.id, 'erro': str(e)}
@@ -147,10 +168,13 @@ class Proprietario(Base):
 # ============================================
 
 class AluguelSimples(Base):
-    """Tabela de Aluguéis Simplificada"""
-    __tablename__ = 'alugueis_simples'
+    """Tabela de Aluguéis Simplificada - Estrutura otimizada"""
+    __tablename__ = 'alugueis'
     __table_args__ = (
         UniqueConstraint('imovel_id', 'proprietario_id', 'mes', 'ano', name='uq_aluguel_simples_periodo'),
+        CheckConstraint('mes >= 1 AND mes <= 12', name='alugueis_simples_mes_check'),
+        CheckConstraint('ano >= 2020 AND ano <= 2060', name='alugueis_simples_ano_check'),
+        CheckConstraint('taxa_administracao_total >= 0 AND taxa_administracao_proprietario >= 0', name='alugueis_simples_taxa_check'),
     )
     
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -159,13 +183,10 @@ class AluguelSimples(Base):
     proprietario_id = Column(Integer, ForeignKey('proprietarios.id'), nullable=False)
     mes = Column(Integer, nullable=False)
     ano = Column(Integer, nullable=False)
-    valor_aluguel_proprietario = Column(Numeric(12,2), nullable=False, default=0)
     taxa_administracao_total = Column(Numeric(12,2), nullable=False, default=0)
     taxa_administracao_proprietario = Column(Numeric(12,2), nullable=False, default=0)
     valor_liquido_proprietario = Column(Numeric(12,2), nullable=False, default=0)
-    observacoes = Column(Text, nullable=True)
     data_cadastro = Column(DateTime, default=func.current_timestamp())
-    data_atualizacao = Column(DateTime, default=func.current_timestamp(), onupdate=func.current_timestamp())
     
     # Relacionamentos
     imovel = relationship('Imovel', back_populates='alugueis')
@@ -184,13 +205,13 @@ class AluguelSimples(Base):
             'nome_proprietario': f"{self.proprietario.nome} {self.proprietario.sobrenome}".strip() if self.proprietario else None,
             'mes': self.mes,
             'ano': self.ano,
-            'valor_aluguel_proprietario': float(self.valor_aluguel_proprietario) if self.valor_aluguel_proprietario else 0,
+            'periodo': f"{self.mes:02d}/{self.ano}",
             'taxa_administracao_total': float(self.taxa_administracao_total) if self.taxa_administracao_total else 0,
             'taxa_administracao_proprietario': float(self.taxa_administracao_proprietario) if self.taxa_administracao_proprietario else 0,
             'valor_liquido_proprietario': float(self.valor_liquido_proprietario) if self.valor_liquido_proprietario else 0,
-            'observacoes': self.observacoes,
             'data_cadastro': self.data_cadastro.isoformat() if self.data_cadastro else None,
-            'data_atualizacao': self.data_atualizacao.isoformat() if self.data_atualizacao else None
+            # Campo calculado estimado basado en taxas + valor liquido
+            'valor_total_estimado': float(self.taxa_administracao_total) + float(self.valor_liquido_proprietario) if self.taxa_administracao_total and self.valor_liquido_proprietario else 0
         }
 
 # ============================================
@@ -198,20 +219,20 @@ class AluguelSimples(Base):
 # ============================================
 
 class Participacao(Base):
-    """Tabela de Participações (relação muitos para muitos)"""
+    """Tabela de Participações - Relação proprietários e imóveis"""
     __tablename__ = 'participacoes'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     uuid = Column(UUID(as_uuid=True), default=func.uuid_generate_v4(), unique=True, nullable=False)
-    porcentagem = Column(Numeric(8,6), nullable=False, default=0.00)  # 0.00 a 100.00
-    observacoes = Column(Text, nullable=True)
-    data_registro = Column(DateTime(timezone=True), nullable=False, default=func.now())
+    porcentagem = Column(Numeric(5,2), nullable=False, default=0.00)  # 0.00 a 100.00
+    data_registro = Column(DateTime, nullable=False, default=func.current_timestamp())
+    
     __table_args__ = (
-        # Garante que não existam participações duplicadas para mesmo imóvel, proprietário e data_registro
-        UniqueConstraint('imovel_id', 'proprietario_id', 'data_registro', name='uniq_participacao_data'),
+        # Constraint única para mesmo imóvel, proprietário e data_registro
+        UniqueConstraint('proprietario_id', 'imovel_id', 'data_registro', name='uniq_participacao_data'),
+        # Validação de porcentagem
+        CheckConstraint('porcentagem >= 0 AND porcentagem <= 100', name='participacoes_porcentagem_check'),
     )
-    ativo = Column(Boolean, default=True)
-    # Campos removidos: data_inicio, data_fim, data_criacao, data_atualizacao
     
     # Chaves estrangeiras
     imovel_id = Column(Integer, ForeignKey('imoveis.id'), nullable=False)
@@ -228,10 +249,8 @@ class Participacao(Base):
         return {
             'id': self.id,
             'uuid': str(self.uuid) if self.uuid else None,
-            'porcentagem': float(self.porcentagem) if self.porcentagem else 0,
-            'observacoes': self.observacoes,
-            'ativo': self.ativo,
-            # Campos removidos: data_inicio, data_fim, data_criacao, data_atualizacao
+            'porcentagem': float(self.porcentagem) if self.porcentagem else 0.00,
+            'data_registro': self.data_registro.isoformat() if self.data_registro else None,
             'imovel_id': self.imovel_id,
             'proprietario_id': self.proprietario_id
         }
@@ -308,24 +327,24 @@ class ProprietarioSchema(BaseModel):
 class AluguelSimplesSchema(BaseModel):
     nome_imovel: str
     nome_proprietario: str
-    mes: int
-    ano: int
-    valor_aluguel_proprietario: float
-    taxa_administracao_total: Optional[float] = 0
-    taxa_administracao_proprietario: Optional[float] = 0
-    valor_liquido_proprietario: Optional[float] = 0
-    observacoes: Optional[str] = None
-    proprietario_id: Optional[int] = None
-    imovel_id: Optional[int] = None
+    mes: int = Field(..., ge=1, le=12, description="Mês (1-12)")
+    ano: int = Field(..., ge=2020, le=2060, description="Ano (2020-2060)")
+    taxa_administracao_total: Optional[float] = Field(default=0, ge=0, description="Taxa de administração total")
+    taxa_administracao_proprietario: Optional[float] = Field(default=0, ge=0, description="Taxa de administração do proprietário")
+    valor_liquido_proprietario: Optional[float] = Field(default=0, ge=0, description="Valor líquido para o proprietário")
+    proprietario_id: Optional[int] = Field(default=None, gt=0, description="ID do proprietário")
+    imovel_id: Optional[int] = Field(default=None, gt=0, description="ID do imóvel")
+    
+    class Config:
+        from_attributes = True
 
 class ParticipacaoSchema(BaseModel):
-    porcentagem: float
-    observacoes: Optional[str] = None
-    ativo: bool = True
-    data_inicio: Optional[date] = None
-    data_fim: Optional[date] = None
-    imovel_id: int
-    proprietario_id: int
+    porcentagem: float = Field(..., ge=0.0, le=100.0, description="Porcentagem de participação (0.0 a 100.0)")
+    imovel_id: int = Field(..., gt=0, description="ID do imóvel")
+    proprietario_id: int = Field(..., gt=0, description="ID do proprietário")
+    
+    class Config:
+        from_attributes = True
 
 # ============================================
 # VALIDADORES E UTILITÁRIOS
@@ -354,28 +373,24 @@ class AluguelSimplesValidator:
 # EXTRAS - SISTEMA DE ALIAS
 # ============================================
 
-class Extra(Base):
-    """Tabela de Extras - Sistema de Alias para Proprietários"""
-    __tablename__ = 'extras'
+class Alias(Base):
+    """Tabela de Alias - Sistema de Grupos de Proprietários"""
+    __tablename__ = 'alias'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     uuid = Column(UUID(as_uuid=True), default=func.uuid_generate_v4(), unique=True, nullable=False)
     alias = Column(String(200), nullable=False, unique=True)
     id_proprietarios = Column(Text, nullable=True)  # JSON array de IDs dos proprietários
-    data_criacao = Column(DateTime, default=func.current_timestamp())
-    ativo = Column(Boolean, default=True, nullable=False)
     
     def __repr__(self):
-        return f"<Extra(alias='{self.alias}')>"
+        return f"<Alias(alias='{self.alias}')>"
     
     def to_dict(self):
         return {
             'id': self.id,
             'uuid': str(self.uuid),
             'alias': self.alias,
-            'id_proprietarios': self.id_proprietarios,
-            'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
-            'ativo': self.ativo
+            'id_proprietarios': self.id_proprietarios
         }
 
 # ============================================
@@ -388,7 +403,7 @@ class Transferencia(Base):
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     uuid = Column(UUID(as_uuid=True), default=func.uuid_generate_v4(), unique=True, nullable=False)
-    alias_id = Column(Integer, ForeignKey('extras.id'), nullable=False)
+    alias_id = Column(Integer, ForeignKey('alias.id'), nullable=False)
     nome_transferencia = Column(String(300), nullable=False)
     valor_total = Column(Numeric(10, 2), nullable=False, default=0.0)
     id_proprietarios = Column(Text, nullable=True)  # JSON: [{"id": 1, "valor": 100.50}]
@@ -396,11 +411,9 @@ class Transferencia(Base):
     destino_id_proprietario = Column(Integer, ForeignKey('proprietarios.id'), nullable=True)
     data_criacao = Column(DateTime, default=func.current_timestamp())
     data_fim = Column(DateTime, nullable=True)
-    ativo = Column(Boolean, default=True, nullable=False)
-    data_cadastro = Column(DateTime, default=func.current_timestamp())
     
     # Relacionamentos
-    alias = relationship("Extra", backref="transferencias")
+    alias = relationship("Alias", backref="transferencias")
     proprietario_origem = relationship("Proprietario", foreign_keys=[origem_id_proprietario])
     proprietario_destino = relationship("Proprietario", foreign_keys=[destino_id_proprietario])
     
@@ -421,30 +434,25 @@ class Transferencia(Base):
             'proprietario_origem': self.proprietario_origem.nome if self.proprietario_origem else None,
             'proprietario_destino': self.proprietario_destino.nome if self.proprietario_destino else None,
             'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
-            'data_fim': self.data_fim.isoformat() if self.data_fim else None,
-            'ativo': self.ativo,
-            'data_cadastro': self.data_cadastro.isoformat() if self.data_cadastro else None
+            'data_fim': self.data_fim.isoformat() if self.data_fim else None
         }
 
 # Pydantic models para Extra
-class ExtraBase(BaseModel):
+class AliasBase(BaseModel):
     alias: str
     id_proprietarios: Optional[str] = None
-    ativo: Optional[bool] = True
 
-class ExtraCreate(ExtraBase):
+class AliasCreate(AliasBase):
     pass
 
-class ExtraUpdate(ExtraBase):
+class AliasUpdate(AliasBase):
     alias: Optional[str] = None
 
-class ExtraResponse(BaseModel):
+class AliasResponse(BaseModel):
     id: int
     uuid: str
     alias: str
     id_proprietarios: Optional[str] = None
-    data_criacao: Optional[str] = None
-    ativo: bool
 
     class Config:
         from_attributes = True
@@ -459,7 +467,6 @@ class TransferenciaBase(BaseModel):
     destino_id_proprietario: Optional[int] = None
     data_criacao: Optional[str] = None
     data_fim: Optional[str] = None
-    ativo: Optional[bool] = True
 
 class TransferenciaCreate(TransferenciaBase):
     pass
@@ -482,8 +489,6 @@ class TransferenciaResponse(BaseModel):
     proprietario_destino: Optional[str] = None
     data_criacao: Optional[str] = None
     data_fim: Optional[str] = None
-    ativo: bool
-    data_cadastro: Optional[str] = None
 
     class Config:
         from_attributes = True

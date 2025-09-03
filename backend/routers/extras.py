@@ -1,5 +1,5 @@
 """
-Router para Extras - Sistema de Alias
+Router para Alias - Sistema de Grupos de Proprietários
 Acesso exclusivo para administradores
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -10,223 +10,204 @@ import json
 from datetime import datetime
 
 from config import get_db
-from models_final import Extra, ExtraCreate, ExtraUpdate, ExtraResponse, Proprietario
+from models_final import Alias, AliasCreate, AliasUpdate, AliasResponse, Proprietario
 from routers.auth import verify_token, is_admin
 
 router = APIRouter(
     prefix="/api/extras",
     tags=["extras"],
-    responses={404: {"description": "Extra não encontrado"}},
+    responses={404: {"description": "Alias não encontrado"}},
 )
 
 def verify_admin_access(current_user = Depends(is_admin)):
     """Verificar se o usuário é administrador"""
     return current_user
 
-@router.get("/", response_model=List[ExtraResponse])
+@router.get("/", response_model=List[AliasResponse])
 async def listar_extras(
     skip: int = Query(0, ge=0, description="Número de registros para pular"),
     limit: int = Query(100, ge=1, le=1000, description="Limite de registros"),
-    ativo: Optional[bool] = Query(None, description="Filtrar por status ativo"),
     db: Session = Depends(get_db),
     current_user: dict = Depends(verify_admin_access)
 ):
-    """Listar todos os extras (apenas administradores)"""
+    """Listar todos os alias (apenas administradores)"""
     try:
-        query = db.query(Extra)
-        
-        if ativo is not None:
-            query = query.filter(Extra.ativo == ativo)
-        
-        extras = query.offset(skip).limit(limit).all()
-        return [extra.to_dict() for extra in extras]
+        query = db.query(Alias)
+        alias_list = query.offset(skip).limit(limit).all()
+        return [alias_obj.to_dict() for alias_obj in alias_list]
     
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao listar extras: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao listar alias: {str(e)}")
 
-@router.get("/{extra_id}", response_model=ExtraResponse)
+@router.get("/{alias_id}", response_model=AliasResponse)
 async def obter_extra(
-    extra_id: int,
+    alias_id: int,
     db: Session = Depends(get_db),
     current_user: dict = Depends(is_admin)
 ):
-    """Obter um extra específico por ID"""
-    extra = db.query(Extra).filter(Extra.id == extra_id).first()
-    if not extra:
-        raise HTTPException(status_code=404, detail="Extra não encontrado")
+    """Obter um alias específico por ID"""
+    alias_obj = db.query(Alias).filter(Alias.id == alias_id).first()
+    if not alias_obj:
+        raise HTTPException(status_code=404, detail="Alias não encontrado")
     
-    return extra.to_dict()
+    return alias_obj.to_dict()
 
-@router.post("/", response_model=ExtraResponse)
+@router.post("/", response_model=AliasResponse)
 async def criar_extra(
-    extra_data: ExtraCreate,
+    alias_data: AliasCreate,
     db: Session = Depends(get_db),
     current_user: dict = Depends(verify_admin_access)
 ):
-    """Criar um novo extra"""
+    """Criar um novo alias"""
     try:
         # Verificar se já existe um alias com o mesmo nome
-        existing_extra = db.query(Extra).filter(Extra.alias == extra_data.alias).first()
-        if existing_extra:
+        existing_alias = db.query(Alias).filter(Alias.alias == alias_data.alias).first()
+        if existing_alias:
             raise HTTPException(status_code=400, detail="Já existe um alias com este nome")
         
-        # Validar proprietários se fornecidos
-        if extra_data.id_proprietarios:
+        # Verificar se os proprietários existem
+        if alias_data.id_proprietarios:
             try:
-                proprietario_ids = json.loads(extra_data.id_proprietarios)
-                if not isinstance(proprietario_ids, list):
-                    raise HTTPException(status_code=400, detail="id_proprietarios deve ser um array JSON")
-                
-                # Verificar se todos os proprietários existem
-                for prop_id in proprietario_ids:
-                    proprietario = db.query(Proprietario).filter(Proprietario.id == prop_id).first()
-                    if not proprietario:
-                        raise HTTPException(status_code=400, detail=f"Proprietário com ID {prop_id} não encontrado")
-            
+                proprietario_ids = json.loads(alias_data.id_proprietarios)
+                if isinstance(proprietario_ids, list):
+                    for prop_id in proprietario_ids:
+                        proprietario = db.query(Proprietario).filter(Proprietario.id == prop_id).first()
+                        if not proprietario:
+                            raise HTTPException(status_code=400, detail=f"Proprietário com ID {prop_id} não encontrado")
             except json.JSONDecodeError:
-                raise HTTPException(status_code=400, detail="id_proprietarios deve ser um JSON válido")
+                raise HTTPException(status_code=400, detail="id_proprietarios deve ser um JSON array válido")
         
-        # Criar novo extra (apenas alias)
-        novo_extra = Extra(
-            alias=extra_data.alias,
-            id_proprietarios=extra_data.id_proprietarios,
-            ativo=extra_data.ativo
+        # Criar o novo alias
+        new_alias = Alias(
+            alias=alias_data.alias,
+            id_proprietarios=alias_data.id_proprietarios
         )
         
-        db.add(novo_extra)
+        db.add(new_alias)
         db.commit()
-        db.refresh(novo_extra)
+        db.refresh(new_alias)
         
-        return novo_extra.to_dict()
+        return new_alias.to_dict()
     
     except HTTPException:
         raise
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Erro ao criar extra: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao criar alias: {str(e)}")
 
-@router.put("/{extra_id}", response_model=ExtraResponse)
+@router.put("/{alias_id}", response_model=AliasResponse)
 async def atualizar_extra(
-    extra_id: int,
-    extra_data: ExtraUpdate,
+    alias_id: int,
+    alias_data: AliasUpdate,
     db: Session = Depends(get_db),
     current_user: dict = Depends(verify_admin_access)
 ):
-    """Atualizar um extra existente"""
+    """Atualizar um alias existente"""
     try:
-        extra = db.query(Extra).filter(Extra.id == extra_id).first()
-        if not extra:
-            raise HTTPException(status_code=404, detail="Extra não encontrado")
+        alias_obj = db.query(Alias).filter(Alias.id == alias_id).first()
+        if not alias_obj:
+            raise HTTPException(status_code=404, detail="Alias não encontrado")
         
-        # Atualizar campos se fornecidos
-        if extra_data.alias is not None:
-            # Verificar se já existe outro alias com o mesmo nome
-            existing_extra = db.query(Extra).filter(
-                Extra.alias == extra_data.alias,
-                Extra.id != extra_id
-            ).first()
-            if existing_extra:
+        # Verificar se o novo nome já existe (se foi fornecido)
+        if alias_data.alias and alias_data.alias != alias_obj.alias:
+            existing_alias = db.query(Alias).filter(Alias.alias == alias_data.alias).first()
+            if existing_alias:
                 raise HTTPException(status_code=400, detail="Já existe um alias com este nome")
-            extra.alias = extra_data.alias
         
-        if extra_data.id_proprietarios is not None:
-            if extra_data.id_proprietarios:
-                try:
-                    proprietario_ids = json.loads(extra_data.id_proprietarios)
-                    if not isinstance(proprietario_ids, list):
-                        raise HTTPException(status_code=400, detail="id_proprietarios deve ser um array JSON")
-                    
-                    # Verificar se todos os proprietários existem
+        # Verificar proprietários se fornecidos
+        if alias_data.id_proprietarios:
+            try:
+                proprietario_ids = json.loads(alias_data.id_proprietarios)
+                if isinstance(proprietario_ids, list):
                     for prop_id in proprietario_ids:
                         proprietario = db.query(Proprietario).filter(Proprietario.id == prop_id).first()
                         if not proprietario:
                             raise HTTPException(status_code=400, detail=f"Proprietário com ID {prop_id} não encontrado")
-                
-                except json.JSONDecodeError:
-                    raise HTTPException(status_code=400, detail="id_proprietarios deve ser um JSON válido")
-            
-            extra.id_proprietarios = extra_data.id_proprietarios
+            except json.JSONDecodeError:
+                raise HTTPException(status_code=400, detail="id_proprietarios deve ser um JSON array válido")
         
-        if extra_data.ativo is not None:
-            extra.ativo = extra_data.ativo
+        # Atualizar campos
+        if alias_data.alias:
+            alias_obj.alias = alias_data.alias
+        if alias_data.id_proprietarios is not None:
+            alias_obj.id_proprietarios = alias_data.id_proprietarios
         
         db.commit()
-        db.refresh(extra)
+        db.refresh(alias_obj)
         
-        return extra.to_dict()
+        return alias_obj.to_dict()
     
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Erro ao atualizar extra: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar alias: {str(e)}")
 
-@router.delete("/{extra_id}")
+@router.delete("/{alias_id}")
 async def deletar_extra(
-    extra_id: int,
+    alias_id: int,
     db: Session = Depends(get_db),
     current_user: dict = Depends(verify_admin_access)
 ):
-    """Deletar um extra (soft delete)"""
+    """Deletar um alias"""
     try:
-        extra = db.query(Extra).filter(Extra.id == extra_id).first()
-        if not extra:
-            raise HTTPException(status_code=404, detail="Extra não encontrado")
+        alias_obj = db.query(Alias).filter(Alias.id == alias_id).first()
+        if not alias_obj:
+            raise HTTPException(status_code=404, detail="Alias não encontrado")
         
-        # Soft delete - apenas marcar como inativo
-        extra.ativo = False
+        db.delete(alias_obj)
         db.commit()
         
-        return {"message": "Extra deletado com sucesso"}
+        return {"message": f"Alias '{alias_obj.alias}' deletado com sucesso"}
     
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Erro ao deletar extra: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao deletar alias: {str(e)}")
 
-# Endpoint para busca por alias
-@router.get("/buscar/{alias}", response_model=ExtraResponse)
-async def buscar_por_alias(
-    alias: str,
+@router.get("/{alias_id}/proprietarios")
+async def obter_proprietarios_do_alias(
+    alias_id: int,
     db: Session = Depends(get_db),
     current_user: dict = Depends(is_admin)
 ):
-    """Buscar extra por alias"""
-    extra = db.query(Extra).filter(
-        Extra.alias == alias,
-        Extra.ativo == True
-    ).first()
-    
-    if not extra:
-        raise HTTPException(status_code=404, detail="Alias não encontrado")
-    
-    return extra.to_dict()
-
-@router.get("/proprietarios/disponiveis", response_model=List[dict])
-async def listar_proprietarios_disponiveis(
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(is_admin)
-):
-    """Listar proprietários disponíveis para seleção"""
+    """Obter a lista detalhada de proprietários de um alias"""
     try:
-        proprietarios = db.query(Proprietario).filter(Proprietario.ativo == True).all()
-        return [{"id": p.id, "nome": p.nome, "sobrenome": p.sobrenome} for p in proprietarios]
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao listar proprietários: {str(e)}")
-
-@router.get("/estatisticas")
-async def obter_estatisticas(
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(is_admin)
-):
-    """Obter estatísticas dos extras"""
-    try:
-        total_extras = db.query(func.count(Extra.id)).scalar()
-        extras_ativos = db.query(func.count(Extra.id)).filter(Extra.ativo == True).scalar()
+        alias_obj = db.query(Alias).filter(Alias.id == alias_id).first()
+        if not alias_obj:
+            raise HTTPException(status_code=404, detail="Alias não encontrado")
         
-        return {
-            "total_extras": total_extras,
-            "extras_ativos": extras_ativos,
-            "extras_inativos": total_extras - extras_ativos
-        }
+        if not alias_obj.id_proprietarios:
+            return {
+                "alias": alias_obj.alias,
+                "proprietarios": []
+            }
+        
+        try:
+            proprietario_ids = json.loads(alias_obj.id_proprietarios)
+            proprietarios = []
+            
+            for prop_id in proprietario_ids:
+                proprietario = db.query(Proprietario).filter(Proprietario.id == prop_id).first()
+                if proprietario:
+                    proprietarios.append({
+                        "id": proprietario.id,
+                        "nome": proprietario.nome,
+                        "sobrenome": proprietario.sobrenome
+                    })
+            
+            return {
+                "alias": alias_obj.alias,
+                "proprietarios": proprietarios
+            }
+        
+        except json.JSONDecodeError:
+            return {
+                "alias": alias_obj.alias,
+                "proprietarios": [],
+                "erro": "Dados de proprietários inválidos"
+            }
     
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao obter estatísticas: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao obter proprietários do alias: {str(e)}")
