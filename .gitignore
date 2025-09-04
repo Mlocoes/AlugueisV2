@@ -50,3 +50,8 @@ cache/
 
 # Logs
 logs/
+# Archivos de debug temporales
+debug_*.py
+analyze_problem.py
+check_db_matches.py
+Alugueis.xlsx
