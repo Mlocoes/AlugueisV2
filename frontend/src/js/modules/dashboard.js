@@ -7,8 +7,6 @@ class DashboardModule {
     constructor() {
         this.charts = {};
         this.data = {};
-        this.chartRetries = 0;
-        this.maxRetries = 3;
     }
 
     /**
@@ -137,7 +135,6 @@ class DashboardModule {
             this.createIncomeChart();
             this.createDistributionChart();
             // ...código existente...
-            this.chartRetries = 0; // Resetar contador
         } catch (error) {
             // ...código existente...
             // Não lançar o erro para não bloquear o resto do dashboard

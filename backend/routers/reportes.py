@@ -1,11 +1,10 @@
 """
 Router para endpoints de relatórios e reportes
 """
-from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func, text
+from sqlalchemy import func
 from pydantic import BaseModel
 
 from config import get_db

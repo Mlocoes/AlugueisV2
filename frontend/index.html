@@ -195,7 +195,6 @@
                                             <th>Contato</th>
                                             <th>Endereço</th>
                                             <th>Dados Bancários</th>
-                                            <th>Estado</th>
                                             <th>Data</th>
                                             <th width="120">Ações</th>
                                         </tr>
@@ -245,7 +244,6 @@
                                             <th>Condomínio Mensal</th>
                                             <th>Alugado</th>
                                             <th>Data Cadastro</th>
-                                            <th>Observações</th>
                                             <th width="120">Ações</th>
                                         </tr>
                                     </thead>
@@ -451,22 +449,17 @@
                             <button id="btn-novo-alias" class="btn btn-primary">
                                 <i class="fas fa-plus me-2"></i>Novo Alias
                             </button>
-                            <button id="btn-novas-transferencias" class="btn btn-success">
-                                <i class="fas fa-exchange-alt me-2"></i>Novas Transferências
-                            </button>
-                            <button id="btn-estatisticas-extras" class="btn btn-info">
-                                <i class="fas fa-chart-pie me-2"></i>Estatísticas
-                            </button>
+                                <button id="btn-novas-transferencias" class="btn btn-primary">
+                                    <i class="fas fa-exchange-alt me-2"></i>Novas Transferências
+                                </button>
                         </div>
                     </div>
 
-                    <!-- Alertas -->
-                    <div id="extras-alerts"></div>
 
                     <!-- Tabela de Aliases -->
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="card-title mb-0"><i class="fas fa-table me-2"></i>Lista de Aliases</h5>
+                            <!-- card-title eliminado -->
                         </div>
                         <div class="card-body">
                             <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
@@ -475,13 +468,12 @@
                                         <tr>
                                             <th>Alias</th>
                                             <th>Proprietários Pertenecentes</th>
-                                            <th width="80" class="text-center">Status</th>
                                             <th width="100" class="text-center">Ações</th>
                                         </tr>
                                     </thead>
                                     <tbody id="extras-table-body">
-                                        <tr>
-                                            <td colspan="4" class="text-center text-muted py-4">
+                                            <tr>
+                                                <td colspan="3" class="text-center text-muted py-4">
                                                 <div class="spinner-border" role="status">
                                                     <span class="visually-hidden">Carregando...</span>
                                                 </div>
@@ -492,19 +484,12 @@
                                 </table>
                             </div>
                         </div>
-                        <div class="card-footer">
-                            <small class="text-muted">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Sistema de extras para gestão de alias e transferências entre proprietários.
-                                Acesso exclusivo para administradores.
-                            </small>
-                        </div>
                     </div>
 
                     <!-- Nova Tabela de Transferências Cadastradas -->
                     <div class="card mt-4">
                         <div class="card-header">
-                            <h5 class="card-title mb-0"><i class="fas fa-exchange-alt me-2"></i>Transferências Cadastradas</h5>
+                            <!-- card-title eliminado -->
                         </div>
                         <div class="card-body">
                             <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
@@ -513,7 +498,6 @@
                                         <tr>
                                             <th>Alias</th>
                                             <th>Nome da Transferência</th>
-                                            <th width="80" class="text-center">Status</th>
                                             <th width="130" class="text-center">Data Criação</th>
                                             <th width="130" class="text-center">Data Fim</th>
                                             <th width="100" class="text-center">Ações</th>
@@ -531,12 +515,6 @@
                                     </tbody>
                                 </table>
                             </div>
-                        </div>
-                        <div class="card-footer">
-                            <small class="text-muted">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Histórico de transferências cadastradas no sistema.
-                            </small>
                         </div>
                     </div>
                 </div>
@@ -703,7 +681,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="form-novo-proprietario">
-                    <div class="modal-body p-1" style="font-size: 0.85rem;">
+                    <div class="modal-body p-1" style="font-size: 0.80rem;">
                         <div class="mb-1"><label class="form-label">Nome</label><input type="text" class="form-control" name="nome" required style="font-size:0.85em;"></div>
                         <div class="mb-3"><label class="form-label">Sobrenome</label><input type="text" class="form-control" name="sobrenome" style="font-size:0.85em;"></div>
                         <div class="mb-3"><label class="form-label">Documento</label><input type="text" class="form-control" name="documento" style="font-size:0.85em;"></div>
@@ -767,7 +745,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="form-cadastrar-usuario">
-                    <div class="modal-body">
+                    <div class="modal-body p-1" style="font-size: 0.85rem;">
                         <div class="mb-3">
                             <label for="novo-usuario" class="form-label">Nome de Usuário *</label>
                             <div class="input-group">
@@ -899,41 +877,25 @@
 
     <!-- Modal Novo/Editar Alias -->
     <div class="modal fade" id="modal-alias" tabindex="-1" aria-labelledby="modalAliasLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
+    <div class="modal-dialog modal-dialog-centered modal-md" style="min-height: 700px;">
+            <div class="modal-content border border-2 shadow-lg">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="modalAliasLabel"><i class="fas fa-plus me-2"></i>Novo Alias</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="form-alias">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="alias-nome" class="form-label">Nome do Alias *</label>
-                            <input type="text" class="form-control" id="alias-nome" name="alias" required placeholder="Digite o nome do alias">
-                        </div>
+                    <div class="modal-body p-1" style="font-size: 0.85rem;">
+                        <div class="mb-1"><label for="alias-nome" class="form-label">Nome do Alias *</label><input type="text" class="form-control" id="alias-nome" name="alias" required placeholder="Digite o nome do alias" style="font-size:0.85em;"></div>
+                        <div class="mb-3"><label for="alias-proprietarios" class="form-label">Proprietários Pertencentes *</label><select class="form-select" id="alias-proprietarios" name="proprietarios" multiple size="8" required style="font-size:0.85em;"><option value="">Carregando proprietários...</option></select><div class="form-text">Mantenha Ctrl pressionado para selecionar múltiplos proprietários</div></div>
                         
                         <div class="mb-3">
-                            <label for="alias-proprietarios" class="form-label">Proprietários Pertencentes *</label>
-                            <select class="form-select" id="alias-proprietarios" name="proprietarios" multiple size="8" required>
-                                <option value="">Carregando proprietários...</option>
-                            </select>
-                            <div class="form-text">Mantenha Ctrl pressionado para selecionar múltiplos proprietários</div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="alias-ativo" name="ativo" checked>
-                                <label class="form-check-label" for="alias-ativo">
-                                    Ativo
-                                </label>
-                            </div>
                         </div>
                         
                         <div id="alias-alerts"></div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" id="btn-salvar-alias">
+                        <button type="submit" class="btn btn-primary" style="width:150px" id="btn-salvar-alias">
                             <i class="fas fa-save me-2"></i>Salvar Alias
                         </button>
                     </div>
@@ -944,43 +906,26 @@
 
     <!-- Modal Novas Transferências -->
     <div class="modal fade" id="modal-transferencias" tabindex="-1" aria-labelledby="modalTransferenciasLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
+    <div class="modal-dialog modal-dialog-centered modal-md" style="min-height: 480px;">
+            <div class="modal-content border border-2 shadow-lg">
+                <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="modalTransferenciasLabel"><i class="fas fa-exchange-alt me-2"></i>Novas Transferências</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="form-transferencias">
-                    <div class="modal-body">
-                        <div class="mb-4">
-                            <label for="transferencia-alias" class="form-label">Selecionar Alias *</label>
-                            <select class="form-select" id="transferencia-alias" name="alias_id" required>
-                                <option value="">Selecione um alias...</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label for="transferencia-nome" class="form-label">Nome da Transferência *</label>
-                            <input type="text" class="form-control" id="transferencia-nome" name="nome_transferencia" 
-                                   placeholder="Digite o nome da transferência" required>
-                        </div>
-                        
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label for="transferencia-data-criacao" class="form-label">Data Criação *</label>
-                                <input type="date" class="form-control" id="transferencia-data-criacao" name="data_criacao" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="transferencia-data-fim" class="form-label">Data Fim</label>
-                                <input type="date" class="form-control" id="transferencia-data-fim" name="data_fim">
-                            </div>
+                    <div class="modal-body" style="font-size: 0.80rem;">
+                        <div class="mb-1"><label for="transferencia-alias" class="form-label">Selecionar Alias *</label><select class="form-select" id="transferencia-alias" name="alias_id" required style="font-size:0.85em;"><option value="">Selecione um alias...</option></select></div>
+                        <div class="mb-3"><label for="transferencia-nome" class="form-label">Nome da Transferência *</label><input type="text" class="form-control" id="transferencia-nome" name="nome_transferencia" placeholder="Digite o nome da transferência" required style="font-size:0.85em;"></div>
+                        <div class="row mb-3">
+                            <div class="col-md-6"><label for="transferencia-data-criacao" class="form-label">Data Criação *</label><input type="date" class="form-control" id="transferencia-data-criacao" name="data_criacao" required style="font-size:0.85em;"></div>
+                            <div class="col-md-6"><label for="transferencia-data-fim" class="form-label">Data Fim</label><input type="date" class="form-control" id="transferencia-data-fim" name="data_fim" style="font-size:0.85em;"></div>
                         </div>
                         
                         <div id="transferencia-proprietarios-container" style="display: none;">
                             <h6 class="mb-3"><i class="fas fa-users me-2"></i>Proprietários do Alias</h6>
                             <div class="table-responsive">
-                                <table class="table table-striped">
-                                    <thead>
+                                <table class="table table-striped" style="font-size: 0.80rem;">
+                                    <thead style="font-size: 0.80rem;">
                                         <tr>
                                             <th>Proprietário</th>
                                             <th>Valor da Transferência (R$)</th>
@@ -997,7 +942,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success" id="btn-salvar-transferencias">
+                        <button type="submit" class="btn btn-primary" style="width:150px" id="btn-salvar-transferencias">
                             <i class="fas fa-save me-2"></i>Salvar Transferências
                         </button>
                     </div>
@@ -1054,6 +999,27 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Confirmar Exclusão Extras (Alias/Transferência) -->
+    <div class="modal fade" id="modal-confirmar-exclusao-extras" tabindex="-1" aria-labelledby="modalConfirmarExclusaoExtrasLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalConfirmarExclusaoExtrasLabel">
+                        <i class="fas fa-trash me-2"></i> Confirmar Exclusão
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3" id="modal-confirmar-exclusao-extras-msg">Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i> Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="btn-confirmar-exclusao-extras"><i class="fas fa-trash me-1"></i> Excluir</button>
                 </div>
             </div>
         </div>

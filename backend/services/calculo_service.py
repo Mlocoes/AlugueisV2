@@ -2,7 +2,7 @@
 Serviço para cálculos de taxas e distribuições
 """
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, func
+from sqlalchemy import and_
 from models_final import AluguelSimples
 
 class CalculoService:

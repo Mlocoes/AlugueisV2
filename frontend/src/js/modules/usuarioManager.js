@@ -316,16 +316,6 @@ class UsuarioManager {
     }
 
     /**
-     * Abrir modal de cadastro
-     */
-    abrirModal() {
-        this.limparFormulario();
-        if (this.modal) {
-            this.modal.show();
-        }
-    }
-
-    /**
      * Carregar lista de usuários para alteração
      */
     async carregarUsuarios() {

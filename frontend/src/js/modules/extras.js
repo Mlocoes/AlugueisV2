@@ -4,6 +4,38 @@
  */
 
 class ExtrasManager {
+    /**
+     * Mostrar modal de confirmação de exclusão para Alias ou Transferência
+     */
+    confirmarExclusao(tipo, id, nome) {
+        console.log('🗑️ Iniciando confirmação de exclusão:', { tipo, id, nome });
+        
+        this.exclusaoTipo = tipo;
+        this.exclusaoId = id;
+        this.exclusaoNome = nome;
+        
+        const modalMsg = document.getElementById('modal-confirmar-exclusao-extras-msg');
+        if (modalMsg) {
+            if (tipo === 'alias') {
+                modalMsg.textContent = `Tem certeza que deseja excluir o alias "${nome}"? Esta ação não pode ser desfeita.`;
+            } else if (tipo === 'transferencia') {
+                modalMsg.textContent = `Tem certeza que deseja excluir a transferência "${nome}"? Esta ação não pode ser desfeita.`;
+            } else {
+                modalMsg.textContent = 'Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.';
+            }
+        }
+        
+        // Usar data-bs-toggle para abrir el modal de forma más simple
+        const modal = document.getElementById('modal-confirmar-exclusao-extras');
+        if (modal) {
+            // Crear instancia solo si no existe
+            let bsModal = bootstrap.Modal.getInstance(modal);
+            if (!bsModal) {
+                bsModal = new bootstrap.Modal(modal);
+            }
+            bsModal.show();
+        }
+    }
     constructor() {
         this.apiService = window.apiService;
         this.uiManager = window.uiManager;
@@ -15,7 +47,6 @@ class ExtrasManager {
         this.initialized = false;
         
         // Controle de operações para evitar bloqueios
-        this.isProcessing = false;
         this.pendingOperations = new Set();
         
         // Binding de métodos
@@ -50,93 +81,45 @@ class ExtrasManager {
         });
 
         // Fechar modal diretamente - Bootstrap lida com aria-hidden automaticamente
-        const bootstrapModal = bootstrap.Modal.getInstance(modal);
-        if (bootstrapModal) {
-            bootstrapModal.hide();
-        }
-    }
-
-    /**
-     * Executar operação com prevenção de duplicados (simplificado)
-     */
-    async executeOperation(operationId, operation) {
-        // Evitar operações duplicadas
-        if (this.pendingOperations.has(operationId)) {
-            console.warn(`⚠️ Operação ${operationId} já em progresso, ignorando duplicado`);
-            return null;
-        }
-
-        this.pendingOperations.add(operationId);
-        
-        try {
-            // Executar diretamente sem setTimeout desnecessário
-            const result = await operation();
-            return result;
-        } catch (error) {
-            console.error(`Erro na operação ${operationId}:`, error);
-            throw error;
-        } finally {
-            this.pendingOperations.delete(operationId);
-        }
-    }
-
-    /**
-     * Recarregar dados de forma otimizada
-     */
-    async optimizedReload(type = 'all') {
-        const reloadId = `reload-${type}-${Date.now()}`;
-        
-        return this.executeOperation(reloadId, async () => {
-            switch (type) {
-                case 'extras':
-                    await this.loadExtras();
-                    break;
-                case 'transferencias':
-                    await this.loadTransferencias();
-                    break;
-                case 'all':
-                default:
-                    await Promise.all([
-                        this.loadExtras(),
-                        this.loadTransferencias()
-                    ]);
-                    break;
-            }
-        });
-    }
-
-    /**
-     * Mostrar estado de carregamento no botão
-     */
-    setButtonLoading(selector, loading = true) {
-        const buttons = document.querySelectorAll(selector);
-        buttons.forEach(button => {
-            if (loading) {
-                button.disabled = true;
-                const icon = button.querySelector('i');
-                if (icon) {
-                    icon.className = 'fas fa-spinner fa-spin';
-                }
-            } else {
-                button.disabled = false;
-                const icon = button.querySelector('i');
-                if (icon) {
-                    // Restaurar ícone original baseado no atributo title
-                    const title = button.getAttribute('title');
-                    if (title === 'Excluir') {
-                        icon.className = 'fas fa-trash';
-                    } else if (title === 'Editar') {
-                        icon.className = 'fas fa-edit';
-                    }
+        if (modalId === 'modal-confirmar-exclusao-extras') {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                const bootstrapModal = bootstrap.Modal.getInstance(modal);
+                if (bootstrapModal) {
+                    bootstrapModal.hide();
                 }
             }
-        });
+        } else {
+            const bootstrapModal = bootstrap.Modal.getInstance(modal);
+            if (bootstrapModal) {
+                bootstrapModal.hide();
+            }
+        }
     }
 
     /**
      * Inicializar eventos
      */
     setupEvents() {
+        // Botón de confirmar exclusão no modal
+        const btnConfirmarExclusao = document.getElementById('btn-confirmar-exclusao-extras');
+        if (btnConfirmarExclusao) {
+            btnConfirmarExclusao.addEventListener('click', async () => {
+                console.log('🔥 Ejecutando exclusão:', { tipo: this.exclusaoTipo, id: this.exclusaoId });
+                try {
+                    if (this.exclusaoTipo === 'alias') {
+                        await this.excluirAlias(this.exclusaoId);
+                    } else if (this.exclusaoTipo === 'transferencia') {
+                        await this.excluirTransferencia(this.exclusaoId);
+                    }
+                    // Fechar modal após exclusão
+                    this.safeCloseModal('modal-confirmar-exclusao-extras', 'btn-confirmar-exclusao-extras');
+                } catch (error) {
+                    console.error('❌ Erro durante exclusão:', error);
+                    this.showError('Erro ao excluir: ' + error.message);
+                }
+            });
+        }
         // Botões principais
         document.getElementById('btn-novo-alias')?.addEventListener('click', () => {
             this.showAliasModal();
@@ -144,10 +127,6 @@ class ExtrasManager {
 
         document.getElementById('btn-novas-transferencias')?.addEventListener('click', () => {
             this.showTransferenciasModal();
-        });
-
-        document.getElementById('btn-estatisticas-extras')?.addEventListener('click', () => {
-            this.showEstatisticas();
         });
 
         // Formulários
@@ -269,7 +248,7 @@ class ExtrasManager {
         if (!extras || extras.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="4" class="text-center text-muted py-4">
+                    <td colspan="3" class="text-center text-muted py-4">
                         <i class="fas fa-inbox fa-2x mb-2"></i><br>
                         Nenhum alias encontrado
                     </td>
@@ -304,17 +283,12 @@ class ExtrasManager {
                     ${proprietariosText.length > 50 ? proprietariosText.substring(0, 50) + '...' : proprietariosText}
                 </td>
                 <td class="text-center">
-                    <span class="badge ${extra.ativo ? 'bg-success' : 'bg-secondary'}">
-                        ${extra.ativo ? 'Ativo' : 'Inativo'}
-                    </span>
-                </td>
-                <td class="text-center">
                     <div class="btn-group btn-group-sm">
                         <button class="btn btn-outline-primary" onclick="window.extrasManager.editarAlias(${extra.id})" title="Editar">
                             <i class="fas fa-edit"></i>
                         </button>
                         <button class="btn btn-outline-danger" 
-                                onclick="window.extrasManager.excluirAlias(${extra.id})" 
+                                onclick="window.extrasManager.confirmarExclusao('alias', ${extra.id}, '${extra.alias}')" 
                                 data-alias-id="${extra.id}"
                                 title="Excluir">
                             <i class="fas fa-trash"></i>
@@ -368,7 +342,7 @@ class ExtrasManager {
         if (!transferencias || transferencias.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">
+                    <td colspan="5" class="text-center text-muted py-4">
                         <i class="fas fa-inbox fa-2x mb-2"></i><br>
                         Nenhuma transferência encontrada
                     </td>
@@ -391,11 +365,6 @@ class ExtrasManager {
             row.innerHTML = `
                 <td><strong>${transferencia.alias}</strong></td>
                 <td>${transferencia.nome_transferencia}</td>
-                <td class="text-center">
-                    <span class="badge ${transferencia.ativo ? 'bg-success' : 'bg-secondary'}">
-                        ${transferencia.ativo ? 'Ativo' : 'Inativo'}
-                    </span>
-                </td>
                 <td class="text-center">${dataCriacaoFormatada}</td>
                 <td class="text-center">${dataFimFormatada}</td>
                 <td class="text-center">
@@ -404,7 +373,7 @@ class ExtrasManager {
                             <i class="fas fa-edit"></i>
                         </button>
                         <button class="btn btn-outline-danger" 
-                                onclick="window.extrasManager.excluirTransferencia(${transferencia.id})" 
+                                onclick="window.extrasManager.confirmarExclusao('transferencia', ${transferencia.id}, '${transferencia.nome_transferencia}')" 
                                 data-transferencia-id="${transferencia.id}"
                                 title="Excluir">
                             <i class="fas fa-trash"></i>
@@ -478,7 +447,6 @@ class ExtrasManager {
         } else {
             modalTitle.innerHTML = '<i class="fas fa-plus me-2"></i>Novo Alias';
             form.reset();
-            document.getElementById('alias-ativo').checked = true;
         }
 
         // Limpar alertas
@@ -521,8 +489,7 @@ class ExtrasManager {
      * Popular formulário de alias com dados
      */
     populateAliasForm(extra) {
-        document.getElementById('alias-nome').value = extra.alias || '';
-        document.getElementById('alias-ativo').checked = extra.ativo !== false;
+    document.getElementById('alias-nome').value = extra.alias || '';
 
         // Selecionar múltiplos proprietários
         const proprietariosSelect = document.getElementById('alias-proprietarios');
@@ -684,8 +651,8 @@ class ExtrasManager {
                             </td>
                             <td>
                                 <div class="input-group">
-                                    <span class="input-group-text">R$</span>
-                                    <input type="number" class="form-control" 
+                                    <span class="input-group-text" style="font-size:0.80rem;">R$</span>
+                                    <input type="number" class="form-control" style="font-size:0.80rem;" 
                                            name="transferencia_${proprietario.id}" 
                                            step="0.01" placeholder="0,00"
                                            value="${valorSalvo}">
@@ -720,7 +687,6 @@ class ExtrasManager {
 
             const aliasData = {
                 alias: formData.get('alias').trim(),
-                ativo: formData.get('ativo') === 'on',
                 id_proprietarios: proprietariosSelecionados.length > 0 ? JSON.stringify(proprietariosSelecionados) : null
             };
 
@@ -748,12 +714,10 @@ class ExtrasManager {
 
             if (response && response.success) {
                 this.showSuccess(this.currentExtra ? 'Alias atualizado com sucesso!' : 'Alias criado com sucesso!');
-                
                 // Fechar modal de forma segura para acessibilidade
                 this.safeCloseModal('modal-alias', 'btn-salvar-alias');
-                
-                // No necesitamos recargar datos ya que usamos filtrado ativo=true
-                // Los nuevos elementos aparecerán automáticamente al refrescar la página
+                // Recargar la lista de aliases para mostrar el nuevo alias
+                await this.loadExtras();
             }
 
         } catch (error) {
@@ -839,8 +803,7 @@ class ExtrasManager {
                 valor_total: valorTotal,
                 id_proprietarios: JSON.stringify(proprietarios),
                 data_criacao: dataCriacao,
-                data_fim: dataFim || null,
-                ativo: true
+                data_fim: dataFim || null
             };
 
             let response;
@@ -856,15 +819,12 @@ class ExtrasManager {
                 this.showSuccess(this.currentTransferencia ? 
                     'Transferência atualizada com sucesso!' : 
                     'Transferência criada com sucesso!');
-                
                 // Resetar currentTransferencia
                 this.currentTransferencia = null;
-                
                 // Fechar modal de forma segura para acessibilidade
                 this.safeCloseModal('modal-transferencias', 'btn-salvar-transferencia');
-                
-                // No necesitamos recargar datos ya que usamos filtrado ativo=true
-                // Los nuevos elementos aparecerán automáticamente al refrescar la página
+                // Recargar la lista de transferencias para mostrar la nueva transferencia
+                await this.loadTransferencias();
             }
 
         } catch (error) {
@@ -902,15 +862,8 @@ class ExtrasManager {
                 this.showError('Alias não encontrado');
                 return;
             }
-
-            // Confirmar exclusão de forma não bloqueante usando requestAnimationFrame
-            requestAnimationFrame(() => {
-                if (confirm(`Tem certeza que deseja excluir o alias "${extra.alias}"?`)) {
-                    // Executar a exclusão sem await para retornar imediatamente
-                    this.executeDeleteAlias(id);
-                }
-            });
-            
+            // Executar a exclusão diretamente (modal já confirma)
+            await this.executeDeleteAlias(id);
         } catch (error) {
             console.error('Erro ao excluir alias:', error);
             this.showError('Erro ao excluir alias: ' + error.message);
@@ -1094,15 +1047,8 @@ class ExtrasManager {
                 this.showError('Transferência não encontrada');
                 return;
             }
-
-            // Confirmar exclusão de forma não bloqueante usando requestAnimationFrame
-            requestAnimationFrame(() => {
-                if (confirm(`Tem certeza que deseja excluir a transferência "${transferencia.nome_transferencia}"?`)) {
-                    // Executar a exclusão sem await para retornar imediatamente
-                    this.executeDeleteTransferencia(id);
-                }
-            });
-            
+            // Executar a exclusão diretamente (modal já confirma)
+            await this.executeDeleteTransferencia(id);
         } catch (error) {
             console.error('Erro ao excluir transferência:', error);
             this.showError('Erro ao excluir transferência: ' + error.message);

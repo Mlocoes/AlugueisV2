@@ -38,8 +38,7 @@ def obter_transferencia(transferencia_id: int, db: Session = Depends(get_db), cu
     Obter uma transferência por ID (apenas administradores)
     """
     transferencia = db.query(Transferencia).filter(
-        Transferencia.id == transferencia_id,
-        Transferencia.ativo == True
+        Transferencia.id == transferencia_id
     ).first()
     
     if not transferencia:
@@ -101,8 +100,7 @@ def criar_transferencia(transferencia_data: TransferenciaCreate, db: Session = D
             origem_id_proprietario=transferencia_data.origem_id_proprietario,
             destino_id_proprietario=transferencia_data.destino_id_proprietario,
             data_criacao=data_criacao or datetime.now(),
-            data_fim=data_fim,
-            ativo=transferencia_data.ativo
+            data_fim=data_fim
         )
         
         db.add(nova_transferencia)
@@ -127,8 +125,7 @@ def atualizar_transferencia(transferencia_id: int, transferencia_data: Transfere
     """
     try:
         transferencia = db.query(Transferencia).filter(
-            Transferencia.id == transferencia_id,
-            Transferencia.ativo == True
+            Transferencia.id == transferencia_id
         ).first()
         
         if not transferencia:
@@ -202,12 +199,11 @@ def atualizar_transferencia(transferencia_id: int, transferencia_data: Transfere
 @router.delete("/{transferencia_id}")
 def excluir_transferencia(transferencia_id: int, db: Session = Depends(get_db), current_user = Depends(is_admin)):
     """
-    Excluir transferência (soft delete) (apenas administradores)
+    Excluir transferência (apenas administradores)
     """
     try:
         transferencia = db.query(Transferencia).filter(
-            Transferencia.id == transferencia_id,
-            Transferencia.ativo == True
+            Transferencia.id == transferencia_id
         ).first()
         
         if not transferencia:
@@ -216,7 +212,8 @@ def excluir_transferencia(transferencia_id: int, db: Session = Depends(get_db), 
                 detail="Transferência não encontrada"
             )
         
-        # Soft delete
+        # Delete real
+        db.delete(transferencia)
         db.commit()
         
         return {"message": "Transferência excluída com sucesso"}
@@ -245,8 +242,7 @@ def listar_transferencias_por_alias(alias_id: int, db: Session = Depends(get_db)
             )
         
         transferencias = db.query(Transferencia).filter(
-            Transferencia.alias_id == alias_id,
-            Transferencia.ativo == True
+            Transferencia.alias_id == alias_id
         ).order_by(desc(Transferencia.id)).all()
         
         return [transferencia.to_dict() for transferencia in transferencias]

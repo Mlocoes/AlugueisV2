@@ -306,14 +306,6 @@ class AlugueisModule {
             window.uiManager.updateActionButtonsVisibility();
         }
     }
-
-    showAddModal() {
-        this.uiManager.showInfo('Funcionalidade de adicionar aluguel em desenvolvimento.');
-    }
-
-    search() {
-        // Implementar busca futuramente
-    }
 }
 
 window.alugueisModule = new AlugueisModule();

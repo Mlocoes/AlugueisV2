@@ -6,14 +6,12 @@ import uuid
 import pandas as pd
 import json
 import tempfile
-import csv
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 from fastapi import APIRouter, HTTPException, UploadFile, File, Query, Depends, Response
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, text, desc
-from sqlalchemy.exc import IntegrityError
 
 from config import get_db
 from models_final import AluguelSimples, Proprietario as Propietario, Imovel as Inmueble, Participacao as Participacion, Usuario, LogImportacao as LogImportacaoSimple

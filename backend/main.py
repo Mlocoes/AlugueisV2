@@ -31,8 +31,6 @@ app.include_router(participacoes.router)
 app.include_router(reportes.router)
 app.include_router(extras.router)
 app.include_router(transferencias.router)
-app.include_router(extras.router)
-app.include_router(reportes.router)
 
 # =====================================================
 # ENDPOINTS PRINCIPAIS

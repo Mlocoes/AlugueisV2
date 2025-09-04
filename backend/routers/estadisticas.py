@@ -56,12 +56,12 @@ async def resumen_por_propiedad(
 ):
     """Obtener resumen agrupado por propiedad"""
     try:
-        query = db.query(AlquilerSimple)
+        query = db.query(AluguelSimples)
         
         if ano:
-            query = query.filter(AlquilerSimple.ano == ano)
+            query = query.filter(AluguelSimples.ano == ano)
         if mes:
-            query = query.filter(AlquilerSimple.mes == mes)
+            query = query.filter(AluguelSimples.mes == mes)
         
         alquileres = query.all()
         
@@ -96,12 +96,12 @@ async def resumen_por_propietario(
 ):
     """Obtener resumen agrupado por propietario"""
     try:
-        query = db.query(AlquilerSimple)
+        query = db.query(AluguelSimples)
         
         if ano:
-            query = query.filter(AlquilerSimple.ano == ano)
+            query = query.filter(AluguelSimples.ano == ano)
         if mes:
-            query = query.filter(AlquilerSimple.mes == mes)
+            query = query.filter(AluguelSimples.mes == mes)
         
         alquileres = query.all()
         
@@ -147,36 +147,36 @@ async def resumen_mensual(db: Session = Depends(get_db), current_user: Usuario =
             ano_anterior = ano_actual
         
         # 1. Ingresos del mes actual - CON DEBUG
-        query_mes_actual = db.query(func.sum(AlquilerSimple.valor_alquiler_propietario))\
+        query_mes_actual = db.query(func.sum(AluguelSimples.valor_alquiler_propietario))\
             .filter(
-                AlquilerSimple.mes == mes_actual,
-                AlquilerSimple.ano == ano_actual
+                AluguelSimples.mes == mes_actual,
+                AluguelSimples.ano == ano_actual
             )
         
         # Debug: contar registros del mes actual
-        count_mes_actual = db.query(func.count(AlquilerSimple.id))\
+        count_mes_actual = db.query(func.count(AluguelSimples.id))\
             .filter(
-                AlquilerSimple.mes == mes_actual,
-                AlquilerSimple.ano == ano_actual
+                AluguelSimples.mes == mes_actual,
+                AluguelSimples.ano == ano_actual
             ).scalar() or 0
         
         ingresos_mes_actual = query_mes_actual.scalar() or 0
         
         # 2. Ingresos del mes anterior
-        ingresos_mes_anterior = db.query(func.sum(AlquilerSimple.valor_alquiler_propietario))\
+        ingresos_mes_anterior = db.query(func.sum(AluguelSimples.valor_alquiler_propietario))\
             .filter(
-                AlquilerSimple.mes == mes_anterior,
-                AlquilerSimple.ano == ano_anterior
+                AluguelSimples.mes == mes_anterior,
+                AluguelSimples.ano == ano_anterior
             ).scalar() or 0
         
         # 3. Total acumulado del año actual
-        total_ano_actual = db.query(func.sum(AlquilerSimple.valor_alquiler_propietario))\
-            .filter(AlquilerSimple.ano == ano_actual)\
+        total_ano_actual = db.query(func.sum(AluguelSimples.valor_alquiler_propietario))\
+            .filter(AluguelSimples.ano == ano_actual)\
             .scalar() or 0
         
         # 4. Calcular media mensual del año actual
-        meses_con_datos = db.query(func.count(func.distinct(AlquilerSimple.mes)))\
-            .filter(AlquilerSimple.ano == ano_actual)\
+        meses_con_datos = db.query(func.count(func.distinct(AluguelSimples.mes)))\
+            .filter(AluguelSimples.ano == ano_actual)\
             .scalar() or 1
         
         media_mensual = total_ano_actual / meses_con_datos if meses_con_datos > 0 else 0
@@ -241,18 +241,18 @@ async def debug_mes(mes: int = 7, ano: int = 2025, db: Session = Depends(get_db)
     """Debug: verificar datos de un mes específico"""
     
     # Contar registros
-    count = db.query(func.count(AlquilerSimple.id))\
-        .filter(AlquilerSimple.mes == mes, AlquilerSimple.ano == ano)\
+    count = db.query(func.count(AluguelSimples.id))\
+        .filter(AluguelSimples.mes == mes, AluguelSimples.ano == ano)\
         .scalar()
     
     # Sumar valores
-    suma = db.query(func.sum(AlquilerSimple.valor_alquiler_propietario))\
-        .filter(AlquilerSimple.mes == mes, AlquilerSimple.ano == ano)\
+    suma = db.query(func.sum(AluguelSimples.valor_alquiler_propietario))\
+        .filter(AluguelSimples.mes == mes, AluguelSimples.ano == ano)\
         .scalar() or 0
     
     # Primeros 5 registros para muestra
-    registros = db.query(AlquilerSimple.nombre_propietario, AlquilerSimple.valor_alquiler_propietario)\
-        .filter(AlquilerSimple.mes == mes, AlquilerSimple.ano == ano)\
+    registros = db.query(AluguelSimples.nombre_propietario, AluguelSimples.valor_alquiler_propietario)\
+        .filter(AluguelSimples.mes == mes, AluguelSimples.ano == ano)\
         .limit(5).all()
     
     return {
