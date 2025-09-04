@@ -338,12 +338,11 @@ CREATE OR REPLACE FUNCTION calcular_taxa_proprietario_automatico()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Buscar a participação do proprietário no imóvel
-    SELECT (participacao / 100.0) * NEW.taxa_administracao_total
+    SELECT (porcentagem / 100.0) * NEW.taxa_administracao_total
     INTO NEW.taxa_administracao_proprietario
     FROM participacoes 
     WHERE proprietario_id = NEW.proprietario_id 
     AND imovel_id = NEW.imovel_id 
-    AND ativo = TRUE
     LIMIT 1;
     
     -- Se não encontrou participação, usar 100% (participação completa)
