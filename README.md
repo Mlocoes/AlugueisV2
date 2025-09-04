@@ -145,6 +145,48 @@ AlugueisV2/
 
 ---
 
-## 📄 Licença
+## �️ Solução de Problemas
+
+### Importação de Alquileres (0 registros importados)
+
+**Problema**: Al importar Excel de alquileres se leen los registros correctamente pero se importan 0.
+
+**Causa**: Error en trigger `calcular_taxa_proprietario_automatico()` que buscaba columna `participacao` inexistente.
+
+**Solución**: 
+- Para **nuevas instalaciones**: ya está corregido en `database/init-scripts/000_estrutura_nova.sql`
+- Para **instalaciones existentes**: ejecutar `database/migrations/009_fix_trigger_taxa_proprietario.sql`
+
+```sql
+-- Aplicar corrección manualmente si necesario:
+CREATE OR REPLACE FUNCTION calcular_taxa_proprietario_automatico()
+RETURNS TRIGGER AS $$
+BEGIN
+    SELECT (porcentagem / 100.0) * NEW.taxa_administracao_total
+    INTO NEW.taxa_administracao_proprietario
+    FROM participacoes 
+    WHERE proprietario_id = NEW.proprietario_id 
+    AND imovel_id = NEW.imovel_id 
+    LIMIT 1;
+    
+    IF NEW.taxa_administracao_proprietario IS NULL THEN
+        NEW.taxa_administracao_proprietario := 0;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### Verificación de Importación Exitosa
+
+```bash
+# Verificar registros importados
+docker exec -t alugueisV1_postgres psql -U alugueisv1_usuario -d alugueisv1_db -c "SELECT COUNT(*) FROM alugueis;"
+```
+
+---
+
+## �📄 Licença
 
 Este projeto está licenciado sob a **MIT License** - veja o arquivo [LICENSE](LICENSE) para detalhes.
