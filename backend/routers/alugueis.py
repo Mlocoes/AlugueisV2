@@ -47,7 +47,8 @@ async def importar_alugueis(file: UploadFile = File(...), db: Session = Depends(
             # Segunda coluna (B) = ignorar, nomes dos proprietários = C até penúltima, última = taxa
             nomes_proprietarios = colunas[2:-1]
             nome_col_taxa = colunas[-1]
-            # Processar imóveis a partir da linha 2 (A2)
+            # Los nombres de los propietarios están como strings, no datetime
+            nomes_proprietarios = [str(prop) for prop in nomes_proprietarios if not isinstance(prop, datetime)]
 
             lidos = 0
             importados = 0
@@ -73,7 +74,13 @@ async def importar_alugueis(file: UploadFile = File(...), db: Session = Depends(
                 print(f"🔴 Aba '{nome_aba}': Erro ao obter data de referência da célula A1: {str(e)}")
 
             for index, row in df.iterrows():
-                nome_imovel = row[colunas[0]]
+                # El nombre del inmueble está en la primera columna de datos, no el header
+                nome_imovel = str(row.iloc[0]).strip()
+                
+                # Verificar si es un nombre válido de inmueble
+                if pd.isna(row.iloc[0]) or nome_imovel == 'nan' or nome_imovel == '':
+                    continue
+                    
                 imovel = db.query(Imovel).filter(Imovel.nome == nome_imovel).first()
                 if not imovel:
                     erros.append(f"Aba '{nome_aba}' Linha {index + 2}: Imóvel '{nome_imovel}' não encontrado.")

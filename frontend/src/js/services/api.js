@@ -171,8 +171,8 @@ class ApiService {
         // Agregar token de autenticación si está disponible
         if (window.authService && window.authService.isAuthenticated()) {
             const authHeader = window.authService.getAuthHeader();
-            if (authHeader) {
-                headers['Authorization'] = authHeader;
+            if (authHeader && authHeader.Authorization) {
+                headers['Authorization'] = authHeader.Authorization;
             }
         }
 
