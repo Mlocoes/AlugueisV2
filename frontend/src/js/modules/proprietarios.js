@@ -346,7 +346,7 @@ class ProprietariosModule {
                     <div class="mb-2"><strong>Agência:</strong><br>${this.formatField(proprietario.agencia, 'Sem agência')}</div>
                     <div class="mb-2"><strong>Conta:</strong><br>${this.formatField(proprietario.conta, 'Sem conta')}</div>
                     <div class="mb-2"><strong>Tipo de conta:</strong><br>${this.formatField(proprietario.tipo_conta, 'Sem tipo especificado')}</div>
-                    <div class="mb-2"><strong>Estado:</strong><br><span class="badge bg-${proprietario.ativo ? 'success' : 'secondary'}">${proprietario.ativo ? 'Ativo' : 'Inativo'}</span></div>
+                    <!-- Estado removido: campo 'ativo' eliminado -->
                     <div class="mb-2"><strong>Data de registro:</strong><br>${new Date(proprietario.data_cadastro).toLocaleDateString()}</div>
                 </div>
             </div>
