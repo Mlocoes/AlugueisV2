@@ -63,7 +63,7 @@ services:
       - "8000:8000"
     networks:
       - alugueisV1_network
-      - traefik
+      - kronos-net
     depends_on:
       postgres_v1:
         condition: service_healthy
@@ -71,11 +71,11 @@ services:
     labels:
       # Labels para Traefik (solo activos si USE_TRAEFIK=true)
       - "traefik.enable=${USE_TRAEFIK:-false}"
-      - "traefik.http.routers.alugueisv1-backend.rule=Host(`${BACKEND_DOMAIN:-api.alugueis.local}`)"
+      - "traefik.http.routers.alugueisv1-backend.rule=Host(`${BACKEND_DOMAIN:-api.alugueis.local}`) && PathPrefix(`/api`)"
       - "traefik.http.routers.alugueisv1-backend.entrypoints=websecure"
       - "traefik.http.routers.alugueisv1-backend.tls.certresolver=cloudflare"
       - "traefik.http.services.alugueisv1-backend.loadbalancer.server.port=8000"
-      - "traefik.docker.network=traefik"
+      - "traefik.docker.network=kronos-net"
 
   # Frontend Optimizado
   frontend_v1:
@@ -88,7 +88,7 @@ services:
       - "3000:80"
     networks:
       - alugueisV1_network
-      - traefik
+      - kronos-net
     depends_on:
       - backend_v1
     restart: unless-stopped
@@ -99,7 +99,7 @@ services:
       - "traefik.http.routers.alugueisv1-frontend.entrypoints=websecure"
       - "traefik.http.routers.alugueisv1-frontend.tls.certresolver=cloudflare"
       - "traefik.http.services.alugueisv1-frontend.loadbalancer.server.port=80"
-      - "traefik.docker.network=traefik"
+      - "traefik.docker.network=kronos-net"
 
 volumes:
   postgres_v1_data:
@@ -108,5 +108,5 @@ volumes:
 networks:
   alugueisV1_network:
     driver: bridge
-  traefik:
+  kronos-net:
     external: true

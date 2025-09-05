@@ -26,25 +26,25 @@ else
 fi
 echo ""
 
-# Función para verificar si la red de Traefik existe
-check_traefik_network() {
-    if ! docker network ls | grep -q "traefik"; then
-        echo "⚠️  Red 'traefik' no encontrada. Creándola..."
-        docker network create traefik
-        echo "✅ Red 'traefik' creada"
+# Función para verificar si la red externa existe
+check_external_network() {
+    if ! docker network ls | grep -q "kronos-net"; then
+        echo "⚠️  Red 'kronos-net' no encontrada. Creándola..."
+        docker network create kronos-net
+        echo "✅ Red 'kronos-net' creada"
     else
-        echo "✅ Red 'traefik' encontrada"
+        echo "✅ Red 'kronos-net' encontrada"
     fi
 }
 
 # Función para deployment con Traefik
 deploy_with_traefik() {
-    echo "🔒 Deployando con Traefik..."
-    check_traefik_network
+    echo "🔒 Deployando con Traefik remoto..."
+    check_external_network
     
     echo "📦 Construyendo y iniciando servicios..."
-    docker-compose -f docker-compose.yml -f docker-compose.traefik.yml build --no-cache
-    docker-compose -f docker-compose.yml -f docker-compose.traefik.yml up -d
+    docker-compose build --no-cache
+    docker-compose up -d
     
     echo ""
     echo "✅ Deployment con Traefik completado!"

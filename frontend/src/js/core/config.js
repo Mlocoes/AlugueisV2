@@ -34,9 +34,9 @@ const AppConfig = {
         
         // Si estamos usando HTTPS, probablemente estamos detrás de Traefik
         if (isHttps) {
-            // Estamos usando Traefik con SSL
-            this.api.baseUrl = `${protocol}//${hostname.replace(/^[^.]+\./, 'api.')}`;
-            console.log('🔒 Modo Traefik detectado (HTTPS)');
+            // Estamos usando Traefik con SSL - usar el mismo dominio
+            this.api.baseUrl = `${protocol}//${hostname}`;
+            console.log('🔒 Modo Traefik detectado (HTTPS) - mismo dominio');
         } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
             // Estamos en desarrollo local
             this.api.baseUrl = 'http://localhost:8000';
