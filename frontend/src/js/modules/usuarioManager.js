@@ -144,7 +144,15 @@ class UsuarioManager {
         this.esconderAlerts();
 
         try {
-            const baseUrl = window.AppConfig?.api?.baseUrl || window.networkConfig?.getBaseURL() || 'http://192.168.0.7:8000';
+            // Esperar a que AppConfig esté inicializado si es necesario
+            if (!window.AppConfig?.api?.baseUrl) {
+                console.log('⏳ AppConfig no inicializado, inicializando...');
+                await window.AppConfig?.initNetwork();
+            }
+            
+            const baseUrl = window.AppConfig?.api?.baseUrl || '';
+            console.log('🔗 Usando baseUrl:', baseUrl);
+            
             const authHeader = window.authService?.getAuthHeader();
 
             if (!authHeader) {
