@@ -8,7 +8,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from config import APP_CONFIG, CORS_CONFIG, get_db
+import os
+import time
+from fastapi_utils.tasks import repeat_every
+
+from config import APP_CONFIG, CORS_CONFIG, get_db, UPLOAD_DIR
 from models_final import AluguelSimples, Imovel
 from routers import alugueis, estadisticas, importacao, upload, auth
 from routers import proprietarios, imoveis, participacoes, reportes, extras, transferencias
@@ -18,6 +22,25 @@ from routers.auth import verify_token
 
 app = FastAPI(**APP_CONFIG)
 app.add_middleware(CORSMiddleware, **CORS_CONFIG)
+
+# Tarefa de limpeza de arquivos de upload
+@app.on_event("startup")
+@repeat_every(seconds=6 * 60 * 60)  # Executar a cada 6 horas
+def cleanup_old_uploads():
+    """Remove arquivos antigos do diretório de upload."""
+    now = time.time()
+    cutoff = now - (24 * 60 * 60)  # 24 horas atrás
+
+    try:
+        for filename in os.listdir(UPLOAD_DIR):
+            file_path = os.path.join(UPLOAD_DIR, filename)
+            if os.path.isfile(file_path):
+                if os.path.getmtime(file_path) < cutoff:
+                    os.remove(file_path)
+                    print(f"Arquivo de upload antigo removido: {filename}")
+    except Exception as e:
+        print(f"Erro na limpeza de arquivos de upload: {e}")
+
 
 # Incluir routers
 app.include_router(auth.router)

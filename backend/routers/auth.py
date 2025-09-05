@@ -95,8 +95,6 @@ def verify_token_flexible(
         token_value = auth_header.split(" ", 1)[1].strip()
     elif request.cookies.get("access_token"):
         token_value = request.cookies.get("access_token")
-    elif request.query_params.get("token"):
-        token_value = request.query_params.get("token")
 
     if not token_value:
         raise HTTPException(

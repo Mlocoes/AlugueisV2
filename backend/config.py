@@ -66,19 +66,19 @@ CORS_CONFIG = {
 }
 
 # Configurações de segredo e debug
-SECRET_KEY = os.getenv("SECRET_KEY") or ("alquileresv2_secret_key_development" if ENV != "production" else None)
+SECRET_KEY = os.getenv("SECRET_KEY")
 
-# Em produção, forçar SECRET_KEY definido
-if ENV == "production" and not SECRET_KEY:
-    raise RuntimeError("SECRET_KEY deve ser definido no ambiente em produção")
+# Forçar SECRET_KEY a ser definido em todos os ambientes
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY deve ser definido no ambiente")
 
 # DEBUG verdadeiro por padrão apenas fora de produção
 DEBUG = (os.getenv("DEBUG").lower() == "true") if os.getenv("DEBUG") else (ENV != "production")
 
 # Configurações de upload
-# UPLOAD_DIR = "/app/uploads"
-# STORAGE_DIR = "/app/storage"
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", "backend/uploads")
+STORAGE_DIR = os.getenv("STORAGE_DIR", "backend/storage")
 
 # Criar diretórios se não existirem
-# os.makedirs(UPLOAD_DIR, exist_ok=True)
-# os.makedirs(STORAGE_DIR, exist_ok=True)
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(STORAGE_DIR, exist_ok=True)
