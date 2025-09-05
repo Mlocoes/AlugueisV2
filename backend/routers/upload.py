@@ -13,15 +13,11 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, text, desc
 
-from config import get_db
+from config import get_db, UPLOAD_DIR
 from models_final import AluguelSimples, Proprietario as Propietario, Imovel as Inmueble, Participacao as Participacion, Usuario, LogImportacao as LogImportacaoSimple
 from .auth import is_admin, verify_token
 
 router = APIRouter(tags=["upload"])
-
-# Directorio temporal para archivos subidos
-UPLOAD_DIR = "/tmp/sistema_alquileres_uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Almacenar información de archivos subidos
 uploaded_files = {}
