@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-Script para probar la funcionalidad de transferencias
+Script para probar        els        print("\n👥 Probando endpoint público de aliases...")
+        response = requests.get(f"{BASE_URL}/api/extras/relatorios")
+        print(f"📡 Status: {response.status_code}")            print(f"📄 Response: {response.text}")
+        
+    except Exception as e:funcionalidad de transferencias
 """
 import requests
 import json

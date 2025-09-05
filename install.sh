@@ -30,6 +30,33 @@ read -s -p "Senha administrador [admin00]: " ADMIN_PASS
 echo
 ADMIN_PASS=${ADMIN_PASS:-admin00}
 
+# Configuración de acceso web
+echo ""
+echo "=== Configuración de Acceso Web ==="
+read -p "¿Desea configurar acceso por internet con Traefik? [S/n]: " USE_TRAEFIK
+USE_TRAEFIK=${USE_TRAEFIK:-S}
+
+if [ "$USE_TRAEFIK" = "S" ] || [ "$USE_TRAEFIK" = "s" ] || [ -z "$USE_TRAEFIK" ]; then
+    USE_TRAEFIK="true"
+    read -p "Dominio para el frontend (ej: alugueis.example.com): " FRONTEND_DOMAIN
+    read -p "Dominio para el backend API (ej: api.alugueis.example.com): " BACKEND_DOMAIN
+    
+    # Verificar que se ingresaron los dominios
+    if [ -z "$FRONTEND_DOMAIN" ] || [ -z "$BACKEND_DOMAIN" ]; then
+        echo "❌ Error: Debe ingresar ambos dominios para usar Traefik"
+        exit 1
+    fi
+    
+    echo "Frontend será accesible en: https://$FRONTEND_DOMAIN"
+    echo "Backend API será accesible en: https://$BACKEND_DOMAIN"
+else
+    USE_TRAEFIK="false"
+    FRONTEND_DOMAIN="localhost"
+    BACKEND_DOMAIN="localhost"
+    echo "Configurando para acceso local solamente"
+fi
+echo ""
+
 read -p "Nome do banco [alugueisv1_db]: " POSTGRES_DB
 POSTGRES_DB=${POSTGRES_DB:-alugueisv1_db}
 read -p "Usuário do banco [alugueisv1_usuario]: " POSTGRES_USER
@@ -60,14 +87,26 @@ DEBUG=true
 CORS_ORIGINS=*
 ADMIN_USER=${ADMIN_USER}
 ADMIN_PASS=${ADMIN_PASS}
+
+# Traefik Configuration
+USE_TRAEFIK=${USE_TRAEFIK}
+FRONTEND_DOMAIN=${FRONTEND_DOMAIN}
+BACKEND_DOMAIN=${BACKEND_DOMAIN}
 ENVEOF
+
+# Configurar CORS según el tipo de instalación
+if [ "$USE_TRAEFIK" = "true" ]; then
+    CORS_ORIGINS="https://${FRONTEND_DOMAIN},https://${BACKEND_DOMAIN}"
+else
+    CORS_ORIGINS="http://192.168.0.7:3000,http://192.168.0.7:8000"
+fi
 
 mkdir -p backend
 cat > backend/.env <<BENVEOF
 ENV=development
 SECRET_KEY=${SECRET_KEY}
 DEBUG=true
-CORS_ALLOW_ORIGINS=http://192.168.0.7:3000,http://192.168.0.7:8000
+CORS_ALLOW_ORIGINS=${CORS_ORIGINS}
 DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_v1:5432/${POSTGRES_DB}
 BENVEOF
 
@@ -112,8 +151,23 @@ docker exec -e PGPASSWORD="$POSTGRES_PASSWORD" "$PG_CID" psql -U "$POSTGRES_USER
 
 echo
 echo "✅ Sistema instalado!"
-echo "Frontend:  http://192.168.0.7:3000"
-echo "Backend:   http://192.168.0.7:8000/docs"
+
+if [ "$USE_TRAEFIK" = "true" ]; then
+    echo "Frontend:  https://$FRONTEND_DOMAIN"
+    echo "Backend:   https://$BACKEND_DOMAIN/docs"
+    echo ""
+    echo "⚠️  IMPORTANTE: Configure los registros DNS A/CNAME para:"
+    echo "   $FRONTEND_DOMAIN -> IP del servidor"
+    echo "   $BACKEND_DOMAIN -> IP del servidor"
+    echo ""
+    echo "📋 Para usar con Traefik, asegúrese de que:"
+    echo "   - Traefik esté corriendo en la red 'traefik'"
+    echo "   - Los certificados SSL estén configurados"
+else
+    echo "Frontend:  http://192.168.0.7:3000"
+    echo "Backend:   http://192.168.0.7:8000/docs"
+fi
+
 echo "Adminer:   http://192.168.0.7:8080 (Servidor: postgres_v1, DB: ${POSTGRES_DB}, User: ${POSTGRES_USER})"
 echo
 echo "Usuário admin: ${ADMIN_USER}"

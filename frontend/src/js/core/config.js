@@ -4,9 +4,9 @@
  */
 
 const AppConfig = {
-    // API Configuration - Usar proxy de nginx en lugar de IP directa
+    // API Configuration - Detección automática de entorno
     api: {
-        baseUrl: '', // Usar ruta relativa para aprovechar el proxy nginx
+        baseUrl: '', // Se configurará automáticamente
         port: '8000',
         endpoints: {
             auth: '/api/auth/',
@@ -22,13 +22,47 @@ const AppConfig = {
         }
     },
 
-    // Método para inicializar configuração de rede
+    // Método para detectar entorno y configurar URL base
     async initNetwork() {
-        // Desabilitado para usar proxy nginx
-        console.log('🌐 Usando proxy nginx, configuración de red deshabilitada');
+        const hostname = window.location.hostname;
+        const protocol = window.location.protocol;
+        const isHttps = protocol === 'https:';
         
-        // No modificar baseUrl para mantener el proxy relativo
-        // this.api.baseUrl permanece como cadena vacía
+        console.log('🌐 Detectando entorno de ejecución...');
+        console.log(`   Hostname: ${hostname}`);
+        console.log(`   Protocol: ${protocol}`);
+        
+        // Si estamos usando HTTPS, probablemente estamos detrás de Traefik
+        if (isHttps) {
+            // Estamos usando Traefik con SSL
+            this.api.baseUrl = `${protocol}//${hostname.replace(/^[^.]+\./, 'api.')}`;
+            console.log('🔒 Modo Traefik detectado (HTTPS)');
+        } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            // Estamos en desarrollo local
+            this.api.baseUrl = 'http://localhost:8000';
+            console.log('🏠 Modo desarrollo local detectado');
+        } else {
+            // Estamos en red local sin Traefik
+            this.api.baseUrl = `http://${hostname}:8000`;
+            console.log('🌐 Modo red local detectado');
+        }
+        
+        console.log(`✅ URL base configurada: ${this.api.baseUrl}`);
+        
+        // Probar conectividad con el backend
+        try {
+            const response = await fetch(`${this.api.baseUrl}/api/health`);
+            if (response.ok) {
+                console.log('✅ Conectividad con backend confirmada');
+            } else {
+                console.warn('⚠️ Backend responde pero con error:', response.status);
+            }
+        } catch (error) {
+            console.error('❌ Error conectando con backend:', error.message);
+            // Fallback a modo proxy nginx relativo
+            this.api.baseUrl = '';
+            console.log('🔄 Fallback a modo proxy relativo');
+        }
     },
 
     // UI Configuration
@@ -88,7 +122,9 @@ const AppConfig = {
 // Export para uso global
 window.AppConfig = AppConfig;
 
-// Auto-inicialización de la configuración de red
-// Usar proxy nginx en lugar de IP directa
-// AppConfig.updateBaseURL('http://192.168.0.7:8000');
-console.log(`🌐 URL base configurada: ${AppConfig.getBaseURL() || 'relativa (proxy nginx)'}`);
+// Auto-inicialización al cargar la página
+document.addEventListener('DOMContentLoaded', async () => {
+    await AppConfig.initNetwork();
+});
+
+console.log('🚀 AppConfig cargado - Inicialización automática habilitada');
