@@ -48,20 +48,14 @@ class AlugueisModule {
 
     async loadMesReciente() {
         try {
-            // Usar fetch direto como fallback para obter o último período
+            // Usar ApiService para obter o último período
             let ultimoPeriodo = null;
             try {
-                const response = await fetch('/api/alugueis/ultimo-periodo/', {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': window.authService?.getAuthHeader()?.Authorization || ''
-                    }
-                });
-                if (response.ok) {
-                    ultimoPeriodo = await response.json();
+                if (window.apiService) {
+                    ultimoPeriodo = await window.apiService.get('/api/alugueis/ultimo-periodo/');
                 }
-            } catch (fetchError) {
-                console.warn('Erro ao usar fetch direto:', fetchError);
+            } catch (apiError) {
+                console.warn('Erro ao usar ApiService:', apiError);
             }
 
             console.log('🔍 Último período obtido:', ultimoPeriodo);
@@ -197,23 +191,17 @@ class AlugueisModule {
 
             let resp;
             if (mes === 'todos') {
-                // Usar fetch directo para suma de todos los meses
+                // Usar ApiService para suma de todos los meses
                 try {
                     console.log('🔍 Buscando soma de todos os meses para ano:', ano);
-                    const response = await fetch(`/api/alugueis/distribuicao-todos-meses/?ano=${ano}`, {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': window.authService?.getAuthHeader()?.Authorization || ''
-                        }
-                    });
-                    if (response.ok) {
-                        resp = await response.json();
-                        console.log('✅ Soma de todos os meses obtida via fetch direto');
+                    if (window.apiService) {
+                        resp = await window.apiService.get(`/api/alugueis/distribuicao-todos-meses/?ano=${ano}`);
+                        console.log('✅ Soma de todos os meses obtida via ApiService');
                     } else {
-                        throw new Error(`HTTP ${response.status}`);
+                        throw new Error('ApiService não disponível');
                     }
-                } catch (fetchError) {
-                    console.warn('Erro ao usar fetch direto para todos os meses, usando método padrão:', fetchError);
+                } catch (apiError) {
+                    console.warn('Erro ao usar ApiService para todos os meses, usando método padrão:', apiError);
                     resp = await this.apiService.getDistribuicaoMatrizAlugueis(ano, null);
                 }
             } else {

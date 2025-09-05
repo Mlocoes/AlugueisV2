@@ -17,7 +17,7 @@ from config import get_db, UPLOAD_DIR
 from models_final import AluguelSimples, Proprietario as Propietario, Imovel as Inmueble, Participacao as Participacion, Usuario, LogImportacao as LogImportacaoSimple
 from .auth import is_admin, verify_token
 
-router = APIRouter(tags=["upload"])
+router = APIRouter(prefix="/api/upload", tags=["upload"])
 
 # Almacenar información de archivos subidos
 uploaded_files = {}

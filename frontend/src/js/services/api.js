@@ -61,7 +61,7 @@ class ApiService {
                 imoveis: '/api/imoveis/',
                 alugueis: '/api/alugueis/',
                 participacoes: '/api/participacoes/',
-                relatorios: '/api/relatorios/',
+                relatorios: '/api/reportes/',
                 distribuicoes: '/api/distribuicoes/',
                 extras: '/api/extras/',
                 transferencias: '/api/transferencias/',
