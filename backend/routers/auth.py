@@ -16,6 +16,19 @@ from models_final import Usuario
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 security = HTTPBearer()
 
+@router.get("/setup-status")
+async def get_setup_status(db: Session = Depends(get_db)):
+    """
+    Verificar se o sistema necessita setup inicial (primeiro admin)
+    """
+    admin_exists = db.query(Usuario).filter(Usuario.tipo_de_usuario == "administrador").first()
+    
+    return {
+        "setup_required": not bool(admin_exists),
+        "has_admin": bool(admin_exists),
+        "message": "Sistema precisa de configuração inicial" if not admin_exists else "Sistema configurado"
+    }
+
 # Configuração de Segurança
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 horas
@@ -189,7 +202,8 @@ async def verify_token_endpoint(current_user: Usuario = Depends(verify_token)):
     return {
         "valid": True,
         "usuario": current_user.usuario,
-        "tipo": current_user.tipo_de_usuario
+        "tipo": current_user.tipo_de_usuario,
+        "is_admin": current_user.tipo_de_usuario == "administrador"
     }
 
 @router.post("/verify")
@@ -210,6 +224,77 @@ class CadastroUsuarioRequest(BaseModel):
     usuario: str
     senha: str
     tipo_de_usuario: str
+
+@router.post("/setup-primeiro-admin")
+async def setup_primeiro_admin(
+    request: CadastroUsuarioRequest, 
+    db: Session = Depends(get_db)
+):
+    """
+    Criar primeiro administrador se não existir nenhum admin no sistema
+    """
+    # Verificar se já existe algum administrador
+    admin_exists = db.query(Usuario).filter(Usuario.tipo_de_usuario == "administrador").first()
+    
+    if admin_exists:
+        raise HTTPException(
+            status_code=400,
+            detail="Já existe um administrador no sistema. Use o endpoint /cadastrar-usuario"
+        )
+    
+    # Forçar tipo administrador para o primeiro usuário
+    request.tipo_de_usuario = "administrador"
+    
+    # Validar dados
+    if len(request.usuario) < 3:
+        raise HTTPException(
+            status_code=400,
+            detail="Nome de usuário deve ter pelo menos 3 caracteres"
+        )
+    
+    if len(request.senha) < 6:
+        raise HTTPException(
+            status_code=400,
+            detail="Senha deve ter pelo menos 6 caracteres"
+        )
+    
+    # Verificar se usuário já existe
+    existing_user = db.query(Usuario).filter(Usuario.usuario == request.usuario).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Nome de usuário já existe"
+        )
+    
+    try:
+        # Criar hash da senha
+        hashed_password = get_password_hash(request.senha)
+        
+        # Criar novo usuário
+        novo_usuario = Usuario(
+            usuario=request.usuario,
+            senha=hashed_password,
+            tipo_de_usuario=request.tipo_de_usuario,
+            ativo=True
+        )
+        
+        db.add(novo_usuario)
+        db.commit()
+        db.refresh(novo_usuario)
+        
+        return {
+            "message": "Primeiro administrador criado com sucesso",
+            "usuario": novo_usuario.usuario,
+            "tipo_de_usuario": novo_usuario.tipo_de_usuario,
+            "setup_completo": True
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao criar usuário: {str(e)}"
+        )
 
 @router.post("/cadastrar-usuario")
 async def cadastrar_usuario(

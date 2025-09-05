@@ -155,7 +155,7 @@ class UsuarioManager {
             
             const authHeader = window.authService?.getAuthHeader();
 
-            if (!authHeader) {
+            if (!authHeader || !authHeader.Authorization) {
                 throw new Error('Token de autenticação não encontrado');
             }
 
@@ -163,7 +163,7 @@ class UsuarioManager {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': authHeader
+                    'Authorization': authHeader.Authorization
                 },
                 body: JSON.stringify(userData)
             });
