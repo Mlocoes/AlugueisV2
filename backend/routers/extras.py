@@ -23,6 +23,21 @@ def verify_admin_access(current_user = Depends(is_admin)):
     """Verificar se o usuário é administrador"""
     return current_user
 
+@router.get("/relatorios", response_model=List[AliasResponse])
+async def listar_aliases_para_relatorios(db: Session = Depends(get_db)):
+    """
+    Endpoint público para consultar aliases em relatórios
+    Não requer autenticação para facilitar integração com relatórios
+    """
+    try:
+        aliases = db.query(Alias).all()
+        return [alias.to_dict() for alias in aliases]
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao consultar aliases para relatórios: {str(e)}"
+        )
+
 # Rutas específicas (deben ir ANTES de las rutas dinámicas)
 @router.get("/proprietarios/disponiveis")
 async def listar_proprietarios_disponiveis(
@@ -55,6 +70,36 @@ async def obter_estatisticas_alias(
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao obter estatísticas: {str(e)}")
+
+@router.get("/{alias_id}/proprietarios/relatorios")
+async def obter_proprietarios_alias_para_relatorios(
+    alias_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint público para obter proprietários de um alias em relatórios
+    Não requer autenticação para facilitar integração com relatórios
+    """
+    try:
+        alias = db.query(Alias).filter(Alias.id == alias_id).first()
+        if not alias:
+            raise HTTPException(status_code=404, detail="Alias não encontrado")
+        
+        if not alias.id_proprietarios:
+            return []
+        
+        proprietario_ids = json.loads(alias.id_proprietarios)
+        proprietarios = db.query(Proprietario).filter(Proprietario.id.in_(proprietario_ids)).all()
+        
+        return [{"id": p.id, "nome": p.nome, "sobrenome": p.sobrenome} for p in proprietarios]
+    
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Formato inválido de proprietários no alias")
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao obter proprietários do alias para relatórios: {str(e)}"
+        )
 
 # Rutas generales
 @router.get("/", response_model=List[AliasResponse])

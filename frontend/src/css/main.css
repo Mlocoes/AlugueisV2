@@ -779,6 +779,21 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Estilos para Aliases en combos de filtro */
+.alias-option {
+    background-color: #e3f2fd !important;
+    color: #1976d2 !important;
+    font-weight: 500;
+    font-style: italic;
+}
+
+option[disabled] {
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+    font-weight: bold;
+    text-align: center;
+}
+
 /* Responsive Import */
 @media (max-width: 768px) {
     .upload-area {
@@ -797,4 +812,15 @@ body {
     .file-item {
         padding: 0.75rem;
     }
+}
+
+/* === ESTILOS PARA ALIASES EN RELATÓRIOS === */
+.alias-option {
+    background-color: #e3f2fd !important;
+    color: #1976d2 !important;
+    font-weight: 500;
+}
+
+.alias-option:hover {
+    background-color: #bbdefb !important;
 }

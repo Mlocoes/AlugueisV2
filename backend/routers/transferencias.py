@@ -10,7 +10,7 @@ from sqlalchemy import desc
 
 from config import get_db
 from models_final import Transferencia, TransferenciaCreate, TransferenciaUpdate, TransferenciaResponse, Alias
-from routers.auth import is_admin
+from routers.auth import is_admin, is_user_or_admin
 
 router = APIRouter(
     prefix="/api/transferencias",
@@ -30,6 +30,35 @@ def listar_transferencias(db: Session = Depends(get_db), current_user = Depends(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao listar transferências: {str(e)}"
+        )
+
+@router.get("/consulta", response_model=List[TransferenciaResponse])
+def consultar_transferencias(db: Session = Depends(get_db), current_user = Depends(is_user_or_admin)):
+    """
+    Consultar transferências para relatórios (usuários e administradores)
+    """
+    try:
+        transferencias = db.query(Transferencia).order_by(desc(Transferencia.id)).all()
+        return [transferencia.to_dict() for transferencia in transferencias]
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao consultar transferências: {str(e)}"
+        )
+
+@router.get("/relatorios", response_model=List[TransferenciaResponse])
+def transferencias_para_relatorios(db: Session = Depends(get_db)):
+    """
+    Endpoint público para consultar transferências em relatórios
+    Não requer autenticação para facilitar integração com relatórios
+    """
+    try:
+        transferencias = db.query(Transferencia).order_by(desc(Transferencia.id)).all()
+        return [transferencia.to_dict() for transferencia in transferencias]
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao consultar transferências para relatórios: {str(e)}"
         )
 
 @router.get("/{transferencia_id}", response_model=TransferenciaResponse)

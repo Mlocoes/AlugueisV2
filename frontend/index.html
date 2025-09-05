@@ -392,11 +392,20 @@
                                         <option value="12">Dezembro</option>
                                     </select>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label for="relatorios-proprietario-select" class="form-label mb-1">Proprietário</label>
                                     <select id="relatorios-proprietario-select" class="form-select">
                                         <option value="">Carregando...</option>
                                     </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1">&nbsp;</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="relatorios-transferencias-check">
+                                        <label class="form-check-label" for="relatorios-transferencias-check">
+                                            <i class="fas fa-exchange-alt me-1"></i>Transferências
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -415,12 +424,14 @@
                                             <th width="50">Nº</th>
                                             <th>Nome do Proprietário</th>
                                             <th width="120" class="text-center">Período</th>
+                                            <th width="150" class="text-end">Soma dos Aluguéis</th>
+                                            <th width="150" class="text-end">Soma das Taxas de Administração</th>
                                             <th width="150" class="text-center">Imóveis</th>
                                         </tr>
                                     </thead>
                                     <tbody id="relatorios-table-body">
                                         <tr>
-                                            <td colspan="5" class="text-center text-muted py-4">
+                                            <td colspan="6" class="text-center text-muted py-4">
                                                 <div class="spinner-border" role="status">
                                                     <span class="visually-hidden">Carregando...</span>
                                                 </div>

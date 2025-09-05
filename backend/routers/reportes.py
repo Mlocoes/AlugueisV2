@@ -15,9 +15,12 @@ router = APIRouter(prefix="/api/reportes", tags=["reportes"])
 # Modelos Pydantic para responses
 class ResumenMensualItem(BaseModel):
     nome_proprietario: str
+    proprietario_id: int
     mes: int
     ano: int
     valor_total: float
+    soma_alugueis: float
+    soma_taxas: float
     quantidade_imoveis: Optional[int] = 1
 
     class Config:
@@ -55,14 +58,18 @@ async def get_resumen_mensual(
         # Query base usando JOIN para obter dados dos proprietários e aluguéis
         query = db.query(
             func.concat(Proprietario.nome, ' ', func.coalesce(Proprietario.sobrenome, '')).label('nome_proprietario'),
+            AluguelSimples.proprietario_id,
             AluguelSimples.mes,
             AluguelSimples.ano,
             func.sum(AluguelSimples.valor_liquido_proprietario).label('valor_total'),
+            func.sum(AluguelSimples.valor_liquido_proprietario + AluguelSimples.taxa_administracao_proprietario).label('soma_alugueis'),
+            func.sum(AluguelSimples.taxa_administracao_proprietario).label('soma_taxas'),
             func.count(func.distinct(AluguelSimples.imovel_id)).label('quantidade_imoveis')
         ).select_from(AluguelSimples)\
         .join(Proprietario, AluguelSimples.proprietario_id == Proprietario.id)\
         .group_by(
             func.concat(Proprietario.nome, ' ', func.coalesce(Proprietario.sobrenome, '')),
+            AluguelSimples.proprietario_id,
             AluguelSimples.mes,
             AluguelSimples.ano
         )
@@ -82,7 +89,7 @@ async def get_resumen_mensual(
                 func.concat(Proprietario.nome, ' ', func.coalesce(Proprietario.sobrenome, '')).ilike(f"%{nome_proprietario}%")
             )
 
-        # Ordenar por ano, mês e nome
+        # Ordernar por ano, mês e nome
         query = query.order_by(
             AluguelSimples.ano.desc(),
             AluguelSimples.mes.desc(),
@@ -96,9 +103,12 @@ async def get_resumen_mensual(
         for row in result:
             resumo_list.append({
                 "nome_proprietario": row.nome_proprietario,
+                "proprietario_id": row.proprietario_id,
                 "mes": row.mes,
                 "ano": row.ano,
                 "valor_total": float(row.valor_total) if row.valor_total else 0.0,
+                "soma_alugueis": float(row.soma_alugueis) if row.soma_alugueis else 0.0,
+                "soma_taxas": float(row.soma_taxas) if row.soma_taxas else 0.0,
                 "quantidade_imoveis": row.quantidade_imoveis if row.quantidade_imoveis else 1
             })
 
