@@ -159,7 +159,7 @@ class UsuarioManager {
                 throw new Error('Token de autenticação não encontrado');
             }
 
-            const response = await fetch(`${baseUrl}/auth/cadastrar-usuario`, {
+            const response = await fetch(`${baseUrl}/api/auth/cadastrar-usuario`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

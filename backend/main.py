@@ -94,6 +94,11 @@ async def health_check(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Sistema não está saudável: {str(e)}")
 
+@app.get("/api/health")
+async def api_health_check(db: Session = Depends(get_db)):
+    """Verificação de saúde do sistema via API"""
+    return await health_check(db)
+
 # =====================================================
 # ENDPOINTS DE COMPATIBILIDADE COM FRONTEND
 # =====================================================
