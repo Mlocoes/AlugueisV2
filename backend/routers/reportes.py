@@ -26,6 +26,17 @@ class ResumenMensualItem(BaseModel):
     class Config:
         from_attributes = True
 
+@router.get("/")
+async def get_reportes_info():
+    """Información sobre endpoints de reportes disponibles"""
+    return {
+        "message": "Router de Reportes - Endpoints disponibles",
+        "endpoints": [
+            "GET /api/reportes/anos-disponiveis - Lista años disponibles",
+            "GET /api/reportes/resumen-mensual - Resumen mensual por propietario"
+        ]
+    }
+
 @router.get("/anos-disponiveis")
 async def get_anos_disponiveis(
     db: Session = Depends(get_db)

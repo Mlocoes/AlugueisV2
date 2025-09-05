@@ -13,6 +13,18 @@ from .auth import is_admin
 
 router = APIRouter(prefix="/api/importacao", tags=["importacao"])
 
+@router.get("/")
+async def get_importacao_info():
+    """Información sobre endpoints de importación disponibles"""
+    return {
+        "message": "Router de Importação - Endpoints disponibles",
+        "endpoints": [
+            "POST /api/importacao/importar-excel/ - Importar proprietarios desde Excel",
+            "POST /api/importacao/importar-alquileres-modelo/ - Importar alquileres desde modelo",
+            "GET /api/importacao/logs/importacoes - Ver logs de importaciones"
+        ]
+    }
+
 @router.post("/importar-excel/")
 async def importar_proprietarios_excel(file: UploadFile = File(...), db: Session = Depends(get_db), admin_user: Usuario = Depends(is_admin)):
     """Importa proprietários a partir de arquivo Excel."""

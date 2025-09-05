@@ -15,12 +15,26 @@ from sqlalchemy import and_, text, desc
 
 from config import get_db, UPLOAD_DIR
 from models_final import AluguelSimples, Proprietario as Propietario, Imovel as Inmueble, Participacao as Participacion, Usuario, LogImportacao as LogImportacaoSimple
-from .auth import is_admin, verify_token
+from routers.auth import is_admin, verify_token
 
 router = APIRouter(prefix="/api/upload", tags=["upload"])
 
 # Almacenar información de archivos subidos
 uploaded_files = {}
+
+@router.get("/")
+async def get_upload_info():
+    """Información sobre endpoints de upload disponibles"""
+    return {
+        "message": "Router de Upload - Endpoints disponibles",
+        "endpoints": [
+            "POST /api/upload/ - Subir archivo para procesamiento",
+            "POST /api/upload/process/{file_id} - Procesar archivo subido",
+            "POST /api/upload/import/{file_id} - Importar datos procesados",
+            "GET /api/upload/files - Listar archivos subidos",
+            "GET /api/upload/templates/{template_type} - Descargar plantillas"
+        ]
+    }
 
 class FileProcessor:
     """Procesador de archivos Excel para diferentes tipos de datos"""
@@ -253,7 +267,7 @@ class FileProcessor:
             "total_rows": len(df)
         }
 
-@router.post("/api/upload")
+@router.post("/")
 async def upload_file(file: UploadFile = File(...), admin_user: Usuario = Depends(is_admin)):
     """Subir archivo para procesamiento"""
     try:
@@ -308,8 +322,8 @@ async def upload_file(file: UploadFile = File(...), admin_user: Usuario = Depend
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al subir archivo: {str(e)}")
 
-@router.post("/api/process/{file_id}")
-async def process_file(file_id: str, db: Session = Depends(get_db), admin_user: Usuario = Depends(is_admin)):
+@router.post("/process/{file_id}")
+async def process_file(file_id: str, admin_user: Usuario = Depends(is_admin)):
     """Procesar archivo subido"""
     try:
         # Verificar que el archivo existe
@@ -363,8 +377,8 @@ async def process_file(file_id: str, db: Session = Depends(get_db), admin_user: 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al procesar archivo: {str(e)}")
 
-@router.post("/api/import/{file_id}")
-async def import_to_database(file_id: str, db: Session = Depends(get_db), admin_user: Usuario = Depends(is_admin)):
+@router.post("/import/{file_id}")
+async def import_data(file_id: str, admin_user: Usuario = Depends(is_admin)):
     """Importar datos procesados a la base de datos"""
     try:
         # Verificar que el archivo existe y está procesado
@@ -633,7 +647,7 @@ async def import_alquileres(df: pd.DataFrame, db: Session) -> int:
     
     return count
 
-@router.get("/api/files")
+@router.get("/files")
 async def list_uploaded_files(current_user: Usuario = Depends(verify_token)):
     """Listar archivos subidos recientemente"""
     try:
@@ -658,8 +672,8 @@ async def list_uploaded_files(current_user: Usuario = Depends(verify_token)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al listar archivos: {str(e)}")
 
-@router.get("/api/templates/{template_type}")
-async def download_template(template_type: str, current_user: Usuario = Depends(verify_token)):
+@router.get("/templates/{template_type}")
+async def download_template(template_type: str):
     """Baixar modelo Excel"""
     try:
         # Criar modelos segundo o tipo

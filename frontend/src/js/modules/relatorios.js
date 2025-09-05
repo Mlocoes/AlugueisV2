@@ -228,7 +228,7 @@ class RelatoriosManager {
     async loadAliases() {
         try {
             console.log('🔄 Carregando aliases...');
-            const response = await this.apiService.get('/api/extras/relatorios');
+            const response = await this.apiService.get('/api/extras/reportes');
             const data = response.success ? response.data : response;
             
             if (!Array.isArray(data)) {

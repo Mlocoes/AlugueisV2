@@ -23,7 +23,7 @@ def verify_admin_access(current_user = Depends(is_admin)):
     """Verificar se o usuário é administrador"""
     return current_user
 
-@router.get("/relatorios", response_model=List[AliasResponse])
+@router.get("/reportes", response_model=List[AliasResponse])
 async def listar_aliases_para_relatorios(db: Session = Depends(get_db)):
     """
     Endpoint público para consultar aliases em relatórios
