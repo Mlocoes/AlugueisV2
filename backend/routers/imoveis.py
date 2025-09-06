@@ -59,30 +59,56 @@ def atualizar_imovel(imovel_id: int, dados: Dict, db: Session = Depends(get_db),
 
 @router.delete("/{imovel_id}")
 def excluir_imovel(imovel_id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
-    """Exclui um imóvel, se não tiver aluguéis associados."""
-    imovel = db.query(Imovel).filter(Imovel.id == imovel_id).first()
-    if not imovel:
-        raise HTTPException(status_code=404, detail="Imóvel não encontrado")
+    """Exclui um imóvel, se não tiver aluguéis ou participações ativas associados."""
+    import traceback
+    from sqlalchemy.exc import SQLAlchemyError
+    
+    try:
+        imovel = db.query(Imovel).filter(Imovel.id == imovel_id).first()
+        if not imovel:
+            raise HTTPException(status_code=404, detail="Imóvel não encontrado")
 
-    # Verifica se existem aluguéis associados a este imóvel
-    alugueis_count = db.query(AluguelSimples).filter(AluguelSimples.imovel_id == imovel_id).count()
-    if alugueis_count > 0:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Não é possível excluir o imóvel porque tem {alugueis_count} aluguel(is) associado(s). Remova primeiro os aluguéis ou desative o imóvel."
-        )
+        # Verificar se existem aluguéis associados a este imóvel
+        alugueis_count = db.query(AluguelSimples).filter(AluguelSimples.imovel_id == imovel_id).count()
+        if alugueis_count > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Não é possível excluir o imóvel porque tem {alugueis_count} aluguel(is) associado(s). Remova primeiro os aluguéis ou desative o imóvel."
+            )
 
-    # Verifica se existem participações associadas a este imóvel
-    participacoes_count = db.query(Participacao).filter(Participacao.imovel_id == imovel_id).count()
-    if participacoes_count > 0:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Não é possível excluir o imóvel porque tem {participacoes_count} participação(ões) associada(s). Remova primeiro as participações ou desative o imóvel."
-        )
+        # Verificar participações ativas (apenas com porcentagem > 0)
+        participacoes_ativas_count = db.query(Participacao).filter(
+            Participacao.imovel_id == imovel_id,
+            Participacao.porcentagem > 0
+        ).count()
+        if participacoes_ativas_count > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Não é possível excluir o imóvel porque tem {participacoes_ativas_count} participação(ões) ativa(s) associada(s). Remova as participações primeiro."
+            )
 
-    db.delete(imovel)
-    db.commit()
-    return {"mensagem": "Imóvel excluído com sucesso"}
+        # Limpar participações vazias (porcentagem = 0) antes de excluir
+        participacoes_vazias = db.query(Participacao).filter(
+            Participacao.imovel_id == imovel_id,
+            Participacao.porcentagem == 0
+        ).delete(synchronize_session=False)
+        
+        if participacoes_vazias > 0:
+            print(f"Removidas {participacoes_vazias} participações vazias do imóvel {imovel_id}")
+
+        db.delete(imovel)
+        db.commit()
+        return {"mensagem": "Imóvel excluído com sucesso"}
+        
+    except HTTPException:
+        # Re-lançar HTTPExceptions sem modificar
+        db.rollback()
+        raise
+    except SQLAlchemyError as e:
+        # Capturar apenas erros de banco de dados
+        db.rollback()
+        print(f"Erro SQLAlchemy ao excluir imóvel: {e}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor ao excluir imóvel")
 
 @router.get("/disponiveis/", response_model=List[Dict])
 def listar_imoveis_disponiveis(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
