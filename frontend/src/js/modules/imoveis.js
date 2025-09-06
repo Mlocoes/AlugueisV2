@@ -27,6 +27,48 @@ class ImoveisModule {
                     this.handleCreateData(data, formNovoImportar);
                 });
             }
+
+            // Aplicar el patrón de focus management que funciona en usuario alterar
+            const modalNovoImovel = document.getElementById('novo-imovel-modal');
+            if (modalNovoImovel) {
+                modalNovoImovel.addEventListener('hide.bs.modal', () => {
+                    if (document.activeElement) document.activeElement.blur();
+                    document.body.focus();
+                    console.log('🔧 Focus transferido antes del cierre del modal novo-imovel');
+                });
+            }
+
+            const modalNovoImovelImportar = document.getElementById('novo-imovel-importar-modal');
+            if (modalNovoImovelImportar) {
+                modalNovoImovelImportar.addEventListener('hide.bs.modal', () => {
+                    if (document.activeElement) document.activeElement.blur();
+                    document.body.focus();
+                    console.log('🔧 Focus transferido antes del cierre del modal novo-imovel-importar');
+                });
+            }
+
+            const modalEditarImovel = document.getElementById('editar-imovel-modal');
+            if (modalEditarImovel) {
+                modalEditarImovel.addEventListener('hide.bs.modal', () => {
+                    if (document.activeElement) document.activeElement.blur();
+                    document.body.focus();
+                    console.log('🔧 Focus transferido antes del cierre del modal editar-imovel');
+                });
+            }
+
+            // INTERCEPTAR CLICS EN BOTONES DE CERRAR ANTES DE QUE BOOTSTRAP PROCESE
+            const closeButtons = document.querySelectorAll('[data-bs-dismiss="modal"]');
+            closeButtons.forEach(button => {
+                const modalId = button.closest('.modal')?.id;
+                if (modalId && modalId.includes('imovel')) {
+                    button.addEventListener('click', (e) => {
+                        // Desenfocar inmediatamente ANTES de que Bootstrap inicie el proceso
+                        if (document.activeElement) document.activeElement.blur();
+                        document.body.focus();
+                        console.log(`🔧 PREEMPTIVE: Focus transferido antes del cierre por botón X en ${modalId}`);
+                    });
+                }
+            });
         this.initialized = true;
     }
 
@@ -64,6 +106,9 @@ class ImoveisModule {
                     this.imovelToDeleteId = null;
                     const modalEl = document.getElementById('modal-confirmar-exclusao-imovel');
                     if (modalEl) {
+                        // Aplicar la solución de focus management que funciona en alterar usuario
+                        if (document.activeElement) document.activeElement.blur();
+                        document.body.focus();
                         const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
                         modal.hide();
                     }
@@ -117,6 +162,9 @@ class ImoveisModule {
                 if (formElement && formElement.id === 'form-novo-imovel-importar') {
                     modalId = 'novo-imovel-importar-modal';
                 }
+                // Aplicar la solución de focus management que funciona en alterar usuario
+                if (document.activeElement) document.activeElement.blur();
+                document.body.focus();
                 const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
                 if (modal) modal.hide();
                 formElement.reset();
@@ -238,7 +286,7 @@ class ImoveisModule {
         for (const key in imovel) {
             const input = form.elements[key];
             if (input) {
-                if (key === 'alugado' || key === 'tem_garagem') {
+                if (key === 'tem_garagem') {
                     input.value = imovel[key] ? 'true' : 'false';
                 } else {
                     input.value = imovel[key];
@@ -260,7 +308,7 @@ class ImoveisModule {
         const raw = Object.fromEntries(formData.entries());
 
         // Campos permitidos por el backend (modelo Imovel actualizado)
-        const allowed = ['nome', 'endereco', 'tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'alugado', 'numero_quartos', 'numero_banheiros', 'tem_garagem', 'numero_vagas_garagem', 'andar', 'numero_apartamento', 'cep', 'bairro', 'cidade', 'estado', 'status_imovel'];
+        const allowed = ['nome', 'endereco', 'tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'tem_garagem', 'numero_vagas_garagem', 'andar', 'numero_apartamento', 'cep', 'bairro', 'cidade', 'estado', 'status_imovel'];
         const numericFields = ['area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem', 'andar'];
 
         // Construir payload filtrado y tipado
@@ -297,6 +345,9 @@ class ImoveisModule {
             return;
         }
 
+        // Aplicar la solución de focus management que funciona en alterar usuario
+        if (document.activeElement) document.activeElement.blur();
+        document.body.focus();
         const editModal = bootstrap.Modal.getInstance(document.getElementById('edit-imovel-modal'));
         editModal.hide();
         this.uiManager.showSuccessToast('Imóvel atualizado', 'Os dados foram atualizados com sucesso.');

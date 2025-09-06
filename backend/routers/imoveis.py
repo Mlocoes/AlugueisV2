@@ -80,7 +80,7 @@ def excluir_imovel(imovel_id: int, db: Session = Depends(get_db), current_user: 
 def listar_imoveis_disponiveis(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
     """Lista todos os imóveis disponíveis (não alugados)."""
     try:
-        imoveis = db.query(Imovel).filter(Imovel.alugado == False).order_by(Imovel.nome).all()
+        imoveis = db.query(Imovel).filter(Imovel.status_imovel == 'Disponível').order_by(Imovel.nome).all()
         return [i.to_dict() for i in imoveis]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -106,7 +106,7 @@ async def importar_imoveis(file: UploadFile = File(...), db: Session = Depends(g
             'Valor Mercado': 'valor_mercado',
             'IPTU Mensal': 'iptu_mensal',
             'Condomínio': 'condominio_mensal',
-            'Alugado': 'alugado',
+            'Alugado': 'status_imovel',
             'Quartos': 'numero_quartos',
             'Banheiros': 'numero_banheiros',
             'Garagem': 'tem_garagem',

@@ -625,7 +625,7 @@
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="editImovelModalLabel"><i class="fas fa-building me-2"></i>Editar Imóvel</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="edit-imovel-form">
                     <div class="modal-body p-1" style="font-size: 0.88rem; max-height: 60vh; overflow-y: auto;">
@@ -638,7 +638,7 @@
                         <div class="mb-3"><label class="form-label">Valor Mercado</label><input type="number" class="form-control" name="valor_mercado" style="font-size:0.85em;"></div>
                         <div class="mb-3"><label class="form-label">IPTU Anual</label><input type="number" class="form-control" name="iptu_anual" style="font-size:0.85em;"></div>
                         <div class="mb-3"><label class="form-label">Condomínio Mensal</label><input type="number" class="form-control" name="condominio_mensal" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Alugado</label><select class="form-select" name="ativo" style="font-size:0.85em;"><option value="false">Não</option><option value="true">Sim</option></select></div>
+                        <div class="mb-3"><label class="form-label">Status</label><select class="form-select" name="status_imovel" style="font-size:0.85em;"><option value="Disponível">Disponível</option><option value="Alugado">Alugado</option><option value="Indisponível">Indisponível</option></select></div>
                         <div class="mb-3"><label class="form-label">Data Cadastro</label><input type="date" class="form-control" name="data_cadastro" style="font-size:0.85em;"></div>
                         <div class="mb-3"><label class="form-label">Observações</label><textarea class="form-control" name="observacoes" style="font-size:0.85em;"></textarea></div>
                     </div>
@@ -657,7 +657,7 @@
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="novoImovelImportarModalLabel"><i class="fas fa-building me-2"></i>Novo Imóvel</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="form-novo-imovel-importar">
                     <div class="modal-body p-1" style="font-size: 0.88rem; max-height: 60vh; overflow-y: auto;">
@@ -670,7 +670,7 @@
                         <div class="mb-3"><label class="form-label">Valor Mercado</label><input type="number" class="form-control" name="valor_mercado" style="font-size:0.85em;"></div>
                         <div class="mb-3"><label class="form-label">IPTU Anual</label><input type="number" class="form-control" name="iptu_anual" style="font-size:0.85em;"></div>
                         <div class="mb-3"><label class="form-label">Condomínio Mensal</label><input type="number" class="form-control" name="condominio_mensal" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Alugado</label><select class="form-select" name="ativo" style="font-size:0.85em;"><option value="false">Não</option><option value="true">Sim</option></select></div>
+                        <div class="mb-3"><label class="form-label">Status</label><select class="form-select" name="status_imovel" style="font-size:0.85em;"><option value="Disponível">Disponível</option><option value="Alugado">Alugado</option><option value="Indisponível">Indisponível</option></select></div>
                         <div class="mb-3"><label class="form-label">Data Cadastro</label><input type="date" class="form-control" name="data_cadastro" style="font-size:0.85em;"></div>
                         <div class="mb-3"><label class="form-label">Observações</label><textarea class="form-control" name="observacoes" style="font-size:0.85em;"></textarea></div>
                     </div>
@@ -689,7 +689,7 @@
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="novoProprietarioModalLabel"><i class="fas fa-user-plus me-2"></i> Novo Proprietário</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="form-novo-proprietario">
                     <div class="modal-body p-1" style="font-size: 0.80rem;">
@@ -721,7 +721,7 @@
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="editarProprietarioModalLabel"><i class="fas fa-user-edit me-2"></i>Editar Proprietário</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="form-editar-proprietario">
                     <div class="modal-body p-1" style="font-size: 0.85rem;">
@@ -749,11 +749,11 @@
 
     <!-- Modal de Cadastrar Usuario -->
     <div class="modal fade" id="modal-cadastrar-usuario" tabindex="-1" aria-labelledby="modalCadastrarUsuarioLabel">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="modalCadastrarUsuarioLabel"><i class="fas fa-user-plus me-2"></i>Cadastrar Novo Usuário</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="form-cadastrar-usuario">
                     <div class="modal-body p-1" style="font-size: 0.85rem;">
@@ -807,11 +807,11 @@
 
     <!-- Modal de Alterar Usuario -->
     <div class="modal fade" id="modal-alterar-usuario" tabindex="-1" aria-labelledby="modalAlterarUsuarioLabel">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="modalAlterarUsuarioLabel"><i class="fas fa-user-edit me-2"></i>Alterar Usuário</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
@@ -873,7 +873,7 @@
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="modalConfirmarExclusaoImovelLabel"><i class="fas fa-trash me-2"></i> Confirmar Exclusão</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <p class="mb-3">Tem certeza que deseja excluir este imóvel? Esta ação não pode ser desfeita.</p>
@@ -892,7 +892,7 @@
             <div class="modal-content border border-2 shadow-lg">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="modalAliasLabel"><i class="fas fa-plus me-2"></i>Novo Alias</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="form-alias">
                     <div class="modal-body p-1" style="font-size: 0.85rem;">
@@ -921,7 +921,7 @@
             <div class="modal-content border border-2 shadow-lg">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="modalTransferenciasLabel"><i class="fas fa-exchange-alt me-2"></i>Novas Transferências</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="form-transferencias">
                     <div class="modal-body" style="font-size: 0.80rem;">
@@ -968,7 +968,7 @@
             <div class="modal-content">
                 <div class="modal-header bg-info text-white">
                     <h5 class="modal-title" id="modalEstatisticasExtrasLabel"><i class="fas fa-chart-pie me-2"></i>Estatísticas de Extras</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="row text-center">
@@ -1023,7 +1023,7 @@
                     <h5 class="modal-title" id="modalConfirmarExclusaoExtrasLabel">
                         <i class="fas fa-trash me-2"></i> Confirmar Exclusão
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <p class="mb-3" id="modal-confirmar-exclusao-extras-msg">Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.</p>
