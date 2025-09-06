@@ -4,7 +4,7 @@ from typing import List, Dict
 import pandas as pd
 import traceback
 from datetime import datetime
-from models_final import Proprietario, AluguelSimples, Usuario
+from models_final import Proprietario, AluguelSimples, Usuario, Participacao
 from config import get_db
 from .auth import verify_token, verify_token_flexible
 
@@ -79,13 +79,16 @@ def atualizar_proprietario(proprietario_id: int, dados: Dict, db: Session = Depe
 
 @router.delete("/{proprietario_id}")
 def excluir_proprietario(proprietario_id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
-    """Exclui um proprietário, se não tiver aluguéis associados."""
+    """Exclui um proprietário, se não tiver aluguéis ou participações associados."""
     import traceback
+    from sqlalchemy.exc import SQLAlchemyError
+    
     try:
         proprietario = db.query(Proprietario).filter(Proprietario.id == proprietario_id).first()
         if not proprietario:
             raise HTTPException(status_code=404, detail="Proprietário não encontrado")
 
+        # Verificar aluguéis associados
         alugueis_count = db.query(AluguelSimples).filter(AluguelSimples.proprietario_id == proprietario_id).count()
         if alugueis_count > 0:
             raise HTTPException(
@@ -93,12 +96,43 @@ def excluir_proprietario(proprietario_id: int, db: Session = Depends(get_db), cu
                 detail=f"Não é possível excluir o proprietário porque tem {alugueis_count} aluguel(is) associado(s)."
             )
 
+        # Verificar participações associadas (apenas com porcentagem > 0)
+        participacoes_count = db.query(Participacao).filter(
+            Participacao.proprietario_id == proprietario_id,
+            Participacao.porcentagem > 0
+        ).count()
+        if participacoes_count > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Não é possível excluir o proprietário porque tem {participacoes_count} participação(ões) ativa(s) associada(s). Remova as participações primeiro."
+            )
+
+        # Limpar participações vazias (porcentagem = 0) antes de excluir
+        participacoes_vazias = db.query(Participacao).filter(
+            Participacao.proprietario_id == proprietario_id,
+            Participacao.porcentagem == 0
+        ).delete(synchronize_session=False)
+        
+        if participacoes_vazias > 0:
+            print(f"Removidas {participacoes_vazias} participações vazias do proprietário {proprietario_id}")
+
         db.delete(proprietario)
         db.commit()
         return {"mensagem": "Proprietário excluído com sucesso"}
-    except Exception as e:
+        
+    except HTTPException:
+        # Re-lançar HTTPExceptions sem modificar
         db.rollback()
-        print(f"Erro ao excluir proprietário: {e}\n{traceback.format_exc()}")
+        raise
+    except SQLAlchemyError as e:
+        # Capturar apenas erros de banco de dados
+        db.rollback()
+        print(f"Erro SQLAlchemy ao excluir proprietário: {e}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Erro de banco de dados ao excluir proprietário: {str(e)}")
+    except Exception as e:
+        # Capturar outros erros inesperados
+        db.rollback()
+        print(f"Erro inesperado ao excluir proprietário: {e}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Erro interno ao excluir proprietário: {str(e)}")
 
 @router.post("/importar/", response_model=Dict)

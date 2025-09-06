@@ -62,6 +62,20 @@ class ProprietariosModule {
                 });
             }
         });
+
+        // INTERCEPTAR CLICS EN BOTONES DE CERRAR ANTES DE QUE BOOTSTRAP PROCESE
+        const closeButtons = document.querySelectorAll('[data-bs-dismiss="modal"]');
+        closeButtons.forEach(button => {
+            const modalId = button.closest('.modal')?.id;
+            if (modalId && modalId.includes('proprietario')) {
+                button.addEventListener('click', (e) => {
+                    // Desenfocar inmediatamente ANTES de que Bootstrap inicie el proceso
+                    if (document.activeElement) document.activeElement.blur();
+                    document.body.focus();
+                    console.log(`🔧 PREEMPTIVE: Focus transferido antes del cierre por botón X en ${modalId}`);
+                });
+            }
+        });
     }
 
     async loadProprietarios() {
@@ -275,6 +289,9 @@ class ProprietariosModule {
             this.uiManager.showLoading('Atualizando proprietário...');
             const response = await this.apiService.updateProprietario(this.currentEditId, data);
             if (response.success) {
+                // Aplicar la solución de focus management que funciona en alterar usuario
+                if (document.activeElement) document.activeElement.blur();
+                document.body.focus();
                 const modal = bootstrap.Modal.getInstance(document.getElementById('editar-proprietario-modal'));
                 modal.hide();
                 this.currentEditId = null;
