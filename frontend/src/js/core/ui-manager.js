@@ -519,12 +519,13 @@ class UIManager {
                                     <i class="fas fa-${this.getAlertIcon(type)} me-2"></i>
                                     ${title}
                                 </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
                                 ${message}
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                                     Cancelar
                                 </button>
                                 <button type="button" class="btn btn-${type === 'danger' ? 'danger' : 'primary'}" data-confirm="true">
@@ -541,12 +542,25 @@ class UIManager {
             const modalElement = document.getElementById(modalId);
             const modal = new bootstrap.Modal(modalElement);
 
+            // Añadir focus management en hide.bs.modal
+            modalElement.addEventListener('hide.bs.modal', () => {
+                if (document.activeElement) document.activeElement.blur();
+                document.body.focus();
+                console.log(`🔧 Focus transferido antes del cierre del modal confirmação ${modalId}`);
+            });
+
             // Event listeners
             modalElement.addEventListener('click', (e) => {
                 if (e.target.hasAttribute('data-confirm')) {
+                    // Focus management antes de cerrar modal de confirmación
+                    if (document.activeElement) document.activeElement.blur();
+                    document.body.focus();
                     modal.hide();
                     resolve(true);
-                } else if (e.target.hasAttribute('data-dismiss') || e.target.classList.contains('btn-secondary')) {
+                } else if (e.target.hasAttribute('data-bs-dismiss') || e.target.classList.contains('btn-secondary') || e.target.classList.contains('btn-close')) {
+                    // Focus management antes de cerrar modal de cancelación
+                    if (document.activeElement) document.activeElement.blur();
+                    document.body.focus();
                     modal.hide();
                     resolve(false);
                 }

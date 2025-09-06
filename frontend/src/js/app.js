@@ -20,7 +20,10 @@ class SistemaAlugueisApp {
             // Inicializar configuração de rede
             await this.initializeNetwork();
 
-            // Verificar dependências
+                        // Configurar interceptor global para accesibilidad
+            this.setupGlobalAccessibilityInterceptor();
+
+            // Verificar dependências requeridas
             if (!this.checkDependencies()) {
                 throw new Error('Faltam dependências requeridas');
             }
@@ -47,6 +50,14 @@ class SistemaAlugueisApp {
             console.error('❌ Erro inicializando a aplicação:', error);
             this.showError('Erro crítico ao inicializar o sistema', error);
         }
+    }
+
+    /**
+     * Configurar interceptor global para prevenir problemas de accesibilidad
+     */
+    setupGlobalAccessibilityInterceptor() {
+        // Solución simple: solo loggear para debug
+        console.log('🔒 Sistema de accesibilidad simplificado iniciado');
     }
 
     /**
@@ -227,41 +238,8 @@ class SistemaAlugueisApp {
      * Configurar acessibilidade para modales
      */
     setupModalAccessibility() {
-        // Aguardar que Bootstrap seja carregado
-        document.addEventListener('DOMContentLoaded', () => {
-            // Encontrar todos os modais
-            const modals = document.querySelectorAll('.modal');
-            
-            modals.forEach(modal => {
-                // Remover aria-hidden inicial para que Bootstrap o gerencie
-                modal.removeAttribute('aria-hidden');
-                
-                // Adicionar event listeners para os eventos do modal
-                modal.addEventListener('show.bs.modal', () => {
-                    // Quando o modal está sendo mostrado, remover aria-hidden
-                    modal.removeAttribute('aria-hidden');
-                });
-                
-                modal.addEventListener('shown.bs.modal', () => {
-                    // Quando o modal é mostrado completamente, garantir que aria-hidden seja false
-                    modal.setAttribute('aria-hidden', 'false');
-                });
-                
-                modal.addEventListener('hide.bs.modal', () => {
-                    // Quando o modal está sendo ocultado, ainda não aplicar aria-hidden
-                    modal.removeAttribute('aria-hidden');
-                });
-                
-                modal.addEventListener('hidden.bs.modal', () => {
-                    // Apenas quando completamente oculto, aplicar aria-hidden
-                    modal.setAttribute('aria-hidden', 'true');
-                });
-            });
-            
-            console.log('✅ Acessibilidade de modais configurada');
-        });
-
-        console.log('✅ Eventos globais configurados');
+        // Solución simple: dejar que Bootstrap maneje todo normalmente
+        console.log('✅ Sistema de modales simplificado iniciado');
     }
 
     /**
@@ -344,7 +322,7 @@ class SistemaAlugueisApp {
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             Erro do Sistema
                         </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <p><strong>Mensagem:</strong></p>

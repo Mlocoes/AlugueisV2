@@ -250,12 +250,12 @@ class AlugueisModule {
             return;
         }
 
-        // Cabeçalho: Imóvel | Proprietário1 | Proprietário2 | ... | Total | Ações
+        // Cabeçalho: Imóvel | Proprietário1 | Proprietário2 | ... | Total (sem Ações)
         let headHtml = '<tr><th>Imóvel</th>';
         for (const prop of this.proprietarios) {
             headHtml += `<th>${prop.nome}</th>`;
         }
-        headHtml += '<th>Total</th><th width="120">Ações</th></tr>';
+        headHtml += '<th>Total</th></tr>';
         tableHead.innerHTML = headHtml;
 
         // Corpo: para cada imóvel, uma linha
@@ -275,17 +275,7 @@ class AlugueisModule {
                 total += valor;
                 bodyHtml += `<td>${valor ? 'R$ ' + valor.toFixed(2) : '-'}</td>`;
             }
-            bodyHtml += `<td><strong>R$ ${total.toFixed(2)}</strong></td>`;
-            bodyHtml += `<td>
-                <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-warning admin-only" title="Editar" onclick="window.alugueisModule.editAluguel('${imovel.id}')">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-outline-danger admin-only" title="Excluir" onclick="window.alugueisModule.deleteAluguel('${imovel.id}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </td></tr>`;
+            bodyHtml += `<td><strong>R$ ${total.toFixed(2)}</strong></td></tr>`;
         }
         tableBody.innerHTML = bodyHtml;
 

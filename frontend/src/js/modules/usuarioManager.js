@@ -99,21 +99,65 @@ class UsuarioManager {
         // Limpar formulário quando modal fecha - cadastro
         const modalElement = document.getElementById('modal-cadastrar-usuario');
         if (modalElement) {
+            // INTERCEPTAR ANTES del cierre para evitar problema de foco
+            modalElement.addEventListener('hide.bs.modal', () => {
+                // Desenfocar ANTES de que Bootstrap aplique aria-hidden
+                if (document.activeElement) document.activeElement.blur();
+                document.body.focus();
+                console.log('🔧 Focus transferido antes del cierre del modal cadastrar');
+            });
+            
             modalElement.addEventListener('hidden.bs.modal', () => {
                 this.limparFormulario();
+                // Enfoque adicional por seguridad
+                const focusTarget = document.querySelector('#btn-cadastrar-usuario, input[type="search"], .btn-primary');
+                if (focusTarget && focusTarget.offsetParent !== null) {
+                    setTimeout(() => focusTarget.focus(), 50);
+                } else {
+                    setTimeout(() => document.body.focus(), 50);
+                }
             });
         }
 
         // Limpar formulário quando modal fecha - alterar
         const modalAlterarElement = document.getElementById('modal-alterar-usuario');
         if (modalAlterarElement) {
+            // INTERCEPTAR ANTES del cierre para evitar problema de foco
+            modalAlterarElement.addEventListener('hide.bs.modal', () => {
+                // Desenfocar ANTES de que Bootstrap aplique aria-hidden
+                if (document.activeElement) document.activeElement.blur();
+                document.body.focus();
+                console.log('🔧 Focus transferido antes del cierre del modal alterar');
+            });
+            
             modalAlterarElement.addEventListener('hidden.bs.modal', () => {
                 this.limparFormularioAlterar();
+                // Enfoque adicional por seguridad
+                const focusTarget = document.querySelector('#btn-alterar-usuario, input[type="search"], .btn-primary');
+                if (focusTarget && focusTarget.offsetParent !== null) {
+                    setTimeout(() => focusTarget.focus(), 50);
+                } else {
+                    setTimeout(() => document.body.focus(), 50);
+                }
             });
             modalAlterarElement.addEventListener('show.bs.modal', () => {
                 this.carregarUsuarios();
             });
         }
+
+        // INTERCEPTAR CLICS EN BOTONES DE CERRAR ANTES DE QUE BOOTSTRAP PROCESE
+        const closeButtons = document.querySelectorAll('[data-bs-dismiss="modal"]');
+        closeButtons.forEach(button => {
+            const modalId = button.closest('.modal')?.id;
+            if (modalId && (modalId.includes('usuario') || modalId.includes('imovel') || modalId.includes('proprietario'))) {
+                button.addEventListener('click', (e) => {
+                    // Desenfocar inmediatamente ANTES de que Bootstrap inicie el proceso
+                    if (document.activeElement) document.activeElement.blur();
+                    document.body.focus();
+                    console.log(`🔧 PREEMPTIVE: Focus transferido antes del cierre por botón X en ${modalId}`);
+                });
+            }
+        });
     }
 
     /**
@@ -174,7 +218,13 @@ class UsuarioManager {
 
                 // Limpar formulário após sucesso
                 setTimeout(() => {
+                    // Aplicar la misma solución que proprietarios
+                    if (document.activeElement) document.activeElement.blur();
+                    document.body.focus();
                     this.modal.hide();
+                    // Limpieza manual de cualquier backdrop residual
+                    const backdrops = document.querySelectorAll('.modal-backdrop');
+                    backdrops.forEach(bd => bd.remove());
                 }, 2000);
 
             } else {
@@ -439,7 +489,13 @@ class UsuarioManager {
                 this.mostrarSucessoAlterar(`Usuário '${this.usuarioSelecionado.usuario}' alterado com sucesso!`);
 
                 setTimeout(() => {
+                    // Aplicar la misma solución que proprietarios
+                    if (document.activeElement) document.activeElement.blur();
+                    document.body.focus();
                     this.modalAlterar.hide();
+                    // Limpieza manual de cualquier backdrop residual
+                    const backdrops = document.querySelectorAll('.modal-backdrop');
+                    backdrops.forEach(bd => bd.remove());
                 }, 2000);
 
             } else {
@@ -483,7 +539,13 @@ class UsuarioManager {
                 this.mostrarSucessoAlterar(`Usuário '${this.usuarioSelecionado.usuario}' excluído com sucesso!`);
 
                 setTimeout(() => {
+                    // Aplicar la misma solución que proprietarios
+                    if (document.activeElement) document.activeElement.blur();
+                    document.body.focus();
                     this.modalAlterar.hide();
+                    // Limpieza manual de cualquier backdrop residual
+                    const backdrops = document.querySelectorAll('.modal-backdrop');
+                    backdrops.forEach(bd => bd.remove());
                 }, 2000);
 
             } else {
