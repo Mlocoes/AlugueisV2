@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 
 from config import get_db
-from models_final import AluguelSimples, LogImportacao, ResumenCalculator, Imovel as Inmueble, Usuario
+from models_final import AluguelSimples, LogImportacao, ResumenCalculator, Imovel as Inmueble, Usuario, Proprietario
 from .auth import verify_token
 
 router = APIRouter(prefix="/api/estadisticas", tags=["estadísticas"])
@@ -54,35 +54,47 @@ async def resumen_por_propiedad(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(verify_token)
 ):
-    """Obtener resumen agrupado por propiedad"""
+    """Obtener resumen agrupado por propiedad, optimizado con agregación en BD."""
     try:
-        query = db.query(AluguelSimples)
-        
+        query = db.query(
+            Inmueble.nome.label('nome_imovel'),
+            AluguelSimples.ano,
+            AluguelSimples.mes,
+            func.sum(AluguelSimples.valor_liquido_proprietario).label('valor_total'),
+            func.sum(AluguelSimples.taxa_administracao_proprietario).label('taxa_total'),
+            func.count(AluguelSimples.id).label('total_alugueis')
+        ).join(Inmueble, AluguelSimples.imovel_id == Inmueble.id)
+
         if ano:
             query = query.filter(AluguelSimples.ano == ano)
         if mes:
             query = query.filter(AluguelSimples.mes == mes)
+
+        query = query.group_by(
+            Inmueble.nome,
+            AluguelSimples.ano,
+            AluguelSimples.mes
+        ).order_by(
+            desc(AluguelSimples.ano),
+            desc(AluguelSimples.mes),
+            Inmueble.nome
+        )
         
-        alquileres = query.all()
+        resultados_agrupados = query.all()
         
-        # Agrupar por propiedad y período
-        resumenes = {}
-        for alquiler in alquileres:
-            clave = f"{alquiler.inmueble.nombre if alquiler.inmueble else 'SIN_NOMBRE'}_{alquiler.ano}_{alquiler.mes}"
-            if clave not in resumenes:
-                resumenes[clave] = []
-            resumenes[clave].append(alquiler)
-        
-        # Calcular resúmenes
-        resultado = []
-        for grupo_alquileres in resumenes.values():
-            resumen = ResumenCalculator.calcular_resumen_propiedad(grupo_alquileres)
-            resultado.append(resumen)
-        
-        # Ordenar por período descendente
-        resultado.sort(key=lambda x: (x.get('periodo', ''), x.get('nombre_inmueble', '')), reverse=True)
-        
-        return resultado
+        resultado_final = [
+            {
+                "nome_imovel": r.nome_imovel,
+                "periodo": f"{r.mes:02d}/{r.ano}",
+                "valor_total": float(r.valor_total or 0),
+                "taxa_total": float(r.taxa_total or 0),
+                "total_alugueis": r.total_alugueis,
+                "valor_promedio": float(r.valor_total / r.total_alugueis) if r.total_alugueis > 0 else 0
+            }
+            for r in resultados_agrupados
+        ]
+
+        return resultado_final
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al generar resumen: {str(e)}")
@@ -94,35 +106,47 @@ async def resumen_por_propietario(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(verify_token)
 ):
-    """Obtener resumen agrupado por propietario"""
+    """Obtener resumen agrupado por propietario, optimizado con agregación en BD."""
     try:
-        query = db.query(AluguelSimples)
-        
+        query = db.query(
+            Proprietario.nome.label('nome_proprietario'),
+            AluguelSimples.ano,
+            AluguelSimples.mes,
+            func.sum(AluguelSimples.valor_liquido_proprietario).label('valor_total'),
+            func.sum(AluguelSimples.taxa_administracao_proprietario).label('taxa_total'),
+            func.count(AluguelSimples.id).label('total_alugueis')
+        ).join(Proprietario, AluguelSimples.proprietario_id == Proprietario.id)
+
         if ano:
             query = query.filter(AluguelSimples.ano == ano)
         if mes:
             query = query.filter(AluguelSimples.mes == mes)
+
+        query = query.group_by(
+            Proprietario.nome,
+            AluguelSimples.ano,
+            AluguelSimples.mes
+        ).order_by(
+            desc(AluguelSimples.ano),
+            desc(AluguelSimples.mes),
+            Proprietario.nome
+        )
         
-        alquileres = query.all()
+        resultados_agrupados = query.all()
         
-        # Agrupar por propietario y período
-        resumenes = {}
-        for alquiler in alquileres:
-            clave = f"{alquiler.nombre_propietario}_{alquiler.ano}_{alquiler.mes}"
-            if clave not in resumenes:
-                resumenes[clave] = []
-            resumenes[clave].append(alquiler)
-        
-        # Calcular resúmenes
-        resultado = []
-        for grupo_alquileres in resumenes.values():
-            resumen = ResumenCalculator.calcular_resumen_propietario(grupo_alquileres)
-            resultado.append(resumen)
-        
-        # Ordenar por período descendente
-        resultado.sort(key=lambda x: (x.get('periodo', ''), x.get('nombre_propietario', '')), reverse=True)
-        
-        return resultado
+        resultado_final = [
+            {
+                "nome_proprietario": r.nome_proprietario,
+                "periodo": f"{r.mes:02d}/{r.ano}",
+                "valor_total": float(r.valor_total or 0),
+                "taxa_total": float(r.taxa_total or 0),
+                "total_alugueis": r.total_alugueis,
+                "valor_promedio": float(r.valor_total / r.total_alugueis) if r.total_alugueis > 0 else 0
+            }
+            for r in resultados_agrupados
+        ]
+
+        return resultado_final
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al generar resumen: {str(e)}")
