@@ -138,8 +138,8 @@ class ImoveisModule {
                 if (val === '') { val = null; }
                 if (numericFields.includes(key)) {
                     payload[key] = val !== null ? Number(val) : null;
-                } else if (key === 'alugado' || key === 'tem_garagem') {
-                    payload[key] = val === 'true' || val === true;
+                } else if (key === 'alugado') {
+                    payload[key] = Boolean(val);
                 } else {
                     payload[key] = val;
                 }
@@ -286,8 +286,8 @@ class ImoveisModule {
         for (const key in imovel) {
             const input = form.elements[key];
             if (input) {
-                if (key === 'tem_garagem') {
-                    input.value = imovel[key] ? 'true' : 'false';
+                if (key === 'alugado') {
+                    input.checked = Boolean(imovel[key]);
                 } else {
                     input.value = imovel[key];
                 }
@@ -308,8 +308,8 @@ class ImoveisModule {
         const raw = Object.fromEntries(formData.entries());
 
         // Campos permitidos por el backend (modelo Imovel actualizado)
-        const allowed = ['nome', 'endereco', 'tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'tem_garagem', 'numero_vagas_garagem', 'andar', 'numero_apartamento', 'cep', 'bairro', 'cidade', 'estado', 'status_imovel'];
-        const numericFields = ['area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem', 'andar'];
+        const allowed = ['nome', 'endereco', 'tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem', 'alugado'];
+        const numericFields = ['area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem'];
 
         // Construir payload filtrado y tipado
         const data = {};

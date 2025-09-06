@@ -60,15 +60,8 @@ class Imovel(Base):
     # Campos nuevos
     numero_quartos = Column(Integer, nullable=True)
     numero_banheiros = Column(Integer, nullable=True)
-    tem_garagem = Column(Boolean, default=False)
     numero_vagas_garagem = Column(Integer, default=0)
-    andar = Column(Integer, nullable=True)
-    numero_apartamento = Column(String(10), nullable=True)
-    cep = Column(String(10), nullable=True)
-    bairro = Column(String(100), nullable=True)
-    cidade = Column(String(100), default='São Paulo')
-    estado = Column(String(50), default='SP')
-    status_imovel = Column(String(20), default='Disponível')
+    alugado = Column(Boolean, default=False)
     
     # Relacionamentos
     alugueis = relationship('AluguelSimples', back_populates='imovel')
@@ -93,15 +86,8 @@ class Imovel(Base):
             'data_cadastro': self.data_cadastro.isoformat() if self.data_cadastro else None,
             'numero_quartos': self.numero_quartos,
             'numero_banheiros': self.numero_banheiros,
-            'tem_garagem': self.tem_garagem,
             'numero_vagas_garagem': self.numero_vagas_garagem,
-            'andar': self.andar,
-            'numero_apartamento': self.numero_apartamento,
-            'cep': self.cep,
-            'bairro': self.bairro,
-            'cidade': self.cidade,
-            'estado': self.estado,
-            'status_imovel': self.status_imovel
+            'alugado': self.alugado
         }
 
 # ============================================

@@ -49,15 +49,8 @@ CREATE TABLE IF NOT EXISTS imoveis (
     -- Campos nuevos optimizados
     numero_quartos INTEGER,
     numero_banheiros INTEGER,
-    tem_garagem BOOLEAN DEFAULT FALSE,
     numero_vagas_garagem INTEGER DEFAULT 0,
-    andar INTEGER,
-    numero_apartamento VARCHAR(10),
-    cep VARCHAR(10),
-    bairro VARCHAR(100),
-    cidade VARCHAR(100) DEFAULT 'São Paulo',
-    estado VARCHAR(50) DEFAULT 'SP',
-    status_imovel VARCHAR(20) DEFAULT 'Disponível'
+    alugado BOOLEAN DEFAULT FALSE
 );
 
 -- Tabela de participações (OPTIMIZADA - sin ativo, observacoes)
