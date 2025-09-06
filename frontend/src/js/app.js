@@ -219,6 +219,48 @@ class SistemaAlugueisApp {
             }
         });
 
+        // Configurar gestão de aria-hidden para modales (acessibilidade)
+        this.setupModalAccessibility();
+    }
+
+    /**
+     * Configurar acessibilidade para modales
+     */
+    setupModalAccessibility() {
+        // Aguardar que Bootstrap seja carregado
+        document.addEventListener('DOMContentLoaded', () => {
+            // Encontrar todos os modais
+            const modals = document.querySelectorAll('.modal');
+            
+            modals.forEach(modal => {
+                // Remover aria-hidden inicial para que Bootstrap o gerencie
+                modal.removeAttribute('aria-hidden');
+                
+                // Adicionar event listeners para os eventos do modal
+                modal.addEventListener('show.bs.modal', () => {
+                    // Quando o modal está sendo mostrado, remover aria-hidden
+                    modal.removeAttribute('aria-hidden');
+                });
+                
+                modal.addEventListener('shown.bs.modal', () => {
+                    // Quando o modal é mostrado completamente, garantir que aria-hidden seja false
+                    modal.setAttribute('aria-hidden', 'false');
+                });
+                
+                modal.addEventListener('hide.bs.modal', () => {
+                    // Quando o modal está sendo ocultado, ainda não aplicar aria-hidden
+                    modal.removeAttribute('aria-hidden');
+                });
+                
+                modal.addEventListener('hidden.bs.modal', () => {
+                    // Apenas quando completamente oculto, aplicar aria-hidden
+                    modal.setAttribute('aria-hidden', 'true');
+                });
+            });
+            
+            console.log('✅ Acessibilidade de modais configurada');
+        });
+
         console.log('✅ Eventos globais configurados');
     }
 
