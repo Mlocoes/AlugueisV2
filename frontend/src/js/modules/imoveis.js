@@ -129,8 +129,8 @@ class ImoveisModule {
 
     async handleCreateData(data, formElement) {
         // Adaptar campos según modelo Imovel actualizado
-        const allowed = ['nome', 'endereco', 'tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'alugado', 'numero_quartos', 'numero_banheiros', 'tem_garagem', 'numero_vagas_garagem', 'andar', 'numero_apartamento', 'cep', 'bairro', 'cidade', 'estado', 'status_imovel'];
-        const numericFields = ['area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem', 'andar'];
+        const allowed = ['nome', 'endereco', 'tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem', 'alugado'];
+        const numericFields = ['area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem'];
         const payload = {};
         for (const key of allowed) {
             if (key in data) {
@@ -139,10 +139,13 @@ class ImoveisModule {
                 if (numericFields.includes(key)) {
                     payload[key] = val !== null ? Number(val) : null;
                 } else if (key === 'alugado') {
-                    payload[key] = Boolean(val);
+                    payload[key] = val === 'true' || val === true;
                 } else {
                     payload[key] = val;
                 }
+            } else if (key === 'alugado') {
+                // Los checkboxes no aparecen en FormData cuando no están marcados
+                payload[key] = false;
             }
         }
         // Validación de campos obligatorios
@@ -324,6 +327,9 @@ class ImoveisModule {
                 } else {
                     data[key] = val;
                 }
+            } else if (key === 'alugado' || key === 'tem_garagem') {
+                // Los checkboxes no aparecen en FormData cuando no están marcados
+                data[key] = false;
             }
         }
 
