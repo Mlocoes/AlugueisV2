@@ -167,7 +167,7 @@ class ParticipacoesModule {
                                 </table>
                             </div>
                             <div class="modal-footer">
-                                <button class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                <button class="btn btn-secondary" data-bs-dismiss="modal" id="nv-cancelar">Cancelar</button>
                                 <button class="btn btn-primary" id="nv-salvar">Salvar nova versão</button>
                             </div>
                         </div>
@@ -224,6 +224,9 @@ class ParticipacoesModule {
                         return;
                     }
                     this.uiManager.showSuccess('Nova versão criada');
+                    // Aplicar focus management antes de cerrar modal exitosamente
+                    if (document.activeElement) document.activeElement.blur();
+                    document.body.focus();
                     if (window.bootstrap && window.bootstrap.Modal) {
                         const bs = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
                         bs.hide();
@@ -238,6 +241,32 @@ class ParticipacoesModule {
             };
 
             modalEl.querySelector('#nv-salvar').onclick = salvar;
+            
+            // Configurar botón cancelar con focus management
+            const cancelarBtn = modalEl.querySelector('#nv-cancelar');
+            if (cancelarBtn) {
+                cancelarBtn.onclick = () => {
+                    // Aplicar focus management antes de cerrar
+                    if (document.activeElement) document.activeElement.blur();
+                    document.body.focus();
+                    
+                    if (window.bootstrap && window.bootstrap.Modal) {
+                        const bs = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                        bs.hide();
+                    } else {
+                        modalEl.style.display = 'none'; 
+                        modalEl.classList.remove('show');
+                    }
+                };
+            }
+            
+            // Añadir event listener para focus management en hide.bs.modal
+            modalEl.addEventListener('hide.bs.modal', () => {
+                if (document.activeElement) document.activeElement.blur();
+                document.body.focus();
+                console.log('🔧 Focus transferido antes del cierre del modal participações');
+            });
+            
             if (window.bootstrap && window.bootstrap.Modal) {
                 const bs = new bootstrap.Modal(modalEl);
                 bs.show();
