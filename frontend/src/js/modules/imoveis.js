@@ -300,6 +300,7 @@ class ImoveisModule {
 
     async handleUpdate(event) {
         event.preventDefault();
+        console.log('🔧 DEBUG: handleUpdate iniciado');
 
         const form = document.getElementById('edit-imovel-form');
         if (!form.checkValidity()) {
@@ -309,6 +310,10 @@ class ImoveisModule {
 
         const formData = new FormData(form);
         const raw = Object.fromEntries(formData.entries());
+        console.log('🔧 DEBUG: FormData raw:', JSON.stringify(raw, null, 2));
+        console.log('🔧 DEBUG: Checkbox alugado element:', form.elements['alugado']);
+        console.log('🔧 DEBUG: Checkbox alugado checked:', form.elements['alugado']?.checked);
+        console.log('🔧 DEBUG: Checkbox alugado value:', form.elements['alugado']?.value);
 
         // Campos permitidos por el backend (modelo Imovel actualizado)
         const allowed = ['nome', 'endereco', 'tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem', 'alugado'];
@@ -333,6 +338,9 @@ class ImoveisModule {
             }
         }
 
+        console.log('🔧 DEBUG: Data procesada:', JSON.stringify(data, null, 2));
+        console.log('🔧 DEBUG: currentEditId:', this.currentEditId);
+
         // Validación solo para campos obligatorios
         const requiredFields = ['nome', 'endereco'];
         for (const field of requiredFields) {
@@ -345,6 +353,8 @@ class ImoveisModule {
         this.uiManager.showLoading('Atualizando imóvel...');
         const response = await this.apiService.updateImovel(this.currentEditId, data);
         this.uiManager.hideLoading();
+
+        console.log('🔧 DEBUG: Response from API:', JSON.stringify(response, null, 2));
 
         if (!response.success) {
             this.uiManager.showErrorToast('Erro ao atualizar imóvel', response.error);

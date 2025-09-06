@@ -4,7 +4,7 @@ from typing import List, Dict
 import pandas as pd
 import traceback
 from datetime import datetime
-from models_final import Imovel, AluguelSimples, Usuario
+from models_final import Imovel, AluguelSimples, Usuario, Participacao
 from config import get_db
 from .auth import verify_token
 
@@ -70,6 +70,14 @@ def excluir_imovel(imovel_id: int, db: Session = Depends(get_db), current_user: 
         raise HTTPException(
             status_code=400,
             detail=f"Não é possível excluir o imóvel porque tem {alugueis_count} aluguel(is) associado(s). Remova primeiro os aluguéis ou desative o imóvel."
+        )
+
+    # Verifica se existem participações associadas a este imóvel
+    participacoes_count = db.query(Participacao).filter(Participacao.imovel_id == imovel_id).count()
+    if participacoes_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível excluir o imóvel porque tem {participacoes_count} participação(ões) associada(s). Remova primeiro as participações ou desative o imóvel."
         )
 
     db.delete(imovel)
