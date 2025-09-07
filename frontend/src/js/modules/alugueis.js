@@ -83,9 +83,13 @@ class AlugueisModule {
     } populateAnoDropdown() {
         const anoSelect = document.getElementById('alugueis-ano-select');
         if (!anoSelect) return;
-        anoSelect.innerHTML = '<option value="">Selecione o ano</option>';
+        SecurityUtils.setSafeHTML(anoSelect, '<option value="">Selecione o ano</option>');
         this.anosDisponiveis.forEach(ano => {
-            anoSelect.innerHTML += `<option value="${ano}">${ano}</option>`;
+            const option = SecurityUtils.createSafeElement('option', {
+                value: ano,
+                textContent: ano
+            });
+            anoSelect.appendChild(option);
         });
         anoSelect.disabled = this.anosDisponiveis.length === 0;
 
@@ -101,10 +105,14 @@ class AlugueisModule {
     populateMesDropdown() {
         const mesSelect = document.getElementById('alugueis-mes-select');
         if (!mesSelect) return;
-        mesSelect.innerHTML = '<option value="">Selecione o mês</option>';
+        SecurityUtils.setSafeHTML(mesSelect, '<option value="">Selecione o mês</option>');
         if (this.anosDisponiveis.length > 0) {
             // Opção para todos os meses
-            mesSelect.innerHTML += '<option value="todos">Todos os meses</option>';
+            const todosOption = SecurityUtils.createSafeElement('option', {
+                value: 'todos',
+                textContent: 'Todos os meses'
+            });
+            mesSelect.appendChild(todosOption);
             // Janeiro a Dezembro
             const meses = [
                 { num: 1, nome: 'Janeiro' },
@@ -121,7 +129,11 @@ class AlugueisModule {
                 { num: 12, nome: 'Dezembro' }
             ];
             meses.forEach(m => {
-                mesSelect.innerHTML += `<option value="${m.num}">${m.nome}</option>`;
+                const monthOption = SecurityUtils.createSafeElement('option', {
+                    value: m.num,
+                    textContent: m.nome
+                });
+                mesSelect.appendChild(monthOption);
             });
             mesSelect.disabled = false;
 
@@ -230,8 +242,8 @@ class AlugueisModule {
     clearMatriz() {
         const tableHead = document.getElementById('alugueis-matrix-head');
         const tableBody = document.getElementById('alugueis-matrix-body');
-        if (tableHead) tableHead.innerHTML = '';
-        if (tableBody) tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Nenhum aluguel encontrado.</td></tr>';
+        if (tableHead) SecurityUtils.setSafeHTML(tableHead, '');
+        if (tableBody) SecurityUtils.setSafeHTML(tableBody, '<tr><td colspan="5" class="text-center text-muted">Nenhum aluguel encontrado.</td></tr>');
         const tableContainer = document.getElementById('alugueis-table-container');
         if (tableContainer) tableContainer.style.display = 'block';
     }
@@ -245,8 +257,8 @@ class AlugueisModule {
         if (!tableHead || !tableBody) return;
 
         if (!this.matriz.length || !this.proprietarios?.length || !this.imoveis?.length) {
-            tableHead.innerHTML = '';
-            tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Nenhum aluguel encontrado.</td></tr>';
+            SecurityUtils.setSafeHTML(tableHead, '');
+            SecurityUtils.setSafeHTML(tableBody, '<tr><td colspan="5" class="text-center text-muted">Nenhum aluguel encontrado.</td></tr>');
             return;
         }
 
@@ -256,7 +268,7 @@ class AlugueisModule {
             headHtml += `<th>${prop.nome}</th>`;
         }
         headHtml += '<th>Total</th></tr>';
-        tableHead.innerHTML = headHtml;
+        SecurityUtils.setSafeHTML(tableHead, headHtml);
 
         // Corpo: para cada imóvel, uma linha
         let bodyHtml = '';
@@ -277,7 +289,7 @@ class AlugueisModule {
             }
             bodyHtml += `<td><strong>R$ ${total.toFixed(2)}</strong></td></tr>`;
         }
-        tableBody.innerHTML = bodyHtml;
+        SecurityUtils.setSafeHTML(tableBody, bodyHtml);
 
         // Actualizar visibilidad de botones admin-only después de renderizar
         if (window.uiManager && typeof window.uiManager.updateActionButtonsVisibility === 'function') {

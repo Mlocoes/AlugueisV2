@@ -200,13 +200,13 @@ class LoginManager {
         // Atualizar header com info do usuário (se existir)
         const userInfo = document.querySelector('.user-info');
         if (userInfo) {
-            userInfo.innerHTML = `
+            SecurityUtils.setSafeHTML(userInfo, `
                 <i class="fas fa-user me-2"></i>
-                ${userData.usuario} (${userData.tipo})
+                ${SecurityUtils.escapeHtml(userData.usuario)} (${SecurityUtils.escapeHtml(userData.tipo)})
                 <button class="btn btn-sm btn-outline-light ms-2" onclick="loginManager.logout()">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
-            `;
+            `);
         }
     }
 
@@ -286,11 +286,11 @@ class LoginManager {
 
         if (loading) {
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Entrando...';
+            SecurityUtils.setSafeHTML(submitBtn, '<i class="fas fa-spinner fa-spin me-2"></i>Entrando...');
             inputs.forEach(input => input.disabled = true);
         } else {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Entrar';
+            SecurityUtils.setSafeHTML(submitBtn, '<i class="fas fa-sign-in-alt me-2"></i>Entrar');
             inputs.forEach(input => input.disabled = false);
         }
     }

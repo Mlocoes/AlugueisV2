@@ -215,35 +215,62 @@ class ImoveisModule {
         const tableBody = document.getElementById('imoveis-table-body');
         if (!tableBody) return;
 
-        tableBody.innerHTML = this.imoveis.map(imovel => {
-            // Usando campo 'alugado' actualizado
+        // Limpiar tabla
+        tableBody.innerHTML = '';
+
+        this.imoveis.forEach(imovel => {
+            // Usar SecurityUtils para escapar datos del usuario
+            const safeImovel = window.SecurityUtils.sanitizeData(imovel);
+            
+            // Crear elementos de forma segura
+            const row = document.createElement('tr');
+            
+            // Status badge (contenido confiable del sistema)
             const statusAlugado = imovel.alugado ? '<span class="badge bg-danger">Alugado</span>' : '<span class="badge bg-success">Disponível</span>';
-            return `
-                    <tr>
-                        <td>${imovel.nome || ''}</td>
-                        <td>${imovel.endereco || ''}</td>
-                        <td>${imovel.tipo_imovel || ''}</td>
-                        <td>${imovel.area_total || ''}</td>
-                        <td>${imovel.area_construida || ''}</td>
-                        <td>${imovel.valor_cadastral || ''}</td>
-                        <td>${imovel.valor_mercado || ''}</td>
-                        <td>${imovel.iptu_mensal || ''}</td>
-                        <td>${imovel.condominio_mensal || ''}</td>
-                        <td>${statusAlugado}</td>
-                        <td>${imovel.data_cadastro ? new Date(imovel.data_cadastro).toLocaleDateString() : ''}</td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-warning admin-only" onclick="window.imoveisModule.editImovel(${imovel.id})" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-outline-danger admin-only" onclick="window.imoveisModule.deleteImovel(${imovel.id})" title="Excluir">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-        }).join('');
+            
+            // Usar template con datos escapados
+            const rowTemplate = `
+                <td>\${nome}</td>
+                <td>\${endereco}</td>
+                <td>\${tipo_imovel}</td>
+                <td>\${area_total}</td>
+                <td>\${area_construida}</td>
+                <td>\${valor_cadastral}</td>
+                <td>\${valor_mercado}</td>
+                <td>\${iptu_mensal}</td>
+                <td>\${condominio_mensal}</td>
+                <td>${statusAlugado}</td>
+                <td>\${data_cadastro}</td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-warning admin-only" onclick="window.imoveisModule.editImovel(${imovel.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-outline-danger admin-only" onclick="window.imoveisModule.deleteImovel(${imovel.id})" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+
+            // Preparar datos con fecha formateada
+            const templateData = {
+                nome: safeImovel.nome || '',
+                endereco: safeImovel.endereco || '',
+                tipo_imovel: safeImovel.tipo_imovel || '',
+                area_total: safeImovel.area_total || '',
+                area_construida: safeImovel.area_construida || '',
+                valor_cadastral: safeImovel.valor_cadastral || '',
+                valor_mercado: safeImovel.valor_mercado || '',
+                iptu_mensal: safeImovel.iptu_mensal || '',
+                condominio_mensal: safeImovel.condominio_mensal || '',
+                data_cadastro: imovel.data_cadastro ? new Date(imovel.data_cadastro).toLocaleDateString() : ''
+            };
+
+            // Usar función de seguridad para establecer HTML
+            window.SecurityUtils.setSafeHTML(row, rowTemplate, templateData);
+            tableBody.appendChild(row);
+        });
     }
 
     updateStats() {

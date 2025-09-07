@@ -51,16 +51,17 @@ class ParticipacoesModule {
         const container = document.getElementById('participacoes-data-selector');
         if (!container) return;
         if (!this.datas.length) {
-            container.innerHTML = '<span class="text-muted">Nenhum conjunto disponível</span>';
+            SecurityUtils.setSafeHTML(container, '<span class="text-muted">Nenhum conjunto disponível</span>');
             return;
         }
         let html = '<label for="data-participacoes">Conjunto de Participações:</label> ';
         html += `<select id="data-participacoes">`;
         for (const d of this.datas) {
-            html += `<option value="${d}"${d === this.selectedData ? ' selected' : ''}>${new Date(d).toLocaleString()}</option>`;
+            const formattedDate = new Date(d).toLocaleString();
+            html += `<option value="${SecurityUtils.escapeHtml(d)}"${d === this.selectedData ? ' selected' : ''}>${SecurityUtils.escapeHtml(formattedDate)}</option>`;
         }
         html += '</select>';
-        container.innerHTML = html;
+        SecurityUtils.setSafeHTML(container, html);
         document.getElementById('data-participacoes').addEventListener('change', (e) => {
             this.selectedData = e.target.value;
             this.loadParticipacoes();
@@ -97,8 +98,8 @@ class ParticipacoesModule {
         if (tableContainer) tableContainer.style.display = 'block';
         if (!tableHead || !tableBody) return;
         if (!this.participacoes.length || !this.proprietarios.length || !this.imoveis.length) {
-            tableHead.innerHTML = '';
-            tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Nenhuma participação encontrada.</td></tr>';
+            SecurityUtils.setSafeHTML(tableHead, '');
+            SecurityUtils.setSafeHTML(tableBody, '<tr><td colspan="5" class="text-center text-muted">Nenhuma participação encontrada.</td></tr>');
             return;
         }
         let headHtml = '<tr><th>Imóvel</th>';
@@ -106,7 +107,7 @@ class ParticipacoesModule {
             headHtml += `<th>${prop.nome}</th>`;
         }
         headHtml += '<th>Total</th><th width="120">Ações</th></tr>';
-        tableHead.innerHTML = headHtml;
+        SecurityUtils.setSafeHTML(tableHead, headHtml);
         let bodyHtml = '';
         for (const imovel of this.imoveis) {
             bodyHtml += `<tr><td>${imovel.nome}</td>`;
@@ -128,7 +129,7 @@ class ParticipacoesModule {
                 </div>
             </td></tr>`;
         }
-        tableBody.innerHTML = bodyHtml;
+        SecurityUtils.setSafeHTML(tableBody, bodyHtml);
     }
 
     async novaVersao(imovelId) {
@@ -178,8 +179,11 @@ class ParticipacoesModule {
 
             const body = modalEl.querySelector('#nv-body');
             const im = this.imoveis.find(i => String(i.id) === String(imovelId));
-            const tds = this.proprietarios.map(p => `<td><input type="number" step="0.01" min="0" max="100" data-prop="${p.id}" class="form-control form-control-sm" value="${porImovel[im.id][p.id]}" /></td>`).join('');
-            body.innerHTML = `<tr data-imovel="${im.id}"><td>${im.nome}</td>${tds}<td id="nv-total">0%</td></tr>`;
+            const tds = this.proprietarios.map(p => {
+                const value = porImovel[im.id][p.id];
+                return `<td><input type="number" step="0.01" min="0" max="100" data-prop="${SecurityUtils.escapeHtml(p.id)}" class="form-control form-control-sm" value="${SecurityUtils.escapeHtml(value)}" /></td>`;
+            }).join('');
+            SecurityUtils.setSafeHTML(body, `<tr data-imovel="${SecurityUtils.escapeHtml(im.id)}"><td>${SecurityUtils.escapeHtml(im.nome)}</td>${tds}<td id="nv-total">0%</td></tr>`);
 
             const recalc = () => {
                 let soma = 0;

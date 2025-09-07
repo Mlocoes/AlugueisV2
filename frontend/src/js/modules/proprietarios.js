@@ -98,20 +98,25 @@ class ProprietariosModule {
     renderTable() {
         const tbody = document.getElementById('proprietarios-table-body');
         if (!tbody) return;
+        
         if (this.proprietarios.length === 0) {
-            tbody.innerHTML = `
+            SecurityUtils.setSafeHTML(tbody, `
                 <tr>
                     <td colspan="7" class="text-center text-muted py-4">
                         <i class="fas fa-users fa-2x mb-2"></i>
                         <br>Não há proprietários registrados
                     </td>
                 </tr>
-            `;
+            `);
             return;
         }
-        tbody.innerHTML = this.proprietarios.map(prop => {
-            const nomeCompleto = prop.sobrenome ? `${prop.nome} ${prop.sobrenome}` : prop.nome;
-            const documentoInfo = (prop.tipo_documento && prop.documento) ? `${prop.tipo_documento}: ${prop.documento}` : (prop.documento ? `Doc: ${prop.documento}` : 'Sem documento');
+        
+        const htmlContent = this.proprietarios.map(prop => {
+            const nomeCompleto = prop.sobrenome ? `${SecurityUtils.escapeHtml(prop.nome)} ${SecurityUtils.escapeHtml(prop.sobrenome)}` : SecurityUtils.escapeHtml(prop.nome);
+            const documentoInfo = (prop.tipo_documento && prop.documento) ? 
+                `${SecurityUtils.escapeHtml(prop.tipo_documento)}: ${SecurityUtils.escapeHtml(prop.documento)}` : 
+                (prop.documento ? `Doc: ${SecurityUtils.escapeHtml(prop.documento)}` : 'Sem documento');
+            
             return `
                 <tr>
                     <td data-label="Proprietário">
@@ -131,18 +136,24 @@ class ProprietariosModule {
                 </tr>
             `;
         }).join('');
+        
+        SecurityUtils.setSafeHTML(tbody, htmlContent);
     }
 
     formatField(value, placeholder = '—', prefix = '', suffix = '') {
         if (value === null || value === undefined || value === '' || value === 'NaN') {
-            return `<span class="text-muted fst-italic">${placeholder}</span>`;
+            return `<span class="text-muted fst-italic">${SecurityUtils.escapeHtml(placeholder)}</span>`;
         }
-        return `${prefix}${value}${suffix}`;
+        return `${SecurityUtils.escapeHtml(prefix)}${SecurityUtils.escapeHtml(value)}${SecurityUtils.escapeHtml(suffix)}`;
     }
 
     formatContact(email, telefone) {
-        const emailPart = email ? `<i class="fas fa-envelope text-muted me-1"></i>${email}` : `<i class="fas fa-envelope text-muted me-1"></i><span class="text-muted fst-italic">Sem email</span>`;
-        const telefonePart = telefone ? `<i class="fas fa-phone text-muted me-1"></i>${telefone}` : `<i class="fas fa-phone text-muted me-1"></i><span class="text-muted fst-italic">Sem telefone</span>`;
+        const emailPart = email ? 
+            `<i class="fas fa-envelope text-muted me-1"></i>${SecurityUtils.escapeHtml(email)}` : 
+            `<i class="fas fa-envelope text-muted me-1"></i><span class="text-muted fst-italic">Sem email</span>`;
+        const telefonePart = telefone ? 
+            `<i class="fas fa-phone text-muted me-1"></i>${SecurityUtils.escapeHtml(telefone)}` : 
+            `<i class="fas fa-phone text-muted me-1"></i><span class="text-muted fst-italic">Sem telefone</span>`;
         return `${emailPart}<br>${telefonePart}`;
     }
 
@@ -150,10 +161,10 @@ class ProprietariosModule {
         if (!banco && !agencia && !conta && !tipo_conta) {
             return '<span class="text-muted fst-italic">Sem dados bancários</span>';
         }
-        let html = `<strong>${banco || 'Banco não especificado'}</strong>`;
-        if (agencia) html += `<br><small>Ag. ${agencia}</small>`;
-        if (conta) html += `<br><small>Cta. ${conta}</small>`;
-        if (tipo_conta) html += `<br><small>${tipo_conta}</small>`;
+        let html = `<strong>${SecurityUtils.escapeHtml(banco || 'Banco não especificado')}</strong>`;
+        if (agencia) html += `<br><small>Ag. ${SecurityUtils.escapeHtml(agencia)}</small>`;
+        if (conta) html += `<br><small>Cta. ${SecurityUtils.escapeHtml(conta)}</small>`;
+        if (tipo_conta) html += `<br><small>${SecurityUtils.escapeHtml(tipo_conta)}</small>`;
         return html;
     }
 
@@ -164,20 +175,25 @@ class ProprietariosModule {
         });
         const tbody = document.getElementById('proprietarios-table-body');
         if (!tbody) return;
+        
         if (filteredData.length === 0) {
-            tbody.innerHTML = `
+            SecurityUtils.setSafeHTML(tbody, `
                 <tr>
                     <td colspan="6" class="text-center text-muted py-4">
                         <i class="fas fa-search fa-2x mb-2"></i>
-                        <br>Não foram encontrados proprietários que correspondam a "${searchTerm}"
+                        <br>Não foram encontrados proprietários que correspondam a "${SecurityUtils.escapeHtml(searchTerm)}"
                     </td>
                 </tr>
-            `;
+            `);
             return;
         }
-        tbody.innerHTML = filteredData.map(prop => {
-            const nomeCompleto = prop.sobrenome ? `${prop.nome} ${prop.sobrenome}` : prop.nome;
-            const documentoInfo = (prop.tipo_documento && prop.documento) ? `${prop.tipo_documento}: ${prop.documento}` : (prop.documento ? `Doc: ${prop.documento}` : 'Sem documento');
+        
+        const htmlContent = filteredData.map(prop => {
+            const nomeCompleto = prop.sobrenome ? `${SecurityUtils.escapeHtml(prop.nome)} ${SecurityUtils.escapeHtml(prop.sobrenome)}` : SecurityUtils.escapeHtml(prop.nome);
+            const documentoInfo = (prop.tipo_documento && prop.documento) ? 
+                `${SecurityUtils.escapeHtml(prop.tipo_documento)}: ${SecurityUtils.escapeHtml(prop.documento)}` : 
+                (prop.documento ? `Doc: ${SecurityUtils.escapeHtml(prop.documento)}` : 'Sem documento');
+            
             return `
                 <tr>
                     <td data-label="Proprietário">
@@ -197,6 +213,8 @@ class ProprietariosModule {
                 </tr>
             `;
         }).join('');
+        
+        SecurityUtils.setSafeHTML(tbody, htmlContent);
     }
 
     showNewModal() {
