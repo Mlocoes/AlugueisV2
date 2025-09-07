@@ -57,7 +57,7 @@ async def resumen_por_propiedad(
     """Obtener resumen agrupado por propiedad"""
     try:
         query = db.query(AluguelSimples)
-        
+
         if ano:
             query = query.filter(AluguelSimples.ano == ano)
         if mes:
@@ -72,16 +72,16 @@ async def resumen_por_propiedad(
             if clave not in resumenes:
                 resumenes[clave] = []
             resumenes[clave].append(alquiler)
-        
+
         # Calcular resúmenes
         resultado = []
         for grupo_alquileres in resumenes.values():
             resumen = ResumenCalculator.calcular_resumen_propiedad(grupo_alquileres)
             resultado.append(resumen)
-        
+
         # Ordenar por período descendente
         resultado.sort(key=lambda x: (x.get('periodo', ''), x.get('nombre_inmueble', '')), reverse=True)
-        
+
         return resultado
         
     except Exception as e:
@@ -97,7 +97,7 @@ async def resumen_por_propietario(
     """Obtener resumen agrupado por propietario"""
     try:
         query = db.query(AluguelSimples)
-        
+
         if ano:
             query = query.filter(AluguelSimples.ano == ano)
         if mes:
@@ -112,16 +112,16 @@ async def resumen_por_propietario(
             if clave not in resumenes:
                 resumenes[clave] = []
             resumenes[clave].append(alquiler)
-        
+
         # Calcular resúmenes
         resultado = []
         for grupo_alquileres in resumenes.values():
             resumen = ResumenCalculator.calcular_resumen_propietario(grupo_alquileres)
             resultado.append(resumen)
-        
+
         # Ordenar por período descendente
         resultado.sort(key=lambda x: (x.get('periodo', ''), x.get('nombre_propietario', '')), reverse=True)
-        
+
         return resultado
         
     except Exception as e:

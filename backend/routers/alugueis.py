@@ -419,7 +419,7 @@ async def obter_distribuicao_matriz(
     """Obter distribuição de aluguéis em formato matriz (proprietários vs imóveis) com agregação segundo filtros"""
     try:
         print(f"🔍 Distribuição matriz solicitada - Ano: {ano}, Mês: {mes}, Proprietário: {proprietario_id}, Agregação: {agregacao}")
-        
+
         # Determinar quais filtros aplicar segundo o tipo de agregação
         if agregacao == "completo":
             # Sem filtros de ano/mês - todos os dados
@@ -435,13 +435,13 @@ async def obter_distribuicao_matriz(
             # Mês específico ou valor por padrão
             if not ano or not mes:
                 ultimo_periodo = db.query(
-                    AluguelSimples.ano, 
+                    AluguelSimples.ano,
                     AluguelSimples.mes
                 ).order_by(
-                    desc(AluguelSimples.ano), 
+                    desc(AluguelSimples.ano),
                     desc(AluguelSimples.mes)
                 ).first()
-                
+
                 if not ultimo_periodo:
                     return {
                         'periodo': {'ano': None, 'mes': None, 'tipo_agregacao': agregacao},
@@ -449,19 +449,19 @@ async def obter_distribuicao_matriz(
                         'imoveis': [],
                         'matriz': []
                     }
-                
+
                 if not ano:
                     ano = ultimo_periodo.ano
                 if not mes:
                     mes = ultimo_periodo.mes
-            
+
             print(f"📊 Mês específico: {mes}/{ano}")
             ano_filtro = ano
             mes_filtro = mes
 
         # Obter todos os aluguéis segundo o tipo de agregação
         query = db.query(AluguelSimples)
-        
+
         # Aplicar filtros de período segundo agregação
         if ano_filtro and mes_filtro:
             # Mês específico
@@ -477,12 +477,12 @@ async def obter_distribuicao_matriz(
         else:
             # Sem filtros de período - todos os dados
             periodo_texto = "Todos os períodos"
-        
+
         # Aplicar filtro de proprietário se especificado
         if proprietario_id:
             query = query.filter(AluguelSimples.proprietario_id == proprietario_id)
             print(f"📊 Filtro de proprietário aplicado: {proprietario_id}")
-            
+
         alugueis = query.all()
         print(f"📊 Aluguéis encontrados para {periodo_texto}: {len(alugueis)}")
 
@@ -520,15 +520,15 @@ async def obter_distribuicao_matriz(
         # Informação adicional sobre a agregação
         total_registros = len(alugueis)
         periodos_unicos = list(set((alq.ano, alq.mes) for alq in alugueis))
-        
+
         print(f"📊 Matriz gerada: {len(proprietarios)} proprietários, {len(imoveis)} imóveis")
         print(f"📊 Total registros processados: {total_registros} de {len(periodos_unicos)} período(s)")
 
         return {"success": True, "data": {
             'periodo': {
-                'ano': ano_filtro, 
-                'mes': mes_filtro, 
-                'tipo_agregacao': agregacao, 
+                'ano': ano_filtro,
+                'mes': mes_filtro,
+                'tipo_agregacao': agregacao,
                 'descricao': periodo_texto,
                 'total_registros': total_registros,
                 'periodos_incluidos': len(periodos_unicos)
@@ -545,7 +545,7 @@ async def obter_distribuicao_matriz(
             'total_proprietarios': len(proprietarios),
             'total_imoveis': len(imoveis)
         }}
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao obter distribuição matriz: {str(e)}")
 

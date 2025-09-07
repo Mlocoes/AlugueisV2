@@ -24,7 +24,52 @@ class UIManager {
     init() {
         this.createAlertContainer();
         this.setupEventListeners();
+        this.setupSidebarToggle();
         console.log('🎨 UIManager inicializado');
+    }
+
+    /**
+     * Configurar el botón para mostrar/ocultar la barra lateral en móvil
+     */
+    setupSidebarToggle() {
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebar = document.getElementById('sidebar');
+
+        if (!sidebarToggle || !sidebar) {
+            console.warn('⚠️ Elementos para el sidebar responsivo no encontrados.');
+            return;
+        }
+
+        // Crear el overlay
+        let overlay = document.querySelector('.sidebar-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'sidebar-overlay';
+            document.body.appendChild(overlay);
+        }
+
+        // Evento para mostrar el sidebar
+        sidebarToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sidebar.classList.add('show');
+            overlay.classList.add('show');
+        });
+
+        // Evento para ocultar el sidebar al hacer clic en el overlay
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('show');
+            overlay.classList.remove('show');
+        });
+
+        // Ocultar el sidebar al hacer clic en un enlace de navegación
+        sidebar.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth < 992) { // Solo en vista móvil
+                    sidebar.classList.remove('show');
+                    overlay.classList.remove('show');
+                }
+            });
+        });
     }
 
     /**
