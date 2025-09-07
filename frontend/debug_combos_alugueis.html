@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Combos Aluguéis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>🔧 Debug Combos Aluguéis</h1>
+        
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Test Controls</h5>
+                    </div>
+                    <div class="card-body">
+                        <button id="test-login" class="btn btn-primary me-2">1. Login</button>
+                        <button id="test-api" class="btn btn-secondary me-2">2. Test API</button>
+                        <button id="test-module" class="btn btn-success me-2">3. Test Module</button>
+                        <button id="test-populate" class="btn btn-warning">4. Populate Combos</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <label for="alugueis-ano-select" class="form-label">Ano</label>
+                <select id="alugueis-ano-select" class="form-select">
+                    <option value="">Selecione o ano</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="alugueis-mes-select" class="form-label">Mês</label>
+                <select id="alugueis-mes-select" class="form-select" disabled>
+                    <option value="">Selecione o mês</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button id="test-filter" class="btn btn-info">Filtrar</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Log Output</h5>
+                    </div>
+                    <div class="card-body">
+                        <pre id="debug-log" style="max-height: 400px; overflow-y: auto; background: #f8f9fa; padding: 1rem; font-size: 0.9rem;"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/utils/security.js"></script>
+    <script src="js/apiService.js"></script>
+    <script src="js/services/authService.js"></script>
+    <script src="js/modules/alugueis.js"></script>
+
+    <script>
+        const log = (message, type = 'info') => {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : '🔍';
+            const logMessage = `${timestamp} ${prefix} ${message}`;
+            
+            console.log(logMessage);
+            document.getElementById('debug-log').textContent += logMessage + '\n';
+            document.getElementById('debug-log').scrollTop = document.getElementById('debug-log').scrollHeight;
+        };
+
+        let token = null;
+
+        // 1. Test Login
+        document.getElementById('test-login').addEventListener('click', async () => {
+            log('Iniciando login...');
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        usuario: 'admin',
+                        senha: 'admin00'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    token = data.access_token;
+                    log('Login realizado com sucesso!', 'success');
+                    
+                    // Configurar apiService
+                    if (window.apiService) {
+                        window.apiService.token = token;
+                        log('Token configurado no apiService', 'success');
+                    }
+                } else {
+                    log(`Erro no login: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`Erro no login: ${error.message}`, 'error');
+            }
+        });
+
+        // 2. Test API
+        document.getElementById('test-api').addEventListener('click', async () => {
+            log('Testando API anos disponíveis...');
+            
+            if (!token) {
+                log('Faça login primeiro!', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8000/api/alugueis/anos-disponiveis/', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`API Response: ${JSON.stringify(data, null, 2)}`, 'success');
+                    
+                    if (data && data.success && data.data && data.data.anos) {
+                        log(`Anos encontrados: ${data.data.anos.join(', ')}`, 'success');
+                    }
+                } else {
+                    log(`Erro na API: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`Erro na API: ${error.message}`, 'error');
+            }
+        });
+
+        // 3. Test Module
+        document.getElementById('test-module').addEventListener('click', async () => {
+            log('Testando módulo aluguéis...');
+            
+            if (!window.alugueisModule) {
+                log('Módulo aluguéis não encontrado!', 'error');
+                return;
+            }
+
+            try {
+                log('Inicializando módulo...', 'info');
+                await window.alugueisModule.load();
+                log('Módulo carregado com sucesso!', 'success');
+            } catch (error) {
+                log(`Erro no módulo: ${error.message}`, 'error');
+            }
+        });
+
+        // 4. Populate Combos
+        document.getElementById('test-populate').addEventListener('click', async () => {
+            log('Populando combos manualmente...');
+            
+            if (!window.alugueisModule) {
+                log('Módulo aluguéis não encontrado!', 'error');
+                return;
+            }
+
+            try {
+                log('Carregando anos disponíveis...', 'info');
+                await window.alugueisModule.loadAnosDisponiveis();
+                log('Combos populados!', 'success');
+            } catch (error) {
+                log(`Erro ao popular combos: ${error.message}`, 'error');
+            }
+        });
+
+        // Test Filter
+        document.getElementById('test-filter').addEventListener('click', () => {
+            const ano = document.getElementById('alugueis-ano-select').value;
+            const mes = document.getElementById('alugueis-mes-select').value;
+            
+            log(`Filtro selecionado - Ano: ${ano || 'nenhum'}, Mês: ${mes || 'nenhum'}`, 'info');
+            
+            if (window.alugueisModule && ano) {
+                log('Executando filtro...', 'info');
+                window.alugueisModule.loadMatrizAlugueis(ano, mes || 'todos');
+            }
+        });
+
+        // Change handlers
+        document.getElementById('alugueis-ano-select').addEventListener('change', (e) => {
+            log(`Ano selecionado: ${e.target.value}`, 'info');
+        });
+
+        document.getElementById('alugueis-mes-select').addEventListener('change', (e) => {
+            log(`Mês selecionado: ${e.target.value}`, 'info');
+        });
+
+        // Inicialização
+        log('Debug page loaded. Use os botões na ordem: Login → Test API → Test Module → Populate Combos', 'info');
+    </script>
+</body>
+</html>

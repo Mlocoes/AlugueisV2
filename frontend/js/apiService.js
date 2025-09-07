@@ -5,8 +5,18 @@ window.apiService = {
         if (window.AppConfig && window.AppConfig.api && window.AppConfig.api.baseUrl) {
             return window.AppConfig.api.baseUrl;
         }
-        // Fallback a localhost si no está configurado
-        return 'http://localhost:8000';
+        
+        // Si AppConfig no está disponible, detectar el entorno manualmente
+        const hostname = window.location.hostname;
+        const protocol = window.location.protocol;
+        
+        if (hostname === 'zeus.kronos.cloudns.ph') {
+            return 'http://zeus.kronos.cloudns.ph:8000';
+        } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            return 'http://localhost:8000';
+        } else {
+            return `http://${hostname}:8000`;
+        }
     },
 
     // Función auxiliar para obtener headers con autenticación

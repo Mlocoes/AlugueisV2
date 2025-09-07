@@ -293,8 +293,27 @@ class RelatoriosManager {
         return [parseInt(selectedValue)];
     }
 
-    filterData() {
-        this.loadRelatoriosData();
+    async filterData() {
+        console.log('🔍 Aplicando filtros de relatórios...');
+        
+        // Obter valores dos filtros
+        const ano = document.getElementById('relatorios-ano-select')?.value;
+        const mes = document.getElementById('relatorios-mes-select')?.value;
+        const proprietarioSelection = document.getElementById('relatorios-proprietario-select')?.value;
+        
+        console.log(`🎯 Filtros: Ano=${ano}, Mês=${mes}, Proprietário=${proprietarioSelection}`);
+        
+        // Se não há filtros, mostrar todos os dados
+        if (!ano && !mes && !proprietarioSelection) {
+            this.filteredData = [...this.currentData];
+            console.log(`📊 Sem filtros - mostrando ${this.filteredData.length} registros`);
+            this.updateTable();
+            this.updateSummary();
+            return;
+        }
+        
+        // Recarregar dados com filtros aplicados no backend
+        await this.loadRelatoriosData();
     }
 
     // Función para obtener valor de transferencias para un proprietário específico

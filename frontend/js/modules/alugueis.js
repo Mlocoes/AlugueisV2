@@ -2,102 +2,102 @@
 
 class AlugueisModule {
     constructor() {
-        this.initialized = false;
+        this.apiService = window.apiService;
+        this.uiManager = window.uiManager;
         this.matriz = [];
+        this.matrizCompleta = []; // Para armazenar dados completos do backend
         this.proprietarios = [];
         this.imoveis = [];
+        this.initialized = false;
         this.anosDisponiveis = [];
         this.anoSelecionado = null;
         this.mesSelecionado = null;
-        
-        // Configurar servicios al inicializar
-        this.setupServices();
-    }
-
-    setupServices() {
-        // Configurar apiService
-        this.apiService = window.apiService;
-        if (!this.apiService) {
-            console.warn('⚠️ ApiService não disponível durante inicialização do módulo aluguéis');
-        }
-        
-        // Configurar uiManager
-        this.uiManager = window.uiManager;
-        if (!this.uiManager) {
-            console.warn('⚠️ UiManager não disponível durante inicialização do módulo aluguéis');
-        }
     }
 
     init() {
-        if (this.initialized) {
-            console.log('🏠 Módulo aluguéis já inicializado, pulando...');
-            return;
-        }
-        
-        console.log('🏠 Inicializando módulo Aluguéis...');
-        console.log('🔍 ApiService disponível:', !!this.apiService);
-        console.log('🔍 UiManager disponível:', !!this.uiManager);
-        
+        if (this.initialized) return;
+        console.log('🏠 Inicializando módulo Aluguéis');
         this.initialized = true;
         this.setupPeriodDropdowns();
-        
-        console.log('✅ Módulo aluguéis inicializado');
     }
 
     async load() {
-        console.log('🏠 AlugueisModule.load() chamado');
+        console.log('🚀 AlugueisModule.load() iniciado');
         
-        // Re-configurar servicios se necessário
-        this.setupServices();
-        
-        if (!this.apiService) {
-            console.error('❌ ApiService não disponível em AlugueisModule.load()');
-            throw new Error('ApiService não disponível');
-        }
+        // Aguardar que os elementos DOM estejam disponíveis
+        await this.waitForDOMElements();
         
         this.init();
-        
-        console.log('🔍 Iniciando loadAnosDisponiveis...');
         await this.loadAnosDisponiveis();
+        
         console.log('✅ AlugueisModule.load() concluído');
+    }
+
+    async waitForDOMElements() {
+        return new Promise((resolve) => {
+            let attempts = 0;
+            const maxAttempts = 50; // 5 segundos máximo
+            
+            const checkElements = () => {
+                const anoSelect = document.getElementById('alugueis-ano-select');
+                const mesSelect = document.getElementById('alugueis-mes-select');
+                
+                console.log(`🔍 Tentativa ${attempts + 1}: Verificando elementos DOM:`, { 
+                    anoSelect: !!anoSelect, 
+                    mesSelect: !!mesSelect 
+                });
+                
+                if (anoSelect && mesSelect) {
+                    console.log('✅ Elementos DOM encontrados!');
+                    resolve();
+                } else if (attempts < maxAttempts) {
+                    attempts++;
+                    setTimeout(checkElements, 100);
+                } else {
+                    console.warn('⚠️ Timeout aguardando elementos DOM, continuando...');
+                    resolve();
+                }
+            };
+            
+            checkElements();
+        });
     }
 
     async loadAnosDisponiveis() {
         try {
-            console.log('🔍 Iniciando carga de anos disponíveis...');
+            console.log('🔍 Iniciando loadAnosDisponiveis...');
             console.log('🔍 ApiService disponível:', !!this.apiService);
             
-            const data = await this.apiService.getAnosDisponiveisAlugueis();
-            console.log('🔍 Dados recebidos de anos:', data);
+            const resp = await this.apiService.getAnosDisponiveisAlugueis();
+            console.log('🔍 Resposta da API:', resp);
             
-            if (data && data.anos && Array.isArray(data.anos) && data.anos.length) {
-                // Garantir que todos os anos sejam números
-                const anosNumericos = data.anos.map(ano => {
-                    const num = typeof ano === 'number' ? ano : parseInt(ano);
-                    return isNaN(num) ? null : num;
-                }).filter(ano => ano !== null);
+            // O apiService já retorna os dados diretamente, não o wrapper completo
+            if (resp && resp.anos && Array.isArray(resp.anos) && resp.anos.length > 0) {
+                // Usar todos os anos disponíveis (ordenados do mais recente ao mais antigo)
+                const anosNumericos = resp.anos
+                    .map(ano => parseInt(ano))
+                    .filter(ano => !isNaN(ano))
+                    .sort((a, b) => b - a);
                 
-                console.log('🔍 Anos numéricos processados:', anosNumericos);
+                console.log('🔍 Anos processados:', anosNumericos);
                 
-                if (anosNumericos.length > 0) {
-                    // Usar todos os anos disponíveis (ordenados do mais recente ao mais antigo)
-                    this.anosDisponiveis = anosNumericos.sort((a, b) => b - a);
-                    this.anoSelecionado = this.anosDisponiveis[0]; // Ano mais recente
-                    console.log('🔍 Anos disponíveis:', this.anosDisponiveis);
-                    console.log('🔍 Ano selecionado por padrão:', this.anoSelecionado);
-                    this.populateAnoDropdown();
-                    // Carregar automaticamente o mês mais recente
-                    await this.loadMesReciente();
-                } else {
-                    console.warn('⚠️ Nenhum ano numérico válido encontrado');
-                    this.usarAnoAtual();
-                }
+                this.anosDisponiveis = anosNumericos;
+                this.anoSelecionado = anosNumericos[0]; // Ano mais recente
+                
+                console.log('🔍 Ano selecionado:', this.anoSelecionado);
+                
+                this.populateAnoDropdown();
+                
+                // Carregar automaticamente o mês mais recente
+                await this.loadMesReciente();
             } else {
-                console.warn('⚠️ Dados de anos inválidos ou vazios:', data);
+                console.warn('⚠️ Dados inválidos ou vazios da API:', resp);
+                this.anosDisponiveis = [];
                 this.usarAnoAtual();
             }
         } catch (error) {
             console.error('❌ Erro ao carregar anos:', error);
+            this.anosDisponiveis = [];
             this.usarAnoAtual();
         }
     }
@@ -129,8 +129,9 @@ class AlugueisModule {
                 this.mesSelecionado = ultimoPeriodo.data.mes;
                 console.log('🔍 Mês selecionado definido como:', this.mesSelecionado);
                 this.populateMesDropdown();
-                // Carregar matriz automaticamente com o mês mais recente do BD
-                this.loadMatrizAlugueis(this.anoSelecionado, ultimoPeriodo.data.mes);
+                // Carregar dados do mês específico detectado
+                console.log('🔧 Carregando mês específico:', this.mesSelecionado);
+                this.loadMatrizAlugueis(this.anoSelecionado, this.mesSelecionado);
             } else {
                 // Se não houver dados, selecionar "Todos os meses" por padrão
                 console.warn('Sem dados de último período, usando todos os meses');
@@ -148,25 +149,31 @@ class AlugueisModule {
     }
 
     populateAnoDropdown() {
+        console.log('🔧 Populando dropdown de anos...');
         const anoSelect = document.getElementById('alugueis-ano-select');
         if (!anoSelect) {
-            console.warn('⚠️ Elemento alugueis-ano-select não encontrado');
+            console.error('❌ Elemento alugueis-ano-select não encontrado!');
             return;
         }
         
-        SecurityUtils.setSafeHTML(anoSelect, '<option value="">Selecione o ano</option>');
+        console.log('🔧 Anos disponíveis:', this.anosDisponiveis);
+        
+        // Limpar e popular manualmente para evitar problemas com SecurityUtils
+        anoSelect.innerHTML = '<option value="">Selecione o ano</option>';
+        
         this.anosDisponiveis.forEach(ano => {
-            const option = SecurityUtils.createSafeElement('option', {
-                value: ano.toString(),
-                textContent: ano.toString()
-            });
+            const option = document.createElement('option');
+            option.value = String(ano); // Garantir que é string
+            option.textContent = String(ano);
             anoSelect.appendChild(option);
         });
+        
         anoSelect.disabled = this.anosDisponiveis.length === 0;
 
         // Selecionar automaticamente o ano mais recente
-        if (this.anoSelecionado && this.anosDisponiveis.includes(this.anoSelecionado)) {
-            anoSelect.value = this.anoSelecionado.toString();
+        if (this.anoSelecionado) {
+            anoSelect.value = String(this.anoSelecionado);
+            console.log('✅ Ano selecionado no dropdown:', this.anoSelecionado);
         }
 
         // Resetar mês
@@ -174,20 +181,23 @@ class AlugueisModule {
     }
 
     populateMesDropdown() {
+        console.log('🔧 Populando dropdown de meses...');
         const mesSelect = document.getElementById('alugueis-mes-select');
         if (!mesSelect) {
-            console.warn('⚠️ Elemento alugueis-mes-select não encontrado');
+            console.error('❌ Elemento alugueis-mes-select não encontrado!');
             return;
         }
         
-        SecurityUtils.setSafeHTML(mesSelect, '<option value="">Selecione o mês</option>');
+        // Limpar e popular manualmente
+        mesSelect.innerHTML = '<option value="">Selecione o mês</option>';
         
         if (this.anosDisponiveis.length > 0) {
-            // Opção para todos os meses
-            const todosOption = SecurityUtils.createSafeElement('option', {
-                value: 'todos',
-                textContent: 'Todos os meses'
-            });
+            console.log('🔧 Adicionando opções de mês...');
+            
+            // Opção para todos los meses
+            const todosOption = document.createElement('option');
+            todosOption.value = 'todos';
+            todosOption.textContent = 'Todos os meses';
             mesSelect.appendChild(todosOption);
             
             // Janeiro a Dezembro
@@ -199,17 +209,20 @@ class AlugueisModule {
             ];
             
             meses.forEach(m => {
-                const monthOption = SecurityUtils.createSafeElement('option', {
-                    value: m.num.toString(),
-                    textContent: m.nome
-                });
+                const monthOption = document.createElement('option');
+                monthOption.value = String(m.num); // Garantir que é string
+                monthOption.textContent = m.nome;
                 mesSelect.appendChild(monthOption);
             });
+            
             mesSelect.disabled = false;
 
             // Selecionar automaticamente o mês mais recente se estiver disponível
             if (this.mesSelecionado) {
-                mesSelect.value = this.mesSelecionado.toString();
+                mesSelect.value = String(this.mesSelecionado);
+                console.log('✅ Mês selecionado no dropdown:', this.mesSelecionado);
+                mesSelect.value = this.mesSelecionado;
+                console.log('🔍 Valor do select após seleção:', mesSelect.value);
             }
         } else {
             mesSelect.disabled = true;
@@ -217,31 +230,11 @@ class AlugueisModule {
     }
 
     setupPeriodDropdowns() {
-        // Esperar a que el DOM esté listo
-        const checkElements = () => {
-            const anoSelect = document.getElementById('alugueis-ano-select');
-            const mesSelect = document.getElementById('alugueis-mes-select');
-            
-            console.log('🔍 Verificando elementos:', { 
-                anoSelect: !!anoSelect, 
-                mesSelect: !!mesSelect 
-            });
-            
-            if (!anoSelect || !mesSelect) {
-                console.warn('⚠️ Elementos de dropdown não encontrados, tentando novamente...');
-                setTimeout(checkElements, 100);
-                return;
-            }
-            
-            // Limpar event listeners anteriores (evitar duplicação)
-            const newAnoSelect = anoSelect.cloneNode(true);
-            const newMesSelect = mesSelect.cloneNode(true);
-            anoSelect.parentNode.replaceChild(newAnoSelect, anoSelect);
-            mesSelect.parentNode.replaceChild(newMesSelect, mesSelect);
-            
-            console.log('✅ Configurando event listeners dos dropdowns');
-            
-            newAnoSelect.addEventListener('change', (e) => {
+        const anoSelect = document.getElementById('alugueis-ano-select');
+        const mesSelect = document.getElementById('alugueis-mes-select');
+        
+        if (anoSelect) {
+            anoSelect.addEventListener('change', (e) => {
                 let ano = e.target.value;
                 console.log('📅 Evento change ano - valor bruto:', ano, 'tipo:', typeof ano);
                 
@@ -249,7 +242,7 @@ class AlugueisModule {
                 if (ano === '' || ano === null || ano === undefined) {
                     this.anoSelecionado = null;
                 } else {
-                    // Si es un objeto serializado, extraer el valor numérico
+                    // Si es un objeto serializado, usar primer año disponible
                     if (typeof ano === 'string' && ano.includes('[object')) {
                         console.warn('⚠️ Valor ano corrompido, usando primeiro ano disponível');
                         ano = this.anosDisponiveis.length > 0 ? this.anosDisponiveis[0].toString() : '';
@@ -260,8 +253,10 @@ class AlugueisModule {
                 console.log('📅 this.anoSelecionado final:', this.anoSelecionado);
                 
                 // Habilita mês apenas se ano selecionado
-                newMesSelect.disabled = !this.anoSelecionado;
-                newMesSelect.value = '';
+                if (mesSelect) {
+                    mesSelect.disabled = !this.anoSelecionado;
+                    mesSelect.value = '';
+                }
                 this.mesSelecionado = null;
                 
                 if (this.anoSelecionado) {
@@ -272,10 +267,13 @@ class AlugueisModule {
                     this.clearMatriz();
                 }
             });
-
-            newMesSelect.addEventListener('change', (e) => {
+        }
+        
+        if (mesSelect) {
+            mesSelect.addEventListener('change', (e) => {
                 let mes = e.target.value;
                 console.log('📅 Evento change mes - valor bruto:', mes, 'tipo:', typeof mes);
+                console.log('📅 Ano selecionado atual:', this.anoSelecionado);
                 
                 // Limpiar y validar el valor
                 if (mes === '' || mes === null || mes === undefined) {
@@ -294,52 +292,63 @@ class AlugueisModule {
                 if (this.anoSelecionado) {
                     if (this.mesSelecionado === 'todos') {
                         // Mostrar suma de todos los meses del año
+                        console.log('🔄 Carregando TODOS os meses para ano:', this.anoSelecionado);
                         this.loadMatrizAlugueis(this.anoSelecionado, 'todos');
                     } else if (this.mesSelecionado) {
                         // Mostrar matriz filtrada por mes específico
                         const mesNumerico = parseInt(this.mesSelecionado);
+                        console.log('🔄 Carregando mês ESPECÍFICO:', mesNumerico, 'para ano:', this.anoSelecionado);
                         this.loadMatrizAlugueis(this.anoSelecionado, mesNumerico);
                     } else {
                         // Sin selección, mostrar todos los meses del año
+                        console.log('🔄 Sem seleção, carregando TODOS os meses');
                         this.loadMatrizAlugueis(this.anoSelecionado, 'todos');
                     }
                 } else {
+                    console.log('❌ Ano não selecionado, limpando matriz');
                     this.clearMatriz();
                 }
             });
-        };
-        
-        checkElements();
+        }
     }
 
     async loadMatrizAlugueis(ano = null, mes = null) {
         try {
             console.log('🔍 loadMatrizAlugueis chamado com:', { ano, mes, tipoAno: typeof ano, tipoMes: typeof mes });
             
-            // Garantir que ano seja um número válido
-            let anoNumerico = null;
-            if (ano !== null && ano !== undefined) {
+            // Sanitizar e validar parâmetros
+            let anoLimpo = null;
+            let mesLimpo = null;
+            
+            // Limpiar año
+            if (ano !== null && ano !== undefined && ano !== '') {
                 if (typeof ano === 'number') {
-                    anoNumerico = ano;
+                    anoLimpo = ano;
                 } else if (typeof ano === 'string') {
-                    // Si es string pero contiene [object Object], extraer el año de this.anosDisponiveis
-                    if (ano.includes('[object Object]') && this.anosDisponiveis.length > 0) {
-                        anoNumerico = this.anosDisponiveis[0];
-                        console.log('🔧 Corrigido ano de object para:', anoNumerico);
-                    } else {
-                        anoNumerico = parseInt(ano);
+                    // Si es string pero válido
+                    if (!ano.includes('[object') && !isNaN(parseInt(ano))) {
+                        anoLimpo = parseInt(ano);
                     }
-                } else {
-                    // Si es un objeto o tipo desconocido, usar el primer año disponible
-                    anoNumerico = this.anosDisponiveis.length > 0 ? this.anosDisponiveis[0] : null;
-                    console.log('� Corrigido ano de object para:', anoNumerico);
                 }
             }
             
-            console.log('🔢 Ano final:', anoNumerico, 'tipo:', typeof anoNumerico);
+            // Limpiar mes
+            if (mes !== null && mes !== undefined && mes !== '') {
+                if (typeof mes === 'string' && !mes.includes('[object')) {
+                    if (mes === 'todos') {
+                        mesLimpo = 'todos';
+                    } else if (!isNaN(parseInt(mes))) {
+                        mesLimpo = parseInt(mes);
+                    }
+                } else if (typeof mes === 'number') {
+                    mesLimpo = mes;
+                }
+            }
             
-            if (!anoNumerico || isNaN(anoNumerico)) {
-                console.error('❌ Ano inválido:', ano, 'convertido para:', anoNumerico);
+            console.log('🔧 Parâmetros limpos:', { anoLimpo, mesLimpo });
+            
+            if (!anoLimpo || isNaN(anoLimpo)) {
+                console.error('❌ Ano inválido:', ano, 'sanitizado:', anoLimpo);
                 this.uiManager.showError('Ano inválido para carregar dados.');
                 return;
             }
@@ -352,39 +361,190 @@ class AlugueisModule {
             }
 
             let resp;
-            // Por ahora, usar siempre el endpoint que funciona para obtener datos del año
+            
             try {
-                console.log('🔍 Buscando dados para ano:', anoNumerico, 'mes:', mes);
-                if (window.apiService) {
-                    resp = await window.apiService.get(`/api/alugueis/distribuicao-todos-meses/?ano=${anoNumerico}`);
-                    console.log('✅ Dados obtidos via ApiService');
+                console.log('🔍 Buscando dados para ano:', anoLimpo, 'mês solicitado:', mesLimpo);
+                
+                if (mesLimpo === 'todos' || mesLimpo === null) {
+                    // Usar endpoint para todos os meses do ano
+                    console.log('🔧 Usando endpoint: distribuicao-todos-meses');
+                    console.log('🌐 URL completa:', `/api/alugueis/distribuicao-todos-meses/?ano=${anoLimpo}`);
+                    if (window.apiService) {
+                        resp = await window.apiService.get(`/api/alugueis/distribuicao-todos-meses/?ano=${anoLimpo}`);
+                        console.log('✅ Dados de todos os meses obtidos via ApiService');
+                    } else {
+                        throw new Error('ApiService não disponível');
+                    }
                 } else {
-                    throw new Error('ApiService não disponível');
+                    // Usar endpoint para mês específico
+                    console.log(`🔧 Usando endpoint: distribuicao-matriz para mês ${mesLimpo}`);
+                    console.log('🌐 URL completa:', `/api/alugueis/distribuicao-matriz/?ano=${anoLimpo}&mes=${mesLimpo}`);
+                    if (window.apiService) {
+                        resp = await window.apiService.get(`/api/alugueis/distribuicao-matriz/?ano=${anoLimpo}&mes=${mesLimpo}`);
+                        console.log(`✅ Dados do mês ${mesLimpo} obtidos via ApiService`);
+                    } else {
+                        throw new Error('ApiService não disponível');
+                    }
                 }
             } catch (apiError) {
-                console.warn('Erro ao usar ApiService:', apiError);
+                console.error('❌ Erro ao carregar dados de aluguéis:', apiError);
                 this.uiManager.showError('Erro ao carregar dados de aluguéis: ' + apiError.message);
                 this.clearMatriz();
                 return;
             }
 
             this.uiManager.hideLoading();
-            console.log('🔎 Dados recebidos do backend:', resp);
-            if (!resp || !resp.data || !resp.data.matriz) {
+            console.log('🔎 Dados recebidos do backend:', resp.data);
+            
+            if (!resp.success || !resp.data || !resp.data.matriz) {
                 this.uiManager.showError('Erro ao carregar matriz de aluguéis.');
                 this.clearMatriz();
                 return;
             }
 
-            this.matriz = resp.data.matriz;
+            // Armazenar dados recebidos
+            this.matrizCompleta = resp.data.matriz;
+            this.matriz = resp.data.matriz; // Dados já filtrados pelo backend
             this.proprietarios = resp.data.proprietarios;
             this.imoveis = resp.data.imoveis;
+            
+            // Exibir a matriz diretamente (dados já filtrados pelo backend)
             this.renderMatriz();
+            
         } catch (error) {
             this.uiManager.showError('Erro ao carregar matriz de aluguéis: ' + error.message);
             this.uiManager.hideLoading();
             this.clearMatriz();
         }
+    }
+
+    aplicarFiltroMes(mes) {
+        console.log('🔧 Aplicando filtro por mês:', mes);
+        
+        if (!this.matrizCompleta || !Array.isArray(this.matrizCompleta)) {
+            console.warn('⚠️ Matriz completa não disponível para filtrar');
+            this.matriz = [];
+            this.renderMatriz();
+            return;
+        }
+        
+        if (mes === 'todos' || mes === null || mes === undefined) {
+            // Somar todos os meses disponíveis do ano
+            console.log('📊 Somando todos os meses disponíveis do ano');
+            this.matriz = this.somarTodosMesesDisponiveis(this.matrizCompleta);
+        } else {
+            // Filtrar por mês específico
+            console.log('📊 Filtrando dados para mês:', mes);
+            this.matriz = this.filtrarMatrizPorMes(this.matrizCompleta, mes);
+        }
+        
+        this.renderMatriz();
+    }
+
+    filtrarMatrizPorMes(matrizCompleta, mesDesejado) {
+        console.log('🔍 Filtrando matriz por mês:', mesDesejado);
+        
+        return matrizCompleta.map(entrada => {
+            // Criar uma cópia da entrada
+            const entradaFiltrada = { ...entrada };
+            
+            // Se a entrada tem dados por mês (estrutura tipo: {valores: {Jan: 100, Feb: 200, ...}})
+            if (entrada.valores && typeof entrada.valores === 'object') {
+                const valoresFiltrados = {};
+                
+                // Mapear número do mês para nomes possíveis
+                const nomesMesesPossiveis = [
+                    `mes_${mesDesejado}`,                    // mes_1, mes_2, etc.
+                    `${mesDesejado.toString().padStart(2, '0')}`,  // 01, 02, etc.
+                    mesDesejado.toString(),                   // 1, 2, etc.
+                    // Nomes em português
+                    { 1: 'janeiro', 2: 'fevereiro', 3: 'marco', 4: 'abril', 5: 'maio', 6: 'junho',
+                      7: 'julho', 8: 'agosto', 9: 'setembro', 10: 'outubro', 11: 'novembro', 12: 'dezembro' }[mesDesejado],
+                    // Nomes em inglês (comuns em APIs)
+                    { 1: 'jan', 2: 'feb', 3: 'mar', 4: 'apr', 5: 'may', 6: 'jun',
+                      7: 'jul', 8: 'aug', 9: 'sep', 10: 'oct', 11: 'nov', 12: 'dec' }[mesDesejado]
+                ];
+                
+                // Para cada imóvel, buscar o valor do mês específico
+                for (const [imovel, valores] of Object.entries(entrada.valores)) {
+                    let valorEncontrado = 0;
+                    
+                    if (typeof valores === 'object' && valores !== null) {
+                        // Buscar o valor usando diferentes formatos de chave
+                        for (const possibleKey of nomesMesesPossiveis) {
+                            if (possibleKey && valores[possibleKey] !== undefined) {
+                                valorEncontrado = Number(valores[possibleKey]) || 0;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    valoresFiltrados[imovel] = valorEncontrado;
+                }
+                
+                entradaFiltrada.valores = valoresFiltrados;
+            } else {
+                // Se não tem estrutura por mês, mostrar zero (não há dados específicos)
+                console.log('📝 Sem dados específicos por mês, mostrando zeros');
+                
+                for (const key in entradaFiltrada) {
+                    if (typeof entradaFiltrada[key] === 'number' && key !== 'proprietario_id') {
+                        entradaFiltrada[key] = 0;
+                    }
+                }
+                
+                // Se há campo valores, zerar todos
+                if (entradaFiltrada.valores && typeof entradaFiltrada.valores === 'object') {
+                    for (const imovel in entradaFiltrada.valores) {
+                        entradaFiltrada.valores[imovel] = 0;
+                    }
+                }
+            }
+            
+            return entradaFiltrada;
+        });
+    }
+
+    somarTodosMesesDisponiveis(matrizCompleta) {
+        console.log('🔍 Somando todos os meses disponíveis na matriz');
+        
+        return matrizCompleta.map(entrada => {
+            // Criar uma cópia da entrada
+            const entradaSomada = { ...entrada };
+            
+            // Se a entrada tem dados por mês
+            if (entrada.valores && typeof entrada.valores === 'object') {
+                const valoresSomados = {};
+                
+                // Para cada imóvel, somar todos os meses disponíveis
+                for (const [imovel, valores] of Object.entries(entrada.valores)) {
+                    let somaTotal = 0;
+                    
+                    if (typeof valores === 'object' && valores !== null) {
+                        // Somar todos os valores numéricos encontrados (assumindo que são meses)
+                        for (const [chave, valor] of Object.entries(valores)) {
+                            const valorNumerico = Number(valor);
+                            if (!isNaN(valorNumerico)) {
+                                somaTotal += valorNumerico;
+                                console.log(`💰 ${imovel} - ${chave}: ${valorNumerico}`);
+                            }
+                        }
+                    } else if (typeof valores === 'number') {
+                        // Se já é um valor numérico, usar diretamente
+                        somaTotal = valores;
+                    }
+                    
+                    valoresSomados[imovel] = somaTotal;
+                }
+                
+                entradaSomada.valores = valoresSomados;
+            } else {
+                // Se não tem estrutura por mês, manter valores originais
+                console.log('📝 Mantendo valores originais (sem estrutura por mês)');
+            }
+            
+            return entradaSomada;
+        });
     }
 
     clearMatriz() {
@@ -397,21 +557,39 @@ class AlugueisModule {
     }
 
     renderMatriz() {
+        console.log('🎨 Renderizando matriz com filtro aplicado...');
+        
         // Usar IDs e estrutura igual à de participações
         const tableHead = document.getElementById('alugueis-matrix-head');
         const tableBody = document.getElementById('alugueis-matrix-body');
         const tableContainer = document.getElementById('alugueis-table-container');
+        
         if (tableContainer) tableContainer.style.display = 'block';
-        if (!tableHead || !tableBody) return;
+        if (!tableHead || !tableBody) {
+            console.error('❌ Elementos da tabela não encontrados');
+            return;
+        }
 
-        if (!this.matriz.length || !this.proprietarios?.length || !this.imoveis?.length) {
+        if (!this.matriz?.length || !this.proprietarios?.length || !this.imoveis?.length) {
             SecurityUtils.setSafeHTML(tableHead, '');
             SecurityUtils.setSafeHTML(tableBody, '<tr><td colspan="5" class="text-center text-muted">Nenhum aluguel encontrado.</td></tr>');
             return;
         }
 
-        // Cabeçalho: Imóvel | Proprietário1 | Proprietário2 | ... | Total (sem Ações)
-        let headHtml = '<tr><th>Imóvel</th>';
+        // Determinar título baseado no filtro
+        let tituloFiltro = '';
+        if (this.mesSelecionado && this.mesSelecionado !== 'todos') {
+            const nomesMeses = {
+                1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',
+                7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
+            };
+            tituloFiltro = ` - ${nomesMeses[this.mesSelecionado]} ${this.anoSelecionado}`;
+        } else {
+            tituloFiltro = ` - Ano ${this.anoSelecionado} (Soma Anual)`;
+        }
+
+        // Cabeçalho: Imóvel | Proprietário1 | Proprietário2 | ... | Total
+        let headHtml = `<tr><th>Imóvel${tituloFiltro}</th>`;
         for (const prop of this.proprietarios) {
             headHtml += `<th>${prop.nome}</th>`;
         }
@@ -421,30 +599,60 @@ class AlugueisModule {
         // Corpo: para cada imóvel, uma linha
         let bodyHtml = '';
         for (const imovel of this.imoveis) {
-            bodyHtml += `<tr><td>${imovel.nome}</td>`;
+            bodyHtml += `<tr><td><strong>${imovel.nome}</strong></td>`;
             let total = 0;
+            
             for (const prop of this.proprietarios) {
                 // Busca valor do aluguel para este imóvel/proprietário
                 let valor = 0;
                 for (const linha of this.matriz) {
-                    if (linha.proprietario_id === prop.proprietario_id && linha.valores[imovel.nome] != null) {
-                        valor = linha.valores[imovel.nome];
+                    if (linha.proprietario_id === prop.proprietario_id) {
+                        if (linha.valores && linha.valores[imovel.nome] != null) {
+                            valor = linha.valores[imovel.nome];
+                        }
                         break;
                     }
                 }
                 total += valor;
-                bodyHtml += `<td>${valor ? 'R$ ' + valor.toFixed(2) : '-'}</td>`;
+                
+                // Formatação com indicação se é valor filtrado
+                const valorFormatado = valor ? `R$ ${valor.toFixed(2)}` : '-';
+                bodyHtml += `<td class="text-end">${valorFormatado}</td>`;
             }
-            bodyHtml += `<td><strong>R$ ${total.toFixed(2)}</strong></td></tr>`;
+            
+            bodyHtml += `<td class="text-end"><strong>R$ ${total.toFixed(2)}</strong></td></tr>`;
         }
+        
+        // Adicionar linha de totais por proprietário
+        bodyHtml += '<tr class="table-secondary"><td><strong>Total por Proprietário</strong></td>';
+        let granTotal = 0;
+        
+        for (const prop of this.proprietarios) {
+            let totalProp = 0;
+            for (const linha of this.matriz) {
+                if (linha.proprietario_id === prop.proprietario_id && linha.valores) {
+                    for (const valor of Object.values(linha.valores)) {
+                        if (typeof valor === 'number') {
+                            totalProp += valor;
+                        }
+                    }
+                }
+            }
+            granTotal += totalProp;
+            bodyHtml += `<td class="text-end"><strong>R$ ${totalProp.toFixed(2)}</strong></td>`;
+        }
+        
+        bodyHtml += `<td class="text-end"><strong style="color: #0d6efd;">R$ ${granTotal.toFixed(2)}</strong></td></tr>`;
+        
         SecurityUtils.setSafeHTML(tableBody, bodyHtml);
 
         // Actualizar visibilidad de botones admin-only después de renderizar
         if (window.uiManager && typeof window.uiManager.updateActionButtonsVisibility === 'function') {
             window.uiManager.updateActionButtonsVisibility();
         }
+        
+        console.log('✅ Matriz renderizada com sucesso');
     }
 }
 
-// Registrar el módulo en el contexto global
 window.alugueisModule = new AlugueisModule();

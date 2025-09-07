@@ -22,18 +22,21 @@ const AppConfig = {
         }
     },
 
-    // Método para detectar entorno y configurar URL base
+        // Método para detectar entorno y configurar URL base
     async initNetwork() {
         const hostname = window.location.hostname;
         const protocol = window.location.protocol;
         const isHttps = protocol === 'https:';
         
-        console.log('🌐 Detectando entorno de ejecución...');
+        console.log('🌐 Detectando entorno de ejecução...');
         console.log(`   Hostname: ${hostname}`);
         console.log(`   Protocol: ${protocol}`);
         
-        // Si estamos usando HTTPS, probablemente estamos detrás de Traefik
-        if (isHttps) {
+        // Forzar la configuración para zeus.kronos.cloudns.ph
+        if (hostname === 'zeus.kronos.cloudns.ph') {
+            this.api.baseUrl = 'http://zeus.kronos.cloudns.ph:8000';
+            console.log('🏛️ Modo producción Zeus detectado - FORZADO');
+        } else if (isHttps) {
             // Estamos usando Traefik con SSL - usar el mismo dominio
             this.api.baseUrl = `${protocol}//${hostname}`;
             console.log('🔒 Modo Traefik detectado (HTTPS) - mismo dominio');
@@ -41,10 +44,6 @@ const AppConfig = {
             // Estamos en desarrollo local
             this.api.baseUrl = 'http://localhost:8000';
             console.log('🏠 Modo desarrollo local detectado');
-        } else if (hostname === 'zeus.kronos.cloudns.ph') {
-            // Estamos en el dominio de producción con puerto específico
-            this.api.baseUrl = 'http://zeus.kronos.cloudns.ph:8000';
-            console.log('🏛️ Modo producción Zeus detectado');
         } else {
             // Estamos en red local sin Traefik
             this.api.baseUrl = `http://${hostname}:8000`;
