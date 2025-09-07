@@ -893,6 +893,126 @@ class ViewManager {
                         </div>
                     </div>
                 </div>
+
+                <!-- Modal de Cadastrar Usuario -->
+                <div class="modal fade" id="modal-cadastrar-usuario" tabindex="-1" aria-labelledby="modalCadastrarUsuarioLabel">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="modalCadastrarUsuarioLabel"><i class="fas fa-user-plus me-2"></i>Cadastrar Novo Usuário</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form id="form-cadastrar-usuario">
+                                <div class="modal-body p-1" style="font-size: 0.85rem;">
+                                    <div class="mb-3">
+                                        <label for="novo-usuario" class="form-label">Nome de Usuário *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                            <input type="text" class="form-control" id="novo-usuario" name="usuario" required placeholder="Digite o nome de usuário" autocomplete="off">
+                                        </div>
+                                        <div class="form-text">Mínimo 3 caracteres, apenas letras, números e underscore</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="nova-senha" class="form-label">Senha *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                            <input type="password" class="form-control" id="nova-senha" name="senha" required placeholder="Digite a senha" autocomplete="off">
+                                            <button class="btn btn-outline-secondary" type="button" id="toggle-senha"><i class="fas fa-eye"></i></button>
+                                        </div>
+                                        <div class="form-text">Mínimo 6 caracteres</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="confirmar-senha" class="form-label">Confirmar Senha *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                            <input type="password" class="form-control" id="confirmar-senha" name="confirmar_senha" required placeholder="Confirme a senha" autocomplete="off">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="tipo-usuario" class="form-label">Tipo de Usuário *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
+                                            <select class="form-select" id="tipo-usuario" name="tipo_de_usuario" required>
+                                                <option value="">Selecione o tipo</option>
+                                                <option value="administrador">Administrador</option>
+                                                <option value="usuario">Usuário Comum</option>
+                                                <option value="visualizador">Visualizador</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div id="erro-cadastro-usuario" class="alert alert-danger d-none"></div>
+                                    <div id="sucesso-cadastro-usuario" class="alert alert-success d-none"></div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i> Cancelar</button>
+                                    <button type="submit" class="btn btn-primary" id="btn-salvar-usuario"><i class="fas fa-save me-1"></i> Cadastrar Usuário</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal de Alterar Usuario -->
+                <div class="modal fade" id="modal-alterar-usuario" tabindex="-1" aria-labelledby="modalAlterarUsuarioLabel">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="modalAlterarUsuarioLabel"><i class="fas fa-user-edit me-2"></i>Alterar Usuário</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="selecionar-usuario" class="form-label">Selecionar Usuário *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-users"></i></span>
+                                        <select class="form-select" id="selecionar-usuario" required>
+                                            <option value="">Carregando usuários...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <form id="form-alterar-usuario" style="display: none;">
+                                    <div class="mb-3">
+                                        <label for="alterar-nova-senha" class="form-label">Nova Senha (deixe vazio para não alterar)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                            <input type="password" class="form-control" id="alterar-nova-senha" name="nova_senha" placeholder="Digite a nova senha" autocomplete="off">
+                                            <button class="btn btn-outline-secondary" type="button" id="toggle-alterar-senha"><i class="fas fa-eye"></i></button>
+                                        </div>
+                                        <div class="form-text">Mínimo 6 caracteres (opcional)</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="alterar-confirmar-senha" class="form-label">Confirmar Nova Senha</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                            <input type="password" class="form-control" id="alterar-confirmar-senha" name="confirmar_nova_senha" placeholder="Confirme a nova senha" autocomplete="off">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="alterar-tipo-usuario" class="form-label">Tipo de Usuário</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
+                                            <select class="form-select" id="alterar-tipo-usuario" name="novo_tipo_usuario">
+                                                <option value="">Não alterar</option>
+                                                <option value="administrador">Administrador</option>
+                                                <option value="usuario">Usuário Comum</option>
+                                                <option value="visualizador">Visualizador</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" class="btn btn-warning flex-fill"><i class="fas fa-save me-1"></i> Alterar Usuário</button>
+                                        <button type="button" class="btn btn-danger" id="btn-excluir-usuario-selecionado"><i class="fas fa-trash me-1"></i> Excluir</button>
+                                    </div>
+                                </form>
+                                <div id="erro-alterar-usuario" class="alert alert-danger d-none mt-3"></div>
+                                <div id="sucesso-alterar-usuario" class="alert alert-success d-none mt-3"></div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i> Fechar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
     }
