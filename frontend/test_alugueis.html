@@ -1,0 +1,193 @@
+/**
+ * Test de funcionalidad del módulo aluguéis
+ * Abre en el navegador: http://localhost:3000/test_alugueis.html
+ */
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Módulo Aluguéis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>🧪 Test Módulo Aluguéis</h1>
+        
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Controles de Test</h5>
+                    </div>
+                    <div class="card-body">
+                        <button id="test-login" class="btn btn-primary me-2">1. Test Login</button>
+                        <button id="test-anos" class="btn btn-secondary me-2">2. Test Anos</button>
+                        <button id="test-modulo" class="btn btn-success me-2">3. Test Módulo</button>
+                        <button id="test-dropdowns" class="btn btn-warning">4. Test Dropdowns</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="test-ano-select" class="form-label">Ano Test</label>
+                <select id="test-ano-select" class="form-select">
+                    <option value="">Selecione o ano</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="test-mes-select" class="form-label">Mês Test</label>
+                <select id="test-mes-select" class="form-select" disabled>
+                    <option value="">Selecione o mês</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Log de Resultados</h5>
+                    </div>
+                    <div class="card-body">
+                        <pre id="test-log" style="max-height: 400px; overflow-y: auto; background: #f8f9fa; padding: 1rem; border-radius: 0.25rem;"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts necessários -->
+    <script src="js/utils/security.js"></script>
+    <script src="js/apiService.js"></script>
+    <script src="js/services/authService.js"></script>
+    <script src="js/modules/alugueis.js"></script>
+
+    <script>
+        // Test setup
+        let testLog = document.getElementById('test-log');
+        let token = null;
+
+        function log(message) {
+            console.log(message);
+            testLog.textContent += new Date().toLocaleTimeString() + ' - ' + message + '\n';
+            testLog.scrollTop = testLog.scrollHeight;
+        }
+
+        // 1. Test Login
+        document.getElementById('test-login').addEventListener('click', async () => {
+            log('🔐 Iniciando test de login...');
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        usuario: 'admin',
+                        senha: 'admin00'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    token = data.access_token;
+                    log('✅ Login realizado com sucesso');
+                    log(`🔑 Token: ${token.substring(0, 50)}...`);
+                    
+                    // Configurar apiService
+                    if (window.apiService) {
+                        window.apiService.setToken(token);
+                        log('✅ Token configurado no apiService');
+                    }
+                } else {
+                    log('❌ Erro no login: ' + response.status);
+                }
+            } catch (error) {
+                log('❌ Erro no login: ' + error.message);
+            }
+        });
+
+        // 2. Test Anos
+        document.getElementById('test-anos').addEventListener('click', async () => {
+            log('📅 Testando endpoint de anos...');
+            
+            if (!token) {
+                log('❌ Faça login primeiro');
+                return;
+            }
+
+            try {
+                if (window.apiService) {
+                    const data = await window.apiService.getAnosDisponiveisAlugueis();
+                    log('✅ Dados de anos recebidos:');
+                    log(JSON.stringify(data, null, 2));
+                } else {
+                    log('❌ ApiService não disponível');
+                }
+            } catch (error) {
+                log('❌ Erro ao obter anos: ' + error.message);
+            }
+        });
+
+        // 3. Test Módulo
+        document.getElementById('test-modulo').addEventListener('click', async () => {
+            log('🏠 Testando módulo aluguéis...');
+            
+            try {
+                if (window.alugueisModule) {
+                    log('✅ Módulo aluguéis encontrado');
+                    log('🔧 Inicializando módulo...');
+                    
+                    await window.alugueisModule.load();
+                    log('✅ Módulo carregado com sucesso');
+                } else {
+                    log('❌ Módulo aluguéis não encontrado em window.alugueisModule');
+                }
+            } catch (error) {
+                log('❌ Erro no módulo: ' + error.message);
+            }
+        });
+
+        // 4. Test Dropdowns
+        document.getElementById('test-dropdowns').addEventListener('click', async () => {
+            log('📋 Testando preenchimento de dropdowns...');
+            
+            if (!window.alugueisModule) {
+                log('❌ Carregue o módulo primeiro');
+                return;
+            }
+
+            try {
+                // Simular elementos para teste
+                const anoSelect = document.getElementById('test-ano-select');
+                const mesSelect = document.getElementById('test-mes-select');
+                
+                if (anoSelect && mesSelect) {
+                    // Monkeypatch para usar nossos elementos de teste
+                    const originalGetElementById = document.getElementById;
+                    document.getElementById = function(id) {
+                        if (id === 'alugueis-ano-select') return anoSelect;
+                        if (id === 'alugueis-mes-select') return mesSelect;
+                        return originalGetElementById.call(document, id);
+                    };
+
+                    await window.alugueisModule.loadAnosDisponiveis();
+                    log('✅ Dropdowns populados');
+                    
+                    // Restaurar função original
+                    document.getElementById = originalGetElementById;
+                }
+            } catch (error) {
+                log('❌ Erro nos dropdowns: ' + error.message);
+            }
+        });
+
+        // Inicialização
+        log('🚀 Test ready! Faça login primeiro, depois teste os outros botões.');
+    </script>
+</body>
+</html>

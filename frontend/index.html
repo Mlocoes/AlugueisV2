@@ -1,1078 +1,424 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Aluguéis V2 - Escritorio</title>
+    <title>Sistema de Aluguéis - Unificado</title>
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Custom Styles -->
-    <link href="/src/css/main.css" rel="stylesheet">
-</head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#007bff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Sistema Aluguéis">
+    
+    <!-- PWA Icons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+
+    <!-- Custom CSS Unificado -->
+    <link href="css/responsive.css" rel="stylesheet">
+    <link href="css/animations.css" rel="stylesheet">
+
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
 <body>
-    <!-- =================================================================
-    HEADER
-    ================================================================== -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-building me-2"></i>
-                Sistema de Aluguéis V2
-            </a>
-            <div class="navbar-nav ms-auto">
-                <span class="navbar-text user-info">
-                    <i class="fas fa-circle text-success me-1"></i>
-                    Conectado
-                </span>
+    <!-- Loading Screen -->
+    <div id="loading-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; color: white;">
+        <div class="loading-spinner" style="width: 50px; height: 50px; border: 3px solid rgba(255, 255, 255, 0.3); border-top: 3px solid #fff; border-radius: 50%;"></div>
+        <h3 style="margin-top: 1rem;">🏠 Sistema de Aluguéis</h3>
+        <p>Carregando aplicação...</p>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="login-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); z-index: 9998;">
+        <div class="container d-flex justify-content-center align-items-center min-vh-100">
+            <div class="card shadow-lg" style="width: 100%; max-width: 400px;">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <div style="font-size: 3rem;">🏠</div>
+                        <h4 class="mt-2">Sistema de Aluguéis</h4>
+                        <p class="text-muted">Faça login para continuar</p>
+                    </div>
+                    
+                    <div id="login-alert" class="alert alert-danger" style="display: none;" role="alert"></div>
+                    
+                    <form id="login-form">
+                        <div class="mb-3">
+                            <label for="login-usuario" class="form-label">Usuário</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input type="text" class="form-control" id="login-usuario" name="usuario" required autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="login-senha" class="form-label">Senha</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                <input type="password" class="form-control" id="login-senha" name="senha" required autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary" id="login-submit">
+                                <i class="fas fa-sign-in-alt me-2"></i>Entrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-    </nav>
+    </div>
 
-    <div class="container-fluid">
-        <div class="row">
-            <!-- =================================================================
-            SIDEBAR
-            ================================================================== -->
-            <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
-                <div class="position-sticky pt-3">
-                    <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="#dashboard" onclick="showTab('dashboard')">
-                                <i class="fas fa-tachometer-alt me-2"></i>
-                                Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#proprietarios" onclick="showTab('proprietarios')">
-                                <i class="fas fa-users me-2"></i>
-                                Proprietários
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#imoveis" onclick="showTab('imoveis')">
-                                <i class="fas fa-building me-2"></i>
-                                Imóveis
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#participacoes" onclick="showTab('participacoes')">
-                                <i class="fas fa-percentage me-2"></i>
-                                Participações
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#alugueis" onclick="showTab('alugueis')">
-                                <i class="fas fa-handshake me-2"></i>
-                                Aluguéis
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#relatorios" onclick="showTab('relatorios')">
-                                <i class="fas fa-chart-bar me-2"></i>
-                                Relatórios
-                            </a>
-                        </li>
-                        <li class="nav-item admin-only" style="display: none;">
-                            <a class="nav-link" href="#extras" onclick="showTab('extras')">
-                                <i class="fas fa-cogs me-2"></i>
-                                Extras
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#importar" onclick="showTab('importar')">
-                                <i class="fas fa-file-import me-2"></i>
-                                Importar
-                            </a>
-                        </li>
-                    </ul>
+    <!-- App Container -->
+    <div id="app-container" class="app-container" style="display: none;">
+        <!-- Navigation Container (será poblado por JavaScript) -->
+        <div id="navigation-container"></div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-link d-md-none me-2" id="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h4 class="mb-0" id="page-title">Dashboard</h4>
                 </div>
-            </nav>
-
-            <!-- =================================================================
-            MAIN CONTENT
-            ================================================================== -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <!-- Dashboard Tab -->
-                <div id="dashboard" class="tab-content active">
-                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                        <h1 class="h2">Dashboard</h1>
+                <div class="d-flex align-items-center">
+                    <div class="user-info me-3" id="header-user-info">
+                        <small class="text-muted">
+                            <i class="fas fa-user me-1"></i>
+                            Carregando...
+                        </small>
                     </div>
-                    <div class="container-fluid">
-                        <div class="row mb-4">
-                            <div class="col-12 col-sm-6 col-md-3">
-                                <div class="card stats-card shadow-sm h-100">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-users fa-2x text-primary mb-3"></i>
-                                        <h4 id="dashboard-total-proprietarios" class="counter" style="font-size:1.5rem;">-</h4>
-                                        <p class="text-muted">Proprietários</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-12 col-sm-6 col-md-3">
-                                <div class="card stats-card shadow-sm h-100">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-building fa-2x text-success mb-3"></i>
-                                        <h4 id="dashboard-total-inmuebles" class="counter" style="font-size:1.5rem;">-</h4>
-                                        <p class="text-muted">Imóveis</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-12 col-sm-6 col-md-3">
-                                <div class="card stats-card shadow-sm h-100">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-handshake fa-2x text-warning mb-3"></i>
-                                        <h4 id="dashboard-alugueis-ano-corrente" class="counter" style="font-size:1.5rem;">-</h4>
-                                        <p class="text-muted">Aluguéis no Ano</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-12 col-sm-6 col-md-3">
-                                <div class="card stats-card shadow-sm h-100">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-dollar-sign fa-2x text-info mb-3"></i>
-                                        <h4 id="dashboard-ingresos-mensuales" class="counter" style="font-size:1.5rem;">-</h4>
-                                        <p class="text-muted">Receita/Mês</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-8">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5><i class="fas fa-chart-line me-2"></i>Evolução de Receitas</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="chart-container">
-                                            <canvas id="ingresosChart" height="300"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5><i class="fas fa-chart-pie me-2"></i>Distribuição por Tipo</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="chart-container">
-                                            <canvas id="distribucionChart" height="300"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <button class="btn btn-outline-secondary btn-sm" id="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="d-none d-md-inline ms-1">Sair</span>
+                    </button>
                 </div>
+            </header>
 
-                <!-- Proprietários Tab -->
-                <div id="proprietarios" class="tab-content">
-                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                        <h1 class="h2"><i class="fas fa-users me-2"></i>Gestão de Proprietários</h1>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                <input type="text" class="form-control" id="search-proprietarios" placeholder="Buscar por nome, sobrenome, documento ou email...">
-                            </div>
+            <!-- Main Body -->
+            <main class="main-body" id="main-content">
+                <!-- Conteúdo dinámico será cargado aquí -->
+                <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Carregando...</span>
                         </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0"><i class="fas fa-table me-2"></i>Lista de Proprietários</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
-                                <table class="table table-striped table-hover">
-                                    <thead class="table-dark">
-                                        <tr>
-                                            <th>Proprietário</th>
-                                            <th>Contato</th>
-                                            <th>Endereço</th>
-                                            <th>Dados Bancários</th>
-                                            <th>Data</th>
-                                            <th width="120">Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="proprietarios-table-body">
-                                        <tr>
-                                            <td colspan="7" class="text-center text-muted py-4">
-                                                <div class="spinner-border" role="status">
-                                                    <span class="visually-hidden">Carregando...</span>
-                                                </div>
-                                                <br>Carregando proprietários...
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Imóveis Tab -->
-                <div id="imoveis" class="tab-content">
-                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                        <h1 class="h2">Gestão de Imóveis</h1>
-                        <div class="btn-group"></div>
-                    </div>
-                    <div class="row mb-4"></div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <input type="text" class="form-control" id="imoveis-search" placeholder="Buscar imóveis...">
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
-                                <table class="table table-striped table-hover" id="imoveis-table">
-                                    <thead class="table-dark">
-                                        <tr>
-                                            <th>Nome</th>
-                                            <th>Endereço</th>
-                                            <th>Tipo</th>
-                                            <th>Área Total</th>
-                                            <th>Área Construída</th>
-                                            <th>Valor Cadastral</th>
-                                            <th>Valor Mercado</th>
-                                            <th>IPTU Anual</th>
-                                            <th>Condomínio Mensal</th>
-                                            <th>Alugado</th>
-                                            <th>Data Cadastro</th>
-                                            <th width="120">Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="imoveis-table-body">
-                                        <tr>
-                                            <td colspan="13" class="text-center text-muted py-4">
-                                                <div class="spinner-border" role="status">
-                                                    <span class="visually-hidden">Carregando...</span>
-                                                </div>
-                                                <br>Carregando imóveis...
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Participações Tab -->
-                <div id="participacoes" class="tab-content">
-                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                        <h1 class="h2"><i class="fas fa-chart-pie me-2"></i>Gestão de Participações</h1>
-                    </div>
-                    <div id="participacoes-data-selector" class="mb-3"></div>
-                    <div class="row" id="participacoes-container"></div>
-                    <div id="participacoes-table-container" style="display: none;">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="table-responsive" style="max-height: 60vh; overflow-y: auto; overflow-x: auto;">
-                                    <table class="table table-striped table-hover matriz-table" id="participacoes-matrix-table">
-                                        <thead class="table-dark" id="participacoes-matrix-head" style="white-space: nowrap;">
-                                            <tr>
-                                                <th width="120">Ações</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="participacoes-matrix-body" style="white-space: nowrap;">
-                                            <tr>
-                                                <td colspan="1" class="text-center text-muted py-4">
-                                                    <div class="spinner-border" role="status">
-                                                        <span class="visually-hidden">Carregando...</span>
-                                                    </div>
-                                                    <br>Carregando participações...
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Aluguéis Tab -->
-                <div id="alugueis" class="tab-content">
-                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                        <h1 class="h2">Matriz de Aluguéis</h1>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-3">
-                            <label for="alugueis-ano-select" class="form-label mb-1">Ano</label>
-                            <select id="alugueis-ano-select" class="form-select">
-                                <option value="">Selecione o ano</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="alugueis-mes-select" class="form-label mb-1">Mês</label>
-                            <select id="alugueis-mes-select" class="form-select" disabled>
-                                <option value="">Selecione o mês</option>
-                                <option value="1">Janeiro</option>
-                                <option value="2">Fevereiro</option>
-                                <option value="3">Março</option>
-                                <option value="4">Abril</option>
-                                <option value="5">Maio</option>
-                                <option value="6">Junho</option>
-                                <option value="7">Julho</option>
-                                <option value="8">Agosto</option>
-                                <option value="9">Setembro</option>
-                                <option value="10">Outubro</option>
-                                <option value="11">Novembro</option>
-                                <option value="12">Dezembro</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div id="alugueis-table-container" style="display: none;">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
-                                    <table class="table table-striped table-hover matriz-table" id="alugueis-matrix-table">
-                                        <thead class="table-dark" id="alugueis-matrix-head">
-                                        </thead>
-                                        <tbody id="alugueis-matrix-body">
-                                            <tr>
-                                                <td colspan="1" class="text-center text-muted py-4">
-                                                    <div class="spinner-border" role="status">
-                                                        <span class="visually-hidden">Carregando...</span>
-                                                    </div>
-                                                    <br>Carregando aluguéis...
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Relatórios Tab -->
-                <div id="relatorios" class="tab-content">
-                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                        <h1 class="h2"><i class="fas fa-chart-bar me-2"></i>Relatórios Financeiros</h1>
-                    </div>
-
-                    <!-- Alertas -->
-                    <div id="relatorios-alerts"></div>
-
-                    <!-- Filtros -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0"><i class="fas fa-filter me-2"></i>Filtros</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <label for="relatorios-ano-select" class="form-label mb-1">Ano</label>
-                                    <select id="relatorios-ano-select" class="form-select">
-                                        <option value="">Carregando...</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="relatorios-mes-select" class="form-label mb-1">Mês</label>
-                                    <select id="relatorios-mes-select" class="form-select">
-                                        <option value="">Todos os meses</option>
-                                        <option value="1">Janeiro</option>
-                                        <option value="2">Fevereiro</option>
-                                        <option value="3">Março</option>
-                                        <option value="4">Abril</option>
-                                        <option value="5">Maio</option>
-                                        <option value="6">Junho</option>
-                                        <option value="7">Julho</option>
-                                        <option value="8">Agosto</option>
-                                        <option value="9">Setembro</option>
-                                        <option value="10">Outubro</option>
-                                        <option value="11">Novembro</option>
-                                        <option value="12">Dezembro</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="relatorios-proprietario-select" class="form-label mb-1">Proprietário</label>
-                                    <select id="relatorios-proprietario-select" class="form-select">
-                                        <option value="">Carregando...</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label mb-1">&nbsp;</label>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="relatorios-transferencias-check">
-                                        <label class="form-check-label" for="relatorios-transferencias-check">
-                                            <i class="fas fa-exchange-alt me-1"></i>Transferências
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tabela de Relatórios -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0"><i class="fas fa-table me-2"></i>Relatório de Aluguéis por Proprietário</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
-                                <table class="table table-striped table-hover">
-                                    <thead class="table-dark">
-                                        <tr>
-                                            <th width="50">Nº</th>
-                                            <th>Nome do Proprietário</th>
-                                            <th width="120" class="text-center">Período</th>
-                                            <th width="150" class="text-end">Soma dos Aluguéis</th>
-                                            <th width="150" class="text-end">Soma das Taxas de Administração</th>
-                                            <th width="150" class="text-center">Imóveis</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="relatorios-table-body">
-                                        <tr>
-                                            <td colspan="6" class="text-center text-muted py-4">
-                                                <div class="spinner-border" role="status">
-                                                    <span class="visually-hidden">Carregando...</span>
-                                                </div>
-                                                <br>Carregando relatórios...
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <div class="card-footer">
-                            <small class="text-muted">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Use os filtros acima para refinar os dados. 
-                                Os valores são calculados automaticamente com base nos aluguéis registrados e participações.
-                            </small>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Extras Tab - Acesso exclusivo para administradores -->
-                <div id="extras" class="tab-content">
-                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                        <h1 class="h2"><i class="fas fa-cogs me-2"></i>Sistema de Extras</h1>
-                        <div class="btn-group">
-                            <button id="btn-novo-alias" class="btn btn-primary">
-                                <i class="fas fa-plus me-2"></i>Novo Alias
-                            </button>
-                                <button id="btn-novas-transferencias" class="btn btn-primary">
-                                    <i class="fas fa-exchange-alt me-2"></i>Novas Transferências
-                                </button>
-                        </div>
-                    </div>
-
-
-                    <!-- Tabela de Aliases -->
-                    <div class="card">
-                        <div class="card-header">
-                            <!-- card-title eliminado -->
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
-                                <table class="table table-striped table-hover">
-                                    <thead class="table-dark">
-                                        <tr>
-                                            <th>Alias</th>
-                                            <th>Proprietários Pertenecentes</th>
-                                            <th width="100" class="text-center">Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="extras-table-body">
-                                            <tr>
-                                                <td colspan="3" class="text-center text-muted py-4">
-                                                <div class="spinner-border" role="status">
-                                                    <span class="visually-hidden">Carregando...</span>
-                                                </div>
-                                                <br>Carregando aliases...
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Nova Tabela de Transferências Cadastradas -->
-                    <div class="card mt-4">
-                        <div class="card-header">
-                            <!-- card-title eliminado -->
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
-                                <table class="table table-striped table-hover">
-                                    <thead class="table-dark">
-                                        <tr>
-                                            <th>Alias</th>
-                                            <th>Nome da Transferência</th>
-                                            <th width="130" class="text-center">Data Criação</th>
-                                            <th width="130" class="text-center">Data Fim</th>
-                                            <th width="100" class="text-center">Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="transferencias-table-body">
-                                        <tr>
-                                            <td colspan="6" class="text-center text-muted py-4">
-                                                <div class="spinner-border" role="status">
-                                                    <span class="visually-hidden">Carregando...</span>
-                                                </div>
-                                                <br>Carregando transferências...
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Importar Tab -->
-                <div id="importar" class="tab-content">
-                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                        <h1 class="h2"><i class="fas fa-file-import me-2"></i>Importar Dados</h1>
-                    </div>
-                    <div class="row mb-4 justify-content-center">
-                        <div class="col-12">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h5 class="card-title mb-0"><i class="fas fa-upload me-2"></i>Importar Arquivos Excel</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="mb-4 text-end">
-                                        <div class="d-flex flex-wrap justify-content-center gap-2">
-                                            <button class="btn btn-primary" style="width:150px" id="btn-novo-proprietario"><i class="fas fa-user-plus me-2"></i> Novo Proprietário</button>
-                                            <button class="btn btn-primary" style="width:150px" id="btn-novo-imovel-importar" data-bs-toggle="modal" data-bs-target="#novo-imovel-importar-modal"><i class="fas fa-building me-2"></i> Novo Imóvel</button>
-                                            <button class="btn btn-primary" style="width:150px" id="btn-alterar-usuario" data-bs-toggle="modal" data-bs-target="#modal-alterar-usuario"><i class="fas fa-user-edit me-2"></i> Alterar Usuário</button>
-                                            <button class="btn btn-primary" style="width:150px" id="btn-cadastrar-usuario" data-bs-toggle="modal" data-bs-target="#modal-cadastrar-usuario"><i class="fas fa-user-plus me-2"></i> Cadastrar Novo Usuário</button>
-                                        </div>
-                                    </div>
-                                    <form id="importar-form-proprietarios" class="mb-3" enctype="multipart/form-data">
-                                        <div class="input-group">
-                                            <input type="file" class="form-control" id="arquivo-proprietarios" accept=".xlsx,.xls" required>
-                                            <button class="btn btn-primary" type="submit" style="width: 260px;"><i class="fas fa-users me-2"></i> Importar Proprietários</button>
-                                        </div>
-                                    </form>
-                                    <form id="importar-form-imoveis" class="mb-3" enctype="multipart/form-data">
-                                        <div class="input-group">
-                                            <input type="file" class="form-control" id="arquivo-imoveis" accept=".xlsx,.xls" required>
-                                            <button class="btn btn-primary" type="submit" style="width: 260px;"><i class="fas fa-building me-2"></i> Importar Imóveis</button>
-                                        </div>
-                                    </form>
-                                    <form id="importar-form-participacoes" class="mb-3" enctype="multipart/form-data">
-                                        <div class="input-group">
-                                            <input type="file" class="form-control" id="arquivo-participacoes" accept=".xlsx,.xls" required>
-                                            <button class="btn btn-primary" type="submit" style="width: 260px;"><i class="fas fa-chart-pie me-2"></i> Importar Participações</button>
-                                        </div>
-                                    </form>
-                                    <form id="importar-form-alugueis" class="mb-3" enctype="multipart/form-data">
-                                        <div class="input-group">
-                                            <input type="file" class="form-control" id="arquivo-alugueis" accept=".xlsx,.xls" required>
-                                            <button class="btn btn-primary" type="submit" style="width: 260px;"><i class="fas fa-calendar-alt me-2"></i> Importar Aluguéis</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
+                        <div class="mt-3">Inicializando aplicação...</div>
                     </div>
                 </div>
             </main>
         </div>
     </div>
 
-    <!-- =================================================================
-    MODALS
-    ================================================================== -->
-    <!-- Modal de Login -->
-    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="loginModalLabel"><i class="fas fa-lock me-2"></i>Login do Sistema</h5>
-                </div>
-                <div class="modal-body">
-                    <form id="loginForm" autocomplete="off">
-                        <div class="mb-3">
-                            <label for="usuario" class="form-label">Usuário</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-user"></i></span>
-                                <input type="text" class="form-control" id="usuario" name="usuario" required autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="senha" class="form-label">Senha</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-key"></i></span>
-                                <input type="password" class="form-control" id="senha" name="senha" required autocomplete="off">
-                            </div>
-                        </div>
-                        <div id="loginError" class="alert alert-danger d-none"></div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary"><i class="fas fa-sign-in-alt me-2"></i>Entrar</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Modales (serão adicionados dinamicamente conforme necessário) -->
+    <div id="modals-container"></div>
 
-    <!-- Modal de Edición de Imóvel -->
-    <div class="modal fade" id="edit-imovel-modal" tabindex="-1" aria-labelledby="editImovelModalLabel">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="editImovelModalLabel"><i class="fas fa-building me-2"></i>Editar Imóvel</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="edit-imovel-form">
-                    <div class="modal-body p-1" style="font-size: 0.88rem; max-height: 60vh; overflow-y: auto;">
-                        <div class="mb-1"><label class="form-label">Nome</label><input type="text" class="form-control" name="nome" required style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Endereço</label><input type="text" class="form-control" name="endereco" required style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Tipo</label><input type="text" class="form-control" name="tipo_imovel" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Área Total</label><input type="number" class="form-control" name="area_total" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Área Construída</label><input type="number" class="form-control" name="area_construida" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Valor Cadastral</label><input type="number" class="form-control" name="valor_cadastral" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Valor Mercado</label><input type="number" class="form-control" name="valor_mercado" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">IPTU Mensal</label><input type="number" class="form-control" name="iptu_mensal" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Condomínio Mensal</label><input type="number" class="form-control" name="condominio_mensal" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Quartos</label><input type="number" class="form-control" name="numero_quartos" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Banheiros</label><input type="number" class="form-control" name="numero_banheiros" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Vagas Garagem</label><input type="number" class="form-control" name="numero_vagas_garagem" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="alugado" id="alugado-edit" value="true"><label class="form-check-label" for="alugado-edit">Alugado</label></div></div>
-                        <div class="mb-3"><label class="form-label">Data Cadastro</label><input type="date" class="form-control" name="data_cadastro" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Observações</label><textarea class="form-control" name="observacoes" style="font-size:0.85em;"></textarea></div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Novo Imóvel (para Importar) -->
-    <div class="modal fade" id="novo-imovel-importar-modal" tabindex="-1" aria-labelledby="novoImovelImportarModalLabel">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="novoImovelImportarModalLabel"><i class="fas fa-building me-2"></i>Novo Imóvel</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="form-novo-imovel-importar">
-                    <div class="modal-body p-1" style="font-size: 0.88rem; max-height: 60vh; overflow-y: auto;">
-                        <div class="mb-1"><label class="form-label">Nome</label><input type="text" class="form-control" name="nome" required style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Endereço</label><input type="text" class="form-control" name="endereco" required style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Tipo</label><input type="text" class="form-control" name="tipo_imovel" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Área Total</label><input type="number" class="form-control" name="area_total" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Área Construída</label><input type="number" class="form-control" name="area_construida" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Valor Cadastral</label><input type="number" class="form-control" name="valor_cadastral" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Valor Mercado</label><input type="number" class="form-control" name="valor_mercado" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">IPTU Mensal</label><input type="number" class="form-control" name="iptu_mensal" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Condomínio Mensal</label><input type="number" class="form-control" name="condominio_mensal" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="alugado" id="alugado-novo" value="true"><label class="form-check-label" for="alugado-novo">Alugado</label></div></div>
-                        <div class="mb-3"><label class="form-label">Data Cadastro</label><input type="date" class="form-control" name="data_cadastro" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Observações</label><textarea class="form-control" name="observacoes" style="font-size:0.85em;"></textarea></div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Novo Proprietário -->
-    <div class="modal fade" id="novo-proprietario-modal" tabindex="-1" aria-labelledby="novoProprietarioModalLabel">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="novoProprietarioModalLabel"><i class="fas fa-user-plus me-2"></i> Novo Proprietário</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="form-novo-proprietario">
-                    <div class="modal-body p-1" style="font-size: 0.80rem;">
-                        <div class="mb-1"><label class="form-label">Nome</label><input type="text" class="form-control" name="nome" required style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Sobrenome</label><input type="text" class="form-control" name="sobrenome" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Documento</label><input type="text" class="form-control" name="documento" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Tipo de Documento</label><input type="text" class="form-control" name="tipo_documento" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Endereço</label><input type="text" class="form-control" name="endereco" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Telefone</label><input type="text" class="form-control" name="telefone" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Email</label><input type="email" class="form-control" name="email" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Banco</label><input type="text" class="form-control" name="banco" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Agência</label><input type="text" class="form-control" name="agencia" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Conta</label><input type="text" class="form-control" name="conta" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Tipo de Conta</label><input type="text" class="form-control" name="tipo_conta" style="font-size:0.85em;"></div>
-                        <!-- Campo 'Estado/ativo' eliminado -->
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Editar Proprietário -->
-    <div class="modal fade" id="editar-proprietario-modal" tabindex="-1" aria-labelledby="editarProprietarioModalLabel">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="editarProprietarioModalLabel"><i class="fas fa-user-edit me-2"></i>Editar Proprietário</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="form-editar-proprietario">
-                    <div class="modal-body p-1" style="font-size: 0.85rem;">
-                        <div class="mb-1"><label class="form-label">Nome</label><input type="text" class="form-control" name="nome" required style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Sobrenome</label><input type="text" class="form-control" name="sobrenome" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Documento</label><input type="text" class="form-control" name="documento" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Tipo de Documento</label><input type="text" class="form-control" name="tipo_documento" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Endereço</label><input type="text" class="form-control" name="endereco" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Telefone</label><input type="text" class="form-control" name="telefone" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Email</label><input type="email" class="form-control" name="email" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Banco</label><input type="text" class="form-control" name="banco" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Agência</label><input type="text" class="form-control" name="agencia" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Conta</label><input type="text" class="form-.form-control" name="conta" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label class="form-label">Tipo de Conta</label><input type="text" class="form-control" name="tipo_conta" style="font-size:0.85em;"></div>
-                        <!-- Campo 'Estado/ativo' eliminado -->
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Cadastrar Usuario -->
-    <div class="modal fade" id="modal-cadastrar-usuario" tabindex="-1" aria-labelledby="modalCadastrarUsuarioLabel">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="modalCadastrarUsuarioLabel"><i class="fas fa-user-plus me-2"></i>Cadastrar Novo Usuário</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="form-cadastrar-usuario">
-                    <div class="modal-body p-1" style="font-size: 0.85rem;">
-                        <div class="mb-3">
-                            <label for="novo-usuario" class="form-label">Nome de Usuário *</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-user"></i></span>
-                                <input type="text" class="form-control" id="novo-usuario" name="usuario" required placeholder="Digite o nome de usuário" autocomplete="off">
-                            </div>
-                            <div class="form-text">Mínimo 3 caracteres, apenas letras, números e underscore</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="nova-senha" class="form-label">Senha *</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                                <input type="password" class="form-control" id="nova-senha" name="senha" required placeholder="Digite a senha" autocomplete="off">
-                                <button class="btn btn-outline-secondary" type="button" id="toggle-senha"><i class="fas fa-eye"></i></button>
-                            </div>
-                            <div class="form-text">Mínimo 6 caracteres</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="confirmar-senha" class="form-label">Confirmar Senha *</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                                <input type="password" class="form-control" id="confirmar-senha" name="confirmar_senha" required placeholder="Confirme a senha" autocomplete="off">
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="tipo-usuario" class="form-label">Tipo de Usuário *</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
-                                <select class="form-select" id="tipo-usuario" name="tipo_de_usuario" required>
-                                    <option value="">Selecione o tipo</option>
-                                    <option value="administrador">Administrador</option>
-                                    <option value="usuario">Usuário Comum</option>
-                                    <option value="visualizador">Visualizador</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div id="erro-cadastro-usuario" class="alert alert-danger d-none"></div>
-                        <div id="sucesso-cadastro-usuario" class="alert alert-success d-none"></div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i> Cancelar</button>
-                        <button type="submit" class="btn btn-primary" id="btn-salvar-usuario"><i class="fas fa-save me-1"></i> Cadastrar Usuário</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Alterar Usuario -->
-    <div class="modal fade" id="modal-alterar-usuario" tabindex="-1" aria-labelledby="modalAlterarUsuarioLabel">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="modalAlterarUsuarioLabel"><i class="fas fa-user-edit me-2"></i>Alterar Usuário</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="selecionar-usuario" class="form-label">Selecionar Usuário *</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-users"></i></span>
-                            <select class="form-select" id="selecionar-usuario" required>
-                                <option value="">Carregando usuários...</option>
-                            </select>
-                        </div>
-                    </div>
-                    <form id="form-alterar-usuario" style="display: none;">
-                        <div class="mb-3">
-                            <label for="alterar-nova-senha" class="form-label">Nova Senha (deixe vazio para não alterar)</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                                <input type="password" class="form-control" id="alterar-nova-senha" name="nova_senha" placeholder="Digite a nova senha" autocomplete="off">
-                                <button class="btn btn-outline-secondary" type="button" id="toggle-alterar-senha"><i class="fas fa-eye"></i></button>
-                            </div>
-                            <div class="form-text">Mínimo 6 caracteres (opcional)</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="alterar-confirmar-senha" class="form-label">Confirmar Nova Senha</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                                <input type="password" class="form-control" id="alterar-confirmar-senha" name="confirmar_nova_senha" placeholder="Confirme a nova senha" autocomplete="off">
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="alterar-tipo-usuario" class="form-label">Tipo de Usuário</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
-                                <select class="form-select" id="alterar-tipo-usuario" name="novo_tipo_usuario">
-                                    <option value="">Não alterar</option>
-                                    <option value="administrador">Administrador</option>
-                                    <option value="usuario">Usuário Comum</option>
-                                    <option value="visualizador">Visualizador</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-warning flex-fill"><i class="fas fa-save me-1"></i> Alterar Usuário</button>
-                            <button type="button" class="btn btn-danger" id="btn-excluir-usuario-selecionado"><i class="fas fa-trash me-1"></i> Excluir</button>
-                        </div>
-                    </form>
-                    <div id="erro-alterar-usuario" class="alert alert-danger d-none mt-3"></div>
-                    <div id="sucesso-alterar-usuario" class="alert alert-success d-none mt-3"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i> Fechar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Confirmación de Exclusión de Imóvel -->
-    <div class="modal fade" id="modal-confirmar-exclusao-imovel" tabindex="-1" aria-labelledby="modalConfirmarExclusaoImovelLabel">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="modalConfirmarExclusaoImovelLabel"><i class="fas fa-trash me-2"></i> Confirmar Exclusão</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-3">Tem certeza que deseja excluir este imóvel? Esta ação não pode ser desfeita.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i> Cancelar</button>
-                    <button type="button" class="btn btn-danger" id="btn-confirmar-exclusao-imovel"><i class="fas fa-trash me-1"></i> Excluir</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Novo/Editar Alias -->
-    <div class="modal fade" id="modal-alias" tabindex="-1" aria-labelledby="modalAliasLabel">
-    <div class="modal-dialog modal-dialog-centered modal-md" style="min-height: 700px;">
-            <div class="modal-content border border-2 shadow-lg">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="modalAliasLabel"><i class="fas fa-plus me-2"></i>Novo Alias</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="form-alias">
-                    <div class="modal-body p-1" style="font-size: 0.85rem;">
-                        <div class="mb-1"><label for="alias-nome" class="form-label">Nome do Alias *</label><input type="text" class="form-control" id="alias-nome" name="alias" required placeholder="Digite o nome do alias" style="font-size:0.85em;"></div>
-                        <div class="mb-3"><label for="alias-proprietarios" class="form-label">Proprietários Pertencentes *</label><select class="form-select" id="alias-proprietarios" name="proprietarios" multiple size="8" required style="font-size:0.85em;"><option value="">Carregando proprietários...</option></select><div class="form-text">Mantenha Ctrl pressionado para selecionar múltiplos proprietários</div></div>
-                        
-                        <div class="mb-3">
-                        </div>
-                        
-                        <div id="alias-alerts"></div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" style="width:150px" id="btn-salvar-alias">
-                            <i class="fas fa-save me-2"></i>Salvar Alias
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Novas Transferências -->
-    <div class="modal fade" id="modal-transferencias" tabindex="-1" aria-labelledby="modalTransferenciasLabel">
-    <div class="modal-dialog modal-dialog-centered modal-md" style="min-height: 480px;">
-            <div class="modal-content border border-2 shadow-lg">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="modalTransferenciasLabel"><i class="fas fa-exchange-alt me-2"></i>Novas Transferências</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="form-transferencias">
-                    <div class="modal-body" style="font-size: 0.80rem;">
-                        <div class="mb-1"><label for="transferencia-alias" class="form-label">Selecionar Alias *</label><select class="form-select" id="transferencia-alias" name="alias_id" required style="font-size:0.85em;"><option value="">Selecione um alias...</option></select></div>
-                        <div class="mb-3"><label for="transferencia-nome" class="form-label">Nome da Transferência *</label><input type="text" class="form-control" id="transferencia-nome" name="nome_transferencia" placeholder="Digite o nome da transferência" required style="font-size:0.85em;"></div>
-                        <div class="row mb-3">
-                            <div class="col-md-6"><label for="transferencia-data-criacao" class="form-label">Data Criação *</label><input type="date" class="form-control" id="transferencia-data-criacao" name="data_criacao" required style="font-size:0.85em;"></div>
-                            <div class="col-md-6"><label for="transferencia-data-fim" class="form-label">Data Fim</label><input type="date" class="form-control" id="transferencia-data-fim" name="data_fim" style="font-size:0.85em;"></div>
-                        </div>
-                        
-                        <div id="transferencia-proprietarios-container" style="display: none;">
-                            <h6 class="mb-3"><i class="fas fa-users me-2"></i>Proprietários do Alias</h6>
-                            <div class="table-responsive">
-                                <table class="table table-striped" style="font-size: 0.80rem;">
-                                    <thead style="font-size: 0.80rem;">
-                                        <tr>
-                                            <th>Proprietário</th>
-                                            <th>Valor da Transferência (R$)</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="transferencia-proprietarios-table">
-                                        <!-- Preenchido dinamicamente -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        
-                        <div id="transferencia-alerts"></div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" style="width:150px" id="btn-salvar-transferencias">
-                            <i class="fas fa-save me-2"></i>Salvar Transferências
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Estatísticas Extras -->
-    <div class="modal fade" id="modal-estatisticas-extras" tabindex="-1" aria-labelledby="modalEstatisticasExtrasLabel">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-info text-white">
-                    <h5 class="modal-title" id="modalEstatisticasExtrasLabel"><i class="fas fa-chart-pie me-2"></i>Estatísticas de Extras</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row text-center">
-                        <div class="col-6">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h4 class="text-primary" id="stat-total-extras">0</h4>
-                                    <small>Total de Extras</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h4 class="text-success" id="stat-extras-ativos">0</h4>
-                                    <small>Extras Ativos</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row text-center mt-3">
-                        <div class="col-6">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h4 class="text-warning" id="stat-extras-inativos">0</h4>
-                                    <small>Extras Inativos</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h4 class="text-info" id="stat-valor-total">R$ 0,00</h4>
-                                    <small>Valor Total Transfer.</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Confirmar Exclusão Extras (Alias/Transferência) -->
-    <div class="modal fade" id="modal-confirmar-exclusao-extras" tabindex="-1" aria-labelledby="modalConfirmarExclusaoExtrasLabel">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="modalConfirmarExclusaoExtrasLabel">
-                        <i class="fas fa-trash me-2"></i> Confirmar Exclusão
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-3" id="modal-confirmar-exclusao-extras-msg">Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i> Cancelar</button>
-                    <button type="button" class="btn btn-danger" id="btn-confirmar-exclusao-extras"><i class="fas fa-trash me-1"></i> Excluir</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- =================================================================
-    SCRIPTS
-    ================================================================== -->
+    <!-- Scripts -->
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- <script src="/src/js/core/network-config.js"></script> DESHABILITADO para usar proxy nginx -->
-    <script src="/src/js/core/config.js"></script>
-    <script src="/src/js/apiService.js"></script>
-    <script src="/src/js/services/api.js"></script>
-    <script src="/src/js/core/ui-manager.js"></script>
-    <script src="/src/js/services/authService.js"></script>
-    <script src="/src/js/modules/loginManager.js"></script>
-    <script src="/src/js/modules/dashboard.js"></script>
-    <script src="/src/js/modules/proprietarios.js"></script>
-    <script src="/src/js/modules/imoveis.js"></script>
-    <script src="/src/js/modules/participacoes.js"></script>
-    <script src="/src/js/modules/importacao.js"></script>
-    <script src="/src/js/modules/usuarioManager.js"></script>
-    <script src="/src/js/modules/alugueis.js"></script>
-    <script src="/src/js/modules/relatorios.js"></script>
-    <script src="/src/js/modules/extras.js"></script>
-    <script src="/src/js/app.js"></script>
+    
+    <!-- Core Scripts -->
+    <script src="js/utils/security.js"></script>
+    <script src="js/core/config.js"></script>
+    <script src="js/core/network-config.js"></script>
+    <script src="js/core/device-manager.js"></script>
+    <script src="js/core/navigator.js"></script>
+    <script src="js/core/view-manager.js"></script>
+    
+    <!-- Services Scripts -->
+    <script src="js/apiService.js"></script>
+    <script src="js/services/authService.js"></script>
+    <script src="js/core/ui-manager.js"></script>
+    
+    <!-- Module Scripts -->
+    <script src="js/modules/loginManager.js"></script>
+    <script src="js/modules/dashboard.js"></script>
+    <script src="js/modules/proprietarios.js"></script>
+    <script src="js/modules/imoveis.js"></script>
+    <script src="js/modules/participacoes.js"></script>
+    <script src="js/modules/alugueis.js"></script>
+    <script src="js/modules/relatorios.js"></script>
+    <script src="js/modules/extras.js"></script>
+    <script src="js/modules/importacao.js"></script>
+    <script src="js/modules/usuarioManager.js"></script>
+
+    <!-- Main App Script -->
     <script>
-        // Crear instancia global de la aplicação
-        window.app = new SistemaAlugueisApp();
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (window.loginManager && typeof window.loginManager.init === 'function') {
-                window.loginManager.init();
+        /**
+         * Aplicación Principal Unificada
+         */
+        class UnifiedApp {
+            constructor() {
+                this.isInitialized = false;
+                this.isAuthenticated = false;
+                this.currentUser = null;
             }
+
+            async init() {
+                if (this.isInitialized) return;
+
+                console.log('🚀 Inicializando aplicación unificada...');
+
+                try {
+                    // Limpiar localStorage corrupto al inicio
+                    this.cleanupLocalStorage();
+
+                    // Inicializar device manager
+                    if (window.deviceManager) {
+                        window.deviceManager.applyDeviceConfiguration();
+                        window.deviceManager.setupResponsiveListeners();
+                    }
+
+                    // Verificar autenticación guardada
+                    await this.checkSavedAuth();
+
+                    // Si no está autenticado, mostrar login
+                    if (!this.isAuthenticated) {
+                        this.showLogin();
+                    } else {
+                        this.showApp();
+                    }
+
+                    this.setupEventListeners();
+                    this.isInitialized = true;
+
+                } catch (error) {
+                    console.error('❌ Error inicializando aplicación:', error);
+                    this.showError('Error al inicializar la aplicación');
+                }
+            }
+
+            cleanupLocalStorage() {
+                try {
+                    const userData = localStorage.getItem('userData');
+                    if (userData === 'undefined' || userData === 'null' || userData === '') {
+                        console.log('🧹 Limpiando localStorage corrupto');
+                        localStorage.removeItem('userData');
+                        localStorage.removeItem('token');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Error limpiando localStorage:', error);
+                }
+            }
+
+            async checkSavedAuth() {
+                const token = localStorage.getItem('token');
+                const userData = localStorage.getItem('userData');
+
+                if (token && userData && userData !== 'undefined' && userData !== 'null') {
+                    try {
+                        // Primero restaurar los datos en el authService
+                        const authService = window.authService;
+                        if (authService && authService.restoreFromLocalStorage()) {
+                            // Luego validar el token
+                            const isValid = await authService.validateToken();
+                            if (isValid) {
+                                this.isAuthenticated = true;
+                                this.currentUser = JSON.parse(userData);
+                                console.log('✅ Autenticação restaurada exitosamente');
+                                return true;
+                            } else {
+                                // Si no es válido, verificar si authService aún tiene datos
+                                // Si los tiene, es problema de conectividad, no limpiar
+                                if (authService.isAuthenticated()) {
+                                    console.log('🔄 Token no validado pero datos locales presentes, continuando sin validación');
+                                    this.isAuthenticated = true;
+                                    this.currentUser = JSON.parse(userData);
+                                    return true;
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('⚠️ Error en autenticación automática:', error);
+                    }
+                }
+
+                // Solo limpiar si realmente no hay datos válidos
+                console.log('🔄 Requiere nuevo login');
+                return false;
+            }
+
+            showLogin() {
+                document.getElementById('loading-screen').style.display = 'none';
+                document.getElementById('login-screen').style.display = 'block';
+                document.getElementById('app-container').style.display = 'none';
+            }
+
+            showApp() {
+                document.getElementById('loading-screen').style.display = 'none';
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-container').style.display = 'flex';
+
+                // Inicializar componentes de la aplicación
+                this.initializeAppComponents();
+            }
+
+            showError(message) {
+                document.getElementById('loading-screen').innerHTML = `
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <h4>Error</h4>
+                        <p>${SecurityUtils.escapeHtml(message)}</p>
+                        <button class="btn btn-light" onclick="location.reload()">
+                            <i class="fas fa-refresh me-2"></i>Recargar
+                        </button>
+                    </div>
+                `;
+            }
+
+            async initializeAppComponents() {
+                try {
+                    // Inicializar navegador
+                    if (window.unifiedNavigator) {
+                        window.unifiedNavigator.init();
+                    }
+
+                    // Inicializar view manager
+                    if (window.viewManager) {
+                        window.viewManager.init();
+                    }
+
+                    // Actualizar información del usuario
+                    this.updateUserInfo();
+
+                    // Navegar a la vista inicial
+                    const initialView = window.unifiedNavigator ? 
+                        window.unifiedNavigator.getViewFromURL() : 'dashboard';
+                    
+                    if (window.unifiedNavigator) {
+                        window.unifiedNavigator.navigateTo(initialView);
+                    }
+
+                } catch (error) {
+                    console.error('❌ Error inicializando componentes:', error);
+                }
+            }
+
+            setupEventListeners() {
+                // Login form
+                const loginForm = document.getElementById('login-form');
+                if (loginForm) {
+                    loginForm.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        await this.handleLogin(e.target);
+                    });
+                }
+
+                // Logout button
+                const logoutBtn = document.getElementById('logout-btn');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', () => {
+                        this.handleLogout();
+                    });
+                }
+
+                // Menu toggle (mobile)
+                const menuToggle = document.getElementById('menu-toggle');
+                if (menuToggle) {
+                    menuToggle.addEventListener('click', () => {
+                        if (window.unifiedNavigator) {
+                            window.unifiedNavigator.toggleSidebar();
+                        }
+                    });
+                }
+            }
+
+            async handleLogin(form) {
+                const submitBtn = document.getElementById('login-submit');
+                const alertDiv = document.getElementById('login-alert');
+                
+                try {
+                    // Mostrar loading
+                    submitBtn.disabled = true;
+                    SecurityUtils.setSafeHTML(submitBtn, '<i class="fas fa-spinner fa-spin me-2"></i>Entrando...');
+                    alertDiv.style.display = 'none';
+
+                    const formData = new FormData(form);
+                    const credentials = {
+                        usuario: formData.get('usuario'),
+                        senha: formData.get('senha')
+                    };
+
+                    // Realizar login a través del authService
+                    const authService = window.authService;
+                    if (!authService) {
+                        throw new Error('Servicio de autenticación no disponible');
+                    }
+
+                    const response = await authService.login(credentials.usuario, credentials.senha);
+                    
+                    if (response.success) {
+                        this.isAuthenticated = true;
+                        this.currentUser = {
+                            usuario: response.usuario,
+                            tipo: response.tipo
+                        };
+                        
+                        // Guardar en localStorage
+                        localStorage.setItem('token', response.token);
+                        localStorage.setItem('userData', JSON.stringify(this.currentUser));
+                        
+                        // Mostrar aplicación
+                        this.showApp();
+                    } else {
+                        throw new Error(response.message || 'Credenciales inválidas');
+                    }
+
+                } catch (error) {
+                    console.error('❌ Error en login:', error);
+                    alertDiv.textContent = error.message || 'Error al iniciar sesión';
+                    alertDiv.style.display = 'block';
+                } finally {
+                    // Restaurar botón
+                    submitBtn.disabled = false;
+                    SecurityUtils.setSafeHTML(submitBtn, '<i class="fas fa-sign-in-alt me-2"></i>Entrar');
+                }
+            }
+
+            handleLogout() {
+                // Limpiar datos
+                localStorage.removeItem('token');
+                localStorage.removeItem('userData');
+                this.isAuthenticated = false;
+                this.currentUser = null;
+
+                // Mostrar login
+                this.showLogin();
+            }
+
+            updateUserInfo() {
+                if (!this.currentUser) return;
+
+                const userInfo = document.getElementById('header-user-info');
+                if (userInfo) {
+                    SecurityUtils.setSafeHTML(userInfo, `
+                        <small class="text-muted">
+                            <i class="fas fa-user me-1"></i>
+                            ${SecurityUtils.escapeHtml(this.currentUser.usuario)} (${SecurityUtils.escapeHtml(this.currentUser.tipo)})
+                        </small>
+                    `);
+                }
+
+                // Actualizar en navegador también
+                if (window.unifiedNavigator) {
+                    window.unifiedNavigator.updateUserInfo(this.currentUser);
+                }
+            }
+        }
+
+        // Inicializar aplicación cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', () => {
+            window.unifiedApp = new UnifiedApp();
+            window.unifiedApp.init();
         });
     </script>
-
 </body>
-
 </html>
