@@ -316,7 +316,7 @@ window.apiService = {
     // === MÉTODOS ESPECÍFICOS PARA USUÁRIOS ===
     async getUsuarios() {
         const response = await this.get('/api/auth/usuarios');
-        return response.success ? response.data : null;
+        return response;
     },
 
     async createUsuario(data) {
