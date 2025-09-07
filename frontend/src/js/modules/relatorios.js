@@ -12,9 +12,8 @@ class RelatoriosManager {
         
         // Esperar que o ApiService esteja disponível
         this.waitForApiService().then(() => {
-            this.setupEventListeners();
-            // Não carregar dados iniciais automaticamente
-            // Apenas carregarão quando a aba de relatórios for ativada
+            console.log('✅ RelatoriosManager pronto - event listeners serão configurados no load()');
+            // Event listeners serão configurados no método load() quando o DOM estiver pronto
         });
     }
 
@@ -36,26 +35,55 @@ class RelatoriosManager {
     }
 
     setupEventListeners() {
+        console.log('🔧 Configurando event listeners de relatórios...');
+        
         // Evento para filtrar por ano
-        document.getElementById('relatorios-ano-select')?.addEventListener('change', () => {
-            this.filterData();
-        });
+        const anoSelect = document.getElementById('relatorios-ano-select');
+        if (anoSelect) {
+            anoSelect.addEventListener('change', () => {
+                console.log('🎯 Filtro de ano alterado');
+                this.filterData();
+            });
+            console.log('✅ Event listener configurado para ano-select');
+        } else {
+            console.warn('⚠️ Elemento relatorios-ano-select não encontrado');
+        }
 
         // Evento para filtrar por mês
-        document.getElementById('relatorios-mes-select')?.addEventListener('change', () => {
-            this.filterData();
-        });
+        const mesSelect = document.getElementById('relatorios-mes-select');
+        if (mesSelect) {
+            mesSelect.addEventListener('change', () => {
+                console.log('🎯 Filtro de mês alterado');
+                this.filterData();
+            });
+            console.log('✅ Event listener configurado para mes-select');
+        } else {
+            console.warn('⚠️ Elemento relatorios-mes-select não encontrado');
+        }
 
         // Evento para filtrar por proprietário
-        document.getElementById('relatorios-proprietario-select')?.addEventListener('change', () => {
-            this.filterData();
-        });
+        const proprietarioSelect = document.getElementById('relatorios-proprietario-select');
+        if (proprietarioSelect) {
+            proprietarioSelect.addEventListener('change', () => {
+                console.log('🎯 Filtro de proprietário alterado');
+                this.filterData();
+            });
+            console.log('✅ Event listener configurado para proprietario-select');
+        } else {
+            console.warn('⚠️ Elemento relatorios-proprietario-select não encontrado');
+        }
 
         // Evento para checkbox de transferências
-        document.getElementById('relatorios-transferencias-check')?.addEventListener('change', () => {
-            console.log('📋 Checkbox transferências alterado');
-            this.updateTable();
-        });
+        const transferenciasCheck = document.getElementById('relatorios-transferencias-check');
+        if (transferenciasCheck) {
+            transferenciasCheck.addEventListener('change', () => {
+                console.log('📋 Checkbox transferências alterado');
+                this.updateTable();
+            });
+            console.log('✅ Event listener configurado para transferencias-check');
+        } else {
+            console.warn('⚠️ Elemento relatorios-transferencias-check não encontrado');
+        }
     }
 
     /**
@@ -75,6 +103,9 @@ class RelatoriosManager {
                 console.warn('⚠️ Usuário não autenticado - não carregando relatórios');
                 return;
             }
+
+            // ⭐ IMPORTANTE: Configurar event listeners agora que o DOM está pronto
+            this.setupEventListeners();
 
             await this.loadInitialData();
         } catch (error) {

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Filtros Relatórios</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .debug-box { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        button { background: #007bff; color: white; border: none; padding: 10px 15px; margin: 5px; cursor: pointer; border-radius: 3px; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Filtros Relatórios</h1>
+    
+    <div class="debug-box">
+        <h3>Verificação de Elementos</h3>
+        <button onclick="checkElements()">Verificar Elementos DOM</button>
+        <div id="element-check"></div>
+    </div>
+    
+    <div class="debug-box">
+        <h3>Test API Calls</h3>
+        <button onclick="testApiCalls()">Testar Chamadas API</button>
+        <div id="api-results"></div>
+    </div>
+    
+    <div class="debug-box">
+        <h3>Test FilterData Method</h3>
+        <button onclick="testFilterMethod()">Testar Método filterData()</button>
+        <div id="filter-results"></div>
+    </div>
+
+    <script>
+        function checkElements() {
+            const results = document.getElementById('element-check');
+            let html = '<h4>Elementos DOM:</h4>';
+            
+            const elements = [
+                'relatorios-ano-select',
+                'relatorios-mes-select', 
+                'relatorios-proprietario-select',
+                'relatorios-table-body'
+            ];
+            
+            elements.forEach(id => {
+                const element = document.getElementById(id);
+                html += `<p>🔍 ${id}: ${element ? '✅ Encontrado' : '❌ Não encontrado'}</p>`;
+                if (element && element.tagName === 'SELECT') {
+                    html += `&nbsp;&nbsp;&nbsp;Valor atual: "${element.value}"<br>`;
+                    html += `&nbsp;&nbsp;&nbsp;Opções: ${element.options.length}<br>`;
+                }
+            });
+            
+            // Verificar se window.relatoriosManager existe
+            html += `<p>🔍 window.relatoriosManager: ${window.relatoriosManager ? '✅ Encontrado' : '❌ Não encontrado'}</p>`;
+            
+            if (window.relatoriosManager) {
+                html += `&nbsp;&nbsp;&nbsp;filterData method: ${typeof window.relatoriosManager.filterData === 'function' ? '✅ Método existe' : '❌ Método não encontrado'}<br>`;
+            }
+            
+            results.innerHTML = html;
+        }
+        
+        function testApiCalls() {
+            const results = document.getElementById('api-results');
+            results.innerHTML = '<p>🔄 Testando calls API...</p>';
+            
+            // Test 1: Sem filtros
+            fetch('http://zeus.kronos.cloudns.ph:8000/api/reportes/resumen-mensual')
+                .then(response => response.json())
+                .then(data => {
+                    let html = '<h4>Resultados API:</h4>';
+                    html += `<p>✅ Sem filtros: ${Array.isArray(data) ? data.length : 0} registros</p>`;
+                    
+                    // Test 2: Com filtro de mês
+                    return fetch('http://zeus.kronos.cloudns.ph:8000/api/reportes/resumen-mensual?mes=8');
+                })
+                .then(response => response.json())
+                .then(data => {
+                    let html = results.innerHTML;
+                    html += `<p>✅ Com mes=8: ${Array.isArray(data) ? data.length : 0} registros</p>`;
+                    
+                    // Test 3: Com filtro de ano
+                    return fetch('http://zeus.kronos.cloudns.ph:8000/api/reportes/resumen-mensual?ano=2025');
+                })
+                .then(response => response.json())
+                .then(data => {
+                    let html = results.innerHTML;
+                    html += `<p>✅ Com ano=2025: ${Array.isArray(data) ? data.length : 0} registros</p>`;
+                    results.innerHTML = html;
+                })
+                .catch(error => {
+                    results.innerHTML += `<p>❌ Erro: ${error.message}</p>`;
+                });
+        }
+        
+        function testFilterMethod() {
+            const results = document.getElementById('filter-results');
+            
+            if (!window.relatoriosManager) {
+                results.innerHTML = '<p>❌ window.relatoriosManager não encontrado</p>';
+                return;
+            }
+            
+            if (typeof window.relatoriosManager.filterData !== 'function') {
+                results.innerHTML = '<p>❌ Método filterData não encontrado</p>';
+                return;
+            }
+            
+            results.innerHTML = '<p>🔄 Executando filterData()...</p>';
+            
+            try {
+                console.log('🧪 Testando filterData() method...');
+                window.relatoriosManager.filterData();
+                results.innerHTML = '<p>✅ Método filterData() executado com sucesso! Verifique o console.</p>';
+            } catch (error) {
+                results.innerHTML = `<p>❌ Erro ao executar filterData(): ${error.message}</p>`;
+            }
+        }
+        
+        // Auto-executar verificação inicial
+        window.onload = function() {
+            checkElements();
+        };
+    </script>
+</body>
+</html>
