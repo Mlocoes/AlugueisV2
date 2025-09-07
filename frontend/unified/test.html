@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Sistema de Aluguéis</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-result { padding: 10px; margin: 5px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste dos Módulos</h1>
+    <div id="test-results"></div>
+
+    <!-- Core Scripts -->
+    <script src="js/utils/security.js"></script>
+    <script src="js/core/config.js"></script>
+    <script src="js/core/network-config.js"></script>
+    <script src="js/core/device-manager.js"></script>
+    <script src="js/core/navigator.js"></script>
+    <script src="js/core/view-manager.js"></script>
+    
+    <!-- Services Scripts -->
+    <script src="js/services/api.js"></script>
+    <script src="js/apiService.js"></script>
+    <script src="js/services/authService.js"></script>
+    <script src="js/core/ui-manager.js"></script>
+
+    <script>
+        const testResults = document.getElementById('test-results');
+        
+        function addTestResult(name, success, error = null) {
+            const div = document.createElement('div');
+            div.className = `test-result ${success ? 'success' : 'error'}`;
+            div.innerHTML = `
+                <strong>${name}:</strong> ${success ? '✅ OK' : '❌ ERRO'}
+                ${error ? `<br><small>${error}</small>` : ''}
+            `;
+            testResults.appendChild(div);
+        }
+
+        // Test modules
+        try {
+            addTestResult('SecurityUtils', typeof SecurityUtils !== 'undefined');
+        } catch (e) {
+            addTestResult('SecurityUtils', false, e.message);
+        }
+
+        try {
+            addTestResult('AppConfig', typeof AppConfig !== 'undefined');
+        } catch (e) {
+            addTestResult('AppConfig', false, e.message);
+        }
+
+        try {
+            addTestResult('NetworkConfig', typeof NetworkConfig !== 'undefined');
+        } catch (e) {
+            addTestResult('NetworkConfig', false, e.message);
+        }
+
+        try {
+            addTestResult('DeviceManager', typeof DeviceManager !== 'undefined');
+        } catch (e) {
+            addTestResult('DeviceManager', false, e.message);
+        }
+
+        try {
+            addTestResult('UnifiedNavigator', typeof UnifiedNavigator !== 'undefined');
+        } catch (e) {
+            addTestResult('UnifiedNavigator', false, e.message);
+        }
+
+        try {
+            addTestResult('ViewManager', typeof ViewManager !== 'undefined');
+        } catch (e) {
+            addTestResult('ViewManager', false, e.message);
+        }
+
+        try {
+            addTestResult('ApiService', typeof ApiService !== 'undefined');
+        } catch (e) {
+            addTestResult('ApiService', false, e.message);
+        }
+
+        try {
+            addTestResult('AuthService', typeof AuthService !== 'undefined');
+        } catch (e) {
+            addTestResult('AuthService', false, e.message);
+        }
+
+        try {
+            addTestResult('UIManager', typeof UIManager !== 'undefined');
+        } catch (e) {
+            addTestResult('UIManager', false, e.message);
+        }
+
+        // Test API connection
+        setTimeout(async () => {
+            try {
+                const response = await fetch('http://localhost:8000/api/health');
+                const data = await response.json();
+                addTestResult('Backend Connection', response.ok, response.ok ? `Status: ${data.status}` : `Error: ${response.status}`);
+            } catch (e) {
+                addTestResult('Backend Connection', false, e.message);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

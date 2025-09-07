@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Test Login - API Service</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #007bff 0%, #6f42c1 100%);
+            min-height: 100vh;
+            margin: 0;
+            color: white;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        .test-result { 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 8px; 
+            backdrop-filter: blur(5px);
+        }
+        .success { 
+            background-color: rgba(40, 167, 69, 0.3); 
+            border: 1px solid rgba(40, 167, 69, 0.5);
+        }
+        .error { 
+            background-color: rgba(220, 53, 69, 0.3); 
+            border: 1px solid rgba(220, 53, 69, 0.5);
+        }
+        .info {
+            background-color: rgba(0, 123, 255, 0.3); 
+            border: 1px solid rgba(0, 123, 255, 0.5);
+        }
+        button {
+            background: rgba(40, 167, 69, 0.8);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: rgba(40, 167, 69, 1); }
+        button:disabled { 
+            background: rgba(108, 117, 125, 0.5); 
+            cursor: not-allowed; 
+        }
+        h1 { text-align: center; margin-bottom: 30px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test API Service & Login</h1>
+        <div id="test-results"></div>
+        
+        <div class="test-result info">
+            <strong>📋 Tests Disponibles:</strong><br>
+            <button onclick="testApiService()">Test ApiService</button>
+            <button onclick="testLogin()">Test Login</button>
+            <button onclick="testBackendHealth()">Test Backend Health</button>
+        </div>
+    </div>
+
+    <!-- Core Scripts - Same as main app -->
+    <script src="js/utils/security.js"></script>
+    <script src="js/core/config.js"></script>
+    <script src="js/core/network-config.js"></script>
+    <script src="js/apiService.js"></script>
+    <script src="js/services/authService.js"></script>
+
+    <script>
+        const testResults = document.getElementById('test-results');
+        
+        function addTestResult(name, success, details = '') {
+            const div = document.createElement('div');
+            div.className = `test-result ${success ? 'success' : 'error'}`;
+            div.innerHTML = `
+                <strong>${name}: ${success ? '✅ OK' : '❌ ERRO'}</strong>
+                ${details ? `<br><small>${details}</small>` : ''}
+            `;
+            testResults.appendChild(div);
+            
+            // Auto scroll to bottom
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function testApiService() {
+            try {
+                // Test 1: ApiService exists
+                addTestResult(
+                    'ApiService Exists',
+                    typeof window.apiService !== 'undefined',
+                    `Type: ${typeof window.apiService}`
+                );
+
+                // Test 2: Has post method
+                addTestResult(
+                    'ApiService.post Method',
+                    typeof window.apiService.post === 'function',
+                    `Available methods: ${Object.keys(window.apiService).join(', ')}`
+                );
+
+                // Test 3: Base URL
+                const baseUrl = window.apiService.getBaseUrl();
+                addTestResult(
+                    'Base URL Configuration',
+                    baseUrl !== null,
+                    `Base URL: ${baseUrl}`
+                );
+
+            } catch (error) {
+                addTestResult('ApiService Test', false, error.message);
+            }
+        }
+
+        async function testLogin() {
+            try {
+                addTestResult('Login Test', true, 'Iniciando test de login...');
+
+                // Test with admin credentials
+                const loginData = {
+                    usuario: 'admin',
+                    senha: 'admin00'
+                };
+
+                addTestResult('Login Request', true, `Enviando: ${JSON.stringify(loginData)}`);
+
+                const response = await window.apiService.post('/api/auth/login', loginData);
+                
+                addTestResult(
+                    'Login Response',
+                    response.success,
+                    `Response: ${JSON.stringify(response, null, 2)}`
+                );
+
+                if (response.success && response.data) {
+                    addTestResult(
+                        'Token Received',
+                        !!response.data.access_token,
+                        `Token length: ${response.data.access_token ? response.data.access_token.length : 0}`
+                    );
+                }
+
+            } catch (error) {
+                addTestResult('Login Test', false, error.message);
+            }
+        }
+
+        async function testBackendHealth() {
+            try {
+                const response = await window.apiService.get('/api/health');
+                addTestResult(
+                    'Backend Health',
+                    response.success,
+                    `Status: ${response.success ? response.data.status : 'Error'}`
+                );
+            } catch (error) {
+                addTestResult('Backend Health', false, error.message);
+            }
+        }
+
+        // Auto-run basic tests
+        setTimeout(() => {
+            console.log('🧪 Running automatic tests...');
+            testApiService();
+        }, 1000);
+    </script>
+</body>
+</html>
