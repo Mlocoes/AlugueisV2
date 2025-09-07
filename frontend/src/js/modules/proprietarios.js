@@ -114,15 +114,15 @@ class ProprietariosModule {
             const documentoInfo = (prop.tipo_documento && prop.documento) ? `${prop.tipo_documento}: ${prop.documento}` : (prop.documento ? `Doc: ${prop.documento}` : 'Sem documento');
             return `
                 <tr>
-                    <td>
+                    <td data-label="Proprietário">
                         <strong>${nomeCompleto}</strong><br>
                         <small class="text-muted">${documentoInfo}</small>
                     </td>
-                    <td>${this.formatContact(prop.email, prop.telefone)}</td>
-                    <td>${this.formatField(prop.endereco, 'Sem endereço')}</td>
-                    <td><div class="small">${this.formatBankInfo(prop.banco, prop.agencia, prop.conta, prop.tipo_conta)}</div></td>
-                    <td><small class="text-muted">${new Date(prop.data_cadastro).toLocaleDateString()}</small></td>
-                    <td>
+                    <td data-label="Contato">${this.formatContact(prop.email, prop.telefone)}</td>
+                    <td data-label="Endereço">${this.formatField(prop.endereco, 'Sem endereço')}</td>
+                    <td data-label="Dados Bancários"><div class="small">${this.formatBankInfo(prop.banco, prop.agencia, prop.conta, prop.tipo_conta)}</div></td>
+                    <td data-label="Data"><small class="text-muted">${new Date(prop.data_cadastro).toLocaleDateString()}</small></td>
+                    <td data-label="Ações">
                         <div class="btn-group btn-group-sm">
                             <button class="btn btn-outline-warning admin-only" onclick="proprietariosModule.editProprietario(${prop.id})" title="Editar"><i class="fas fa-edit"></i></button>
                             <button class="btn btn-outline-danger admin-only" onclick="proprietariosModule.deleteProprietario(${prop.id})" title="Eliminar"><i class="fas fa-trash"></i></button>
@@ -180,15 +180,15 @@ class ProprietariosModule {
             const documentoInfo = (prop.tipo_documento && prop.documento) ? `${prop.tipo_documento}: ${prop.documento}` : (prop.documento ? `Doc: ${prop.documento}` : 'Sem documento');
             return `
                 <tr>
-                    <td>
+                    <td data-label="Proprietário">
                         <strong>${nomeCompleto}</strong><br>
                         <small class="text-muted">${documentoInfo}</small>
                     </td>
-                    <td>${this.formatContact(prop.email, prop.telefone)}</td>
-                    <td>${this.formatField(prop.endereco, 'Sem endereço')}</td>
-                    <td><div class="small">${this.formatBankInfo(prop.banco, prop.agencia, prop.conta, prop.tipo_conta)}</div></td>
-                    <td><small class="text-muted">${new Date(prop.data_cadastro).toLocaleDateString()}</small></td>
-                    <td>
+                    <td data-label="Contato">${this.formatContact(prop.email, prop.telefone)}</td>
+                    <td data-label="Endereço">${this.formatField(prop.endereco, 'Sem endereço')}</td>
+                    <td data-label="Dados Bancários"><div class="small">${this.formatBankInfo(prop.banco, prop.agencia, prop.conta, prop.tipo_conta)}</div></td>
+                    <td data-label="Data"><small class="text-muted">${new Date(prop.data_cadastro).toLocaleDateString()}</small></td>
+                    <td data-label="Ações">
                         <div class="btn-group btn-group-sm">
                             <button class="btn btn-outline-warning admin-only" onclick="proprietariosModule.editProprietario(${prop.id})" title="Editar"><i class="fas fa-edit"></i></button>
                             <button class="btn btn-outline-danger admin-only" onclick="proprietariosModule.deleteProprietario(${prop.id})" title="Eliminar"><i class="fas fa-trash"></i></button>
