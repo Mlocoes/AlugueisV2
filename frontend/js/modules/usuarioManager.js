@@ -231,27 +231,13 @@ class UsuarioManager {
                 await window.AppConfig?.initNetwork();
             }
             
-            const baseUrl = window.AppConfig?.api?.baseUrl || '';
-            console.log('🔗 Usando baseUrl:', baseUrl);
+            console.log('🔗 Usando apiService para crear usuario');
             
-            const authHeader = window.authService?.getAuthHeader();
+            // Usar apiService que maneja automáticamente la autenticación
+            const response = await window.apiService.createUsuario(userData);
 
-            if (!authHeader || !authHeader.Authorization) {
-                throw new Error('Token de autenticação não encontrado');
-            }
-
-            const response = await fetch(`${baseUrl}/api/auth/cadastrar-usuario`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': authHeader.Authorization
-                },
-                body: JSON.stringify(userData)
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                this.mostrarSucesso(`Usuário '${result.usuario}' cadastrado com sucesso!`);
+            if (response && response.success) {
+                this.mostrarSucesso(`Usuário '${response.data.usuario}' cadastrado com sucesso!`);
 
                 // Limpar formulário após sucesso
                 setTimeout(() => {
@@ -265,13 +251,12 @@ class UsuarioManager {
                 }, 2000);
 
             } else {
-                const error = await response.json();
-                this.mostrarErro(error.detail || 'Erro ao cadastrar usuário');
+                this.mostrarErro(response?.message || response?.error || 'Erro ao cadastrar usuário');
             }
 
         } catch (error) {
             console.error('Erro no cadastro:', error);
-            this.mostrarErro('Erro de conexão com o servidor');
+            this.mostrarErro('Erro de conexão com o servidor: ' + error.message);
         } finally {
             this.setLoading(false);
         }
@@ -520,7 +505,7 @@ class UsuarioManager {
         this.esconderAlertsAlterar();
 
         try {
-            const response = await window.apiService.alterarUsuario(this.usuarioSelecionado.id, updateData);
+            const response = await window.apiService.updateUsuario(this.usuarioSelecionado.id, updateData);
 
             if (response && response.success) {
                 this.mostrarSucessoAlterar(`Usuário '${this.usuarioSelecionado.usuario}' alterado com sucesso!`);
@@ -570,7 +555,7 @@ class UsuarioManager {
         this.esconderAlertsAlterar();
 
         try {
-            const response = await window.apiService.excluirUsuario(this.usuarioSelecionado.id);
+            const response = await window.apiService.deleteUsuario(this.usuarioSelecionado.id);
 
             if (response && response.success) {
                 this.mostrarSucessoAlterar(`Usuário '${this.usuarioSelecionado.usuario}' excluído com sucesso!`);
