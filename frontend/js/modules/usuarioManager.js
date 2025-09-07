@@ -20,9 +20,22 @@ class UsuarioManager {
     init() {
         if (this.initialized) return;
 
-        // Obter elementos do DOM
-        this.modal = new bootstrap.Modal(document.getElementById('modal-cadastrar-usuario'));
-        this.modalAlterar = new bootstrap.Modal(document.getElementById('modal-alterar-usuario'));
+        // Obter elementos do DOM (verificar se existem antes de criar modales)
+        const modalElement = document.getElementById('modal-cadastrar-usuario');
+        const modalAlterarElement = document.getElementById('modal-alterar-usuario');
+        
+        if (modalElement) {
+            this.modal = new bootstrap.Modal(modalElement);
+        } else {
+            console.warn('⚠️ Modal cadastrar-usuario não encontrado');
+        }
+        
+        if (modalAlterarElement) {
+            this.modalAlterar = new bootstrap.Modal(modalAlterarElement);
+        } else {
+            console.warn('⚠️ Modal alterar-usuario não encontrado');
+        }
+        
         this.form = document.getElementById('form-cadastrar-usuario');
         this.formAlterar = document.getElementById('form-alterar-usuario');
 
@@ -30,6 +43,30 @@ class UsuarioManager {
         this.setupEvents();
 
         this.initialized = true;
+    }
+
+    /**
+     * Método para carregar dados quando a vista é ativada (chamado pelo view-manager)
+     */
+    async load() {
+        console.log('🔄 Carregando UsuarioManager...');
+        try {
+            // Inicializar se ainda não foi inicializado
+            if (!this.initialized) {
+                this.init();
+            }
+            
+            // Carregar lista de usuários apenas se há elementos necessários
+            if (this.form || this.formAlterar) {
+                await this.carregarUsuarios();
+            } else {
+                console.log('ℹ️ UsuarioManager carregado em modo limitado (elementos DOM não encontrados)');
+            }
+            
+            console.log('✅ UsuarioManager carregado com sucesso');
+        } catch (error) {
+            console.error('❌ Erro ao carregar UsuarioManager:', error);
+        }
     }
 
     /**
@@ -677,3 +714,5 @@ class UsuarioManager {
 
 // Criar instância global
 window.usuarioManager = new UsuarioManager();
+// Registrar também como usuarioManagerModule para compatibilidade com view-manager
+window.usuarioManagerModule = window.usuarioManager;

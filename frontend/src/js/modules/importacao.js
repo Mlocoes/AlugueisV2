@@ -34,6 +34,23 @@ class ImportacaoModule {
         this.initialized = true;
     }
 
+    /**
+     * Método para carregar dados quando a vista é ativada (chamado pelo view-manager)
+     */
+    async load() {
+        console.log('🔄 Carregando ImportacaoModule...');
+        try {
+            // Inicializar se ainda não foi inicializado
+            if (!this.initialized) {
+                this.init();
+            }
+            
+            console.log('✅ ImportacaoModule carregado com sucesso');
+        } catch (error) {
+            console.error('❌ Erro ao carregar ImportacaoModule:', error);
+        }
+    }
+
     async handleImport(event, tipo) {
         event.preventDefault();
         const form = event.target;
@@ -106,3 +123,9 @@ class ImportacaoModule {
         }
     }
 }
+
+// Registrar módulo globalmente
+document.addEventListener('DOMContentLoaded', function() {
+    window.importacaoModule = new ImportacaoModule();
+    console.log('✅ ImportacaoModule registrado globalmente');
+});
