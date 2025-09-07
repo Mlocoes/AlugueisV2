@@ -20,22 +20,9 @@ class UsuarioManager {
     init() {
         if (this.initialized) return;
 
-        // Obter elementos do DOM (verificar se existem antes de criar modales)
-        const modalElement = document.getElementById('modal-cadastrar-usuario');
-        const modalAlterarElement = document.getElementById('modal-alterar-usuario');
-        
-        if (modalElement) {
-            this.modal = new bootstrap.Modal(modalElement);
-        } else {
-            console.warn('⚠️ Modal cadastrar-usuario não encontrado');
-        }
-        
-        if (modalAlterarElement) {
-            this.modalAlterar = new bootstrap.Modal(modalAlterarElement);
-        } else {
-            console.warn('⚠️ Modal alterar-usuario não encontrado');
-        }
-        
+        // Obter elementos do DOM
+        this.modal = new bootstrap.Modal(document.getElementById('modal-cadastrar-usuario'));
+        this.modalAlterar = new bootstrap.Modal(document.getElementById('modal-alterar-usuario'));
         this.form = document.getElementById('form-cadastrar-usuario');
         this.formAlterar = document.getElementById('form-alterar-usuario');
 
@@ -55,14 +42,6 @@ class UsuarioManager {
             if (!this.initialized) {
                 this.init();
             }
-            
-            // Carregar lista de usuários apenas se há elementos necessários
-            if (this.form || this.formAlterar) {
-                await this.carregarUsuarios();
-            } else {
-                console.log('ℹ️ UsuarioManager carregado em modo limitado (elementos DOM não encontrados)');
-            }
-            
             console.log('✅ UsuarioManager carregado com sucesso');
         } catch (error) {
             console.error('❌ Erro ao carregar UsuarioManager:', error);
@@ -231,13 +210,27 @@ class UsuarioManager {
                 await window.AppConfig?.initNetwork();
             }
             
-            console.log('🔗 Usando apiService para crear usuario');
+            const baseUrl = window.AppConfig?.api?.baseUrl || '';
+            console.log('🔗 Usando baseUrl:', baseUrl);
             
-            // Usar apiService que maneja automáticamente la autenticación
-            const response = await window.apiService.createUsuario(userData);
+            const authHeader = window.authService?.getAuthHeader();
 
-            if (response && response.success) {
-                this.mostrarSucesso(`Usuário '${response.data.usuario}' cadastrado com sucesso!`);
+            if (!authHeader || !authHeader.Authorization) {
+                throw new Error('Token de autenticação não encontrado');
+            }
+
+            const response = await fetch(`${baseUrl}/api/auth/cadastrar-usuario`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': authHeader.Authorization
+                },
+                body: JSON.stringify(userData)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                this.mostrarSucesso(`Usuário '${result.usuario}' cadastrado com sucesso!`);
 
                 // Limpar formulário após sucesso
                 setTimeout(() => {
@@ -251,12 +244,13 @@ class UsuarioManager {
                 }, 2000);
 
             } else {
-                this.mostrarErro(response?.message || response?.error || 'Erro ao cadastrar usuário');
+                const error = await response.json();
+                this.mostrarErro(error.detail || 'Erro ao cadastrar usuário');
             }
 
         } catch (error) {
             console.error('Erro no cadastro:', error);
-            this.mostrarErro('Erro de conexão com o servidor: ' + error.message);
+            this.mostrarErro('Erro de conexão com o servidor');
         } finally {
             this.setLoading(false);
         }
@@ -409,13 +403,14 @@ class UsuarioManager {
             const response = await window.apiService.getUsuarios();
             console.log('📋 Resposta getUsuarios:', response);
 
-            if (response && response.success) {
-                this.usuarios = response.data;
+            // O getUsuarios() retorna diretamente os dados (array) se success=true, ou null se falhou
+            if (response && Array.isArray(response)) {
+                this.usuarios = response;
                 console.log('👥 Usuários carregados:', this.usuarios);
                 this.preencherSelectUsuarios();
             } else {
-                console.error('❌ Erro na resposta:', response);
-                this.mostrarErroAlterar(response?.message || response?.error || 'Erro ao carregar usuários');
+                console.error('❌ Erro: resposta não é um array válido:', response);
+                this.mostrarErroAlterar('Erro ao carregar usuários');
             }
         } catch (error) {
             console.error('❌ Erro ao carregar usuários:', error);
@@ -697,7 +692,6 @@ class UsuarioManager {
     }
 }
 
-// Criar instância global
+// Criar instâncias globais para compatibilidade
 window.usuarioManager = new UsuarioManager();
-// Registrar também como usuarioManagerModule para compatibilidade com view-manager
-window.usuarioManagerModule = window.usuarioManager;
+window.usuarioManagerModule = window.usuarioManager; // Alias para view-manager

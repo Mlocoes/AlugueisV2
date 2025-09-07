@@ -860,7 +860,7 @@ class ViewManager {
                                 <div class="mb-4 text-end">
                                     <div class="d-flex flex-wrap justify-content-center gap-2">
                                         <button class="btn btn-primary" style="width:150px" id="btn-novo-proprietario"><i class="fas fa-user-plus me-2"></i> Novo Proprietário</button>
-                                        <button class="btn btn-primary" style="width:150px" id="btn-novo-imovel-importar" data-bs-toggle="modal" data-bs-target="#novo-imovel-importar-modal"><i class="fas fa-building me-2"></i> Novo Imóvel</button>
+                                        <button class="btn btn-primary" style="width:150px" id="btn-novo-imovel-importar"><i class="fas fa-building me-2"></i> Novo Imóvel</button>
                                         <button class="btn btn-primary" style="width:150px" id="btn-alterar-usuario" data-bs-toggle="modal" data-bs-target="#modal-alterar-usuario"><i class="fas fa-user-edit me-2"></i> Alterar Usuário</button>
                                         <button class="btn btn-primary" style="width:150px" id="btn-cadastrar-usuario" data-bs-toggle="modal" data-bs-target="#modal-cadastrar-usuario"><i class="fas fa-user-plus me-2"></i> Cadastrar Novo Usuário</button>
                                     </div>
@@ -894,7 +894,8 @@ class ViewManager {
                     </div>
                 </div>
 
-                <!-- Modal de Cadastrar Usuario -->
+                <!-- Modales de Usuário -->
+                <!-- Modal Cadastrar Usuário -->
                 <div class="modal fade" id="modal-cadastrar-usuario" tabindex="-1" aria-labelledby="modalCadastrarUsuarioLabel">
                     <div class="modal-dialog">
                         <div class="modal-content">
@@ -944,15 +945,18 @@ class ViewManager {
                                     <div id="sucesso-cadastro-usuario" class="alert alert-success d-none"></div>
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i> Cancelar</button>
-                                    <button type="submit" class="btn btn-primary" id="btn-salvar-usuario"><i class="fas fa-save me-1"></i> Cadastrar Usuário</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary" id="btn-confirmar-cadastro">
+                                        <span class="spinner-border spinner-border-sm d-none me-2" id="spinner-cadastro"></span>
+                                        Cadastrar
+                                    </button>
                                 </div>
                             </form>
                         </div>
                     </div>
                 </div>
 
-                <!-- Modal de Alterar Usuario -->
+                <!-- Modal Alterar Usuário -->
                 <div class="modal fade" id="modal-alterar-usuario" tabindex="-1" aria-labelledby="modalAlterarUsuarioLabel">
                     <div class="modal-dialog">
                         <div class="modal-content">

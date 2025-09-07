@@ -316,7 +316,7 @@ window.apiService = {
     // === MÉTODOS ESPECÍFICOS PARA USUÁRIOS ===
     async getUsuarios() {
         const response = await this.get('/api/auth/usuarios');
-        return response;
+        return response.success ? response.data : null;
     },
 
     async createUsuario(data) {
@@ -325,12 +325,12 @@ window.apiService = {
     },
 
     async updateUsuario(id, data) {
-        const response = await this.put(`/api/auth/usuarios/${id}`, data);
+        const response = await this.put(`/api/auth/alterar-usuario/${id}`, data);
         return response;
     },
 
     async deleteUsuario(id) {
-        const response = await this.delete(`/api/auth/usuarios/${id}`);
+        const response = await this.delete(`/api/auth/usuario/${id}`);
         return response;
     },
 

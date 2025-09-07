@@ -195,6 +195,62 @@ class UsuarioManager {
                 });
             }
         });
+
+        // Event listeners para botões que abrem modales (adicionado para corrigir problema)
+        this.setupModalButtons();
+    }
+
+    /**
+     * Configurar event listeners para botões que abrem modales
+     */
+    setupModalButtons() {
+        // Botão "Cadastrar Novo Usuário"
+        const btnCadastrar = document.getElementById('btn-cadastrar-usuario');
+        if (btnCadastrar) {
+            btnCadastrar.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.abrirModalCadastro();
+            });
+            console.log('✅ Event listener configurado para btn-cadastrar-usuario');
+        }
+
+        // Botão "Alterar Usuário" 
+        const btnAlterar = document.getElementById('btn-alterar-usuario');
+        if (btnAlterar) {
+            btnAlterar.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.abrirModalAlteracao();
+            });
+            console.log('✅ Event listener configurado para btn-alterar-usuario');
+        }
+    }
+
+    /**
+     * Abrir modal de cadastro
+     */
+    abrirModalCadastro() {
+        console.log('🔄 Abrindo modal de cadastro...');
+        if (this.modal) {
+            this.limparFormulario();
+            this.modal.show();
+        } else {
+            console.warn('⚠️ Modal de cadastro não disponível');
+            alert('Funcionalidade de cadastro não disponível nesta tela');
+        }
+    }
+
+    /**
+     * Abrir modal de alteração
+     */
+    abrirModalAlteracao() {
+        console.log('🔄 Abrindo modal de alteração...');
+        if (this.modalAlterar) {
+            this.limparFormularioAlterar();
+            this.modalAlterar.show();
+        } else {
+            console.warn('⚠️ Modal de alteração não disponível');
+            alert('Funcionalidade de alteração não disponível nesta tela');
+        }
     }
 
     /**
