@@ -230,28 +230,28 @@ class ParticipacoesModule {
                 // Enviar ao backend
                 try {
                     this.uiManager.showLoading('Salvando nova versão...');
-                    const cfg = this.apiService.getConfig();
-                    const resp = await this.apiService.post(cfg.endpoints.participacoes + 'nova-versao', payload);
+                    const resp = await this.apiService.createNovaVersaoParticipacoes(payload);
                     this.uiManager.hideLoading();
-                    if (resp.mensagem || resp.message) {
-                        this.uiManager.showSuccess('Nova versão criada');
+                    if (resp && (resp.success || resp.mensagem || resp.message)) {
+                        this.uiManager.showSuccess('Nova versão criada com sucesso');
                         // Aplicar focus management antes de cerrar modal exitosamente
                         if (document.activeElement) document.activeElement.blur();
                         document.body.focus();
                         if (window.bootstrap && window.bootstrap.Modal) {
-                            const bs = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                            const bs = bootstrap.Modal.getOrCreateInstance(modalEl);
                             bs.hide();
                         } else {
                             modalEl.style.display = 'none'; modalEl.classList.remove('show');
                         }
+                        // Recarregar dados após sucesso
+                        await this.load();
                     } else {
-                        this.uiManager.showError('Erro ao criar nova versão');
+                        this.uiManager.showError('Erro ao criar nova versão: Resposta inesperada do servidor');
                     }
                 } catch (error) {
                     this.uiManager.showError('Erro ao criar nova versão: ' + error.message);
                     this.uiManager.hideLoading();
                 }
-                await this.load();
             };
 
             modalEl.querySelector('#nv-salvar').onclick = salvar;

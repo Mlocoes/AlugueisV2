@@ -168,6 +168,11 @@ window.apiService = {
         return response.success ? response.data?.datas : null;
     },
 
+    async createNovaVersaoParticipacoes(payload) {
+        const response = await this.post('/api/participacoes/nova-versao', payload);
+        return response;
+    },
+
     // === MÉTODOS ESPECÍFICOS PARA PROPRIETÁRIOS ===
     async getProprietarios() {
         const response = await this.get('/api/proprietarios/');
