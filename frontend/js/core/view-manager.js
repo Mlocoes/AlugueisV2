@@ -479,7 +479,7 @@ class ViewManager {
                     <!-- Header de lista de proprietários eliminado -->
                     <div class="card-body-responsive">
                         <div class="table-responsive-custom" style="max-height: 70vh; min-height: 50vh; overflow-y: auto;">
-                            <table class="table table-striped table-hover table-custom">
+                            <table class="table table-striped table-hover table-custom" style="font-size: 0.8rem;">
                                 <thead class="table-dark">
                                     <tr>
                                         <th>Proprietário</th>
@@ -547,7 +547,7 @@ class ViewManager {
                 <div class="card-responsive">
                     <div class="card-body-responsive">
                         <div class="table-responsive-custom" style="max-height: 70vh; min-height: 50vh; overflow-y: auto;">
-                            <table class="table table-striped table-hover table-custom" id="imoveis-table">
+                            <table class="table table-striped table-hover table-custom" id="imoveis-table" style="font-size: 0.8rem;">
                                 <thead class="table-dark">
                                     <tr>
                                         <th>Nome</th>
@@ -647,7 +647,7 @@ class ViewManager {
                     <div class="card-responsive">
                         <div class="card-body-responsive">
                             <div class="table-responsive-custom" style="max-height: 70vh; min-height: 50vh; overflow-y: auto; overflow-x: auto;">
-                                <table class="table table-striped table-hover matriz-table table-custom" id="participacoes-matrix-table">
+                                <table class="table table-striped table-hover matriz-table table-custom" id="participacoes-matrix-table" style="font-size: 0.8rem;">
                                     <thead class="table-dark" id="participacoes-matrix-head" style="white-space: nowrap;">
                                         <tr>
                                             <th width="120">Ações</th>
@@ -706,7 +706,7 @@ class ViewManager {
                     <div class="card-responsive">
                         <div class="card-body-responsive">
                             <div class="table-responsive-custom" style="max-height: 70vh; min-height: 50vh; overflow-y: auto;">
-                                <table class="table table-striped table-hover matriz-table table-custom" id="alugueis-matrix-table">
+                                <table class="table table-striped table-hover matriz-table table-custom" id="alugueis-matrix-table" style="font-size: 0.8rem;">
                                     <thead class="table-dark" id="alugueis-matrix-head">
                                     </thead>
                                     <tbody id="alugueis-matrix-body">
