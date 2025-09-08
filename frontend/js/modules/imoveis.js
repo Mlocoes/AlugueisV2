@@ -402,7 +402,7 @@ class ImoveisModule {
         const response = await this.apiService.deleteImovel(id);
         this.uiManager.hideLoading();
 
-        if (response.mensagem || response.message) {
+        if (response && (response.success || response.mensagem || response.message)) {
             this.uiManager.showSuccessToast('Imóvel excluído', 'O imóvel foi excluído com sucesso.');
             this.loadImoveis();
         } else {

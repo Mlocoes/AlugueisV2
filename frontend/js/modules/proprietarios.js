@@ -337,10 +337,11 @@ class ProprietariosModule {
         try {
             this.uiManager.showLoading('Excluindo proprietário...');
             const response = await this.apiService.deleteProprietario(id);
-            if (response.mensagem || response.message) {
+            if (response && (response.success || response.mensagem || response.message)) {
+                this.uiManager.showSuccessToast('Proprietário excluído', 'O proprietário foi excluído com sucesso.');
                 await this.loadProprietarios();
             } else {
-                throw new Error('Erro ao excluir proprietário');
+                throw new Error('Resposta inesperada do servidor');
             }
         } catch (error) {
             this.uiManager.showError('Erro ao excluir proprietário: ' + error.message);

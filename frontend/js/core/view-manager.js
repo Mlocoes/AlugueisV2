@@ -659,7 +659,7 @@ class ViewManager {
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="button" class="btn btn-danger" id="confirmar-exclusao-imovel">Excluir</button>
+                                <button type="button" class="btn btn-danger" id="btn-confirmar-exclusao-imovel">Excluir</button>
                             </div>
                         </div>
                     </div>
