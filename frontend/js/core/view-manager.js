@@ -480,7 +480,7 @@ class ViewManager {
                         <h5 class="card-title mb-0"><i class="fas fa-table me-2"></i>Lista de Proprietários</h5>
                     </div>
                     <div class="card-body-responsive">
-                        <div class="table-responsive-custom" style="max-height: 60vh; overflow-y: auto;">
+                        <div class="table-responsive-custom" style="max-height: 70vh; min-height: 50vh; overflow-y: auto;">
                             <table class="table table-striped table-hover table-custom">
                                 <thead class="table-dark">
                                     <tr>
