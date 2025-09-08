@@ -411,9 +411,7 @@ class ViewManager {
     getDashboardTemplate() {
         return `
             <div class="dashboard-container">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Dashboard</h1>
-                </div>
+                <!-- Encabezado eliminado -->
                 <div class="container-fluid">
                     <div class="row mb-4">
                         <div class="col-12 col-sm-6 col-md-3">
@@ -475,9 +473,7 @@ class ViewManager {
     getProprietariosTemplate() {
         return `
             <div class="proprietarios-container">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2"><i class="fas fa-users me-2"></i>Gestão de Proprietários</h1>
-                </div>
+                <!-- Encabezado eliminado -->
                 <!-- Pesquisa de proprietários eliminada -->
                 <div class="card-responsive">
                     <div class="card-header-responsive">
@@ -548,9 +544,7 @@ class ViewManager {
     getImoveisTemplate() {
         return `
             <div class="imoveis-container">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Gestão de Imóveis</h1>
-                </div>
+                <!-- Encabezado eliminado -->
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <input type="text" class="form-control" id="imoveis-search" placeholder="Buscar imóveis...">
@@ -652,9 +646,7 @@ class ViewManager {
     getParticipacoesTemplate() {
         return `
             <div class="participacoes-container">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2"><i class="fas fa-chart-pie me-2"></i>Gestão de Participações</h1>
-                </div>
+                <!-- Encabezado eliminado -->
                 <div id="participacoes-data-selector" class="mb-3"></div>
                 <div class="row" id="participacoes-container"></div>
                 <div id="participacoes-table-container" style="display: none;">
@@ -689,9 +681,7 @@ class ViewManager {
     getAlugueisTemplate() {
         return `
             <div class="alugueis-container">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Matriz de Aluguéis</h1>
-                </div>
+                <!-- Encabezado eliminado -->
                 <div class="row mb-3">
                     <div class="col-md-3">
                         <label for="alugueis-ano-select" class="form-label mb-1">Ano</label>
@@ -747,9 +737,7 @@ class ViewManager {
     getRelatoriosTemplate() {
         return `
             <div class="relatorios-container">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2"><i class="fas fa-chart-bar me-2"></i>Relatórios Financeiros</h1>
-                </div>
+                <!-- Encabezado eliminado -->
                 <div id="relatorios-alerts"></div>
                 <div class="card-responsive mb-4">
                     <div class="card-header-responsive">
@@ -844,17 +832,7 @@ class ViewManager {
     getExtrasTemplate() {
         return `
             <div class="extras-container">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2"><i class="fas fa-cogs me-2"></i>Sistema de Extras</h1>
-                    <div class="btn-group">
-                        <button id="btn-novo-alias" class="btn btn-primary">
-                            <i class="fas fa-plus me-2"></i>Novo Alias
-                        </button>
-                        <button id="btn-novas-transferencias" class="btn btn-primary">
-                            <i class="fas fa-exchange-alt me-2"></i>Novas Transferências
-                        </button>
-                    </div>
-                </div>
+                <!-- Encabezado eliminado -->
                 <div class="card-responsive">
                     <div class="card-body-responsive">
                         <div class="table-responsive-custom" style="max-height: 60vh; overflow-y: auto;">
