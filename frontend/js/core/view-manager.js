@@ -466,18 +466,6 @@ class ViewManager {
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="card-responsive">
-                                <div class="card-header-responsive">
-                                    <h5><i class="fas fa-chart-pie me-2"></i>Distribuição por Tipo</h5>
-                                </div>
-                                <div class="card-body-responsive">
-                                    <div class="chart-container">
-                                        <canvas id="distribucionChart" height="300"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

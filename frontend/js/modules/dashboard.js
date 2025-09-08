@@ -129,8 +129,7 @@ class DashboardModule {
         try {
             // Verificar se os canvas existem antes de criar os gráficos
             const incomeCanvas = document.getElementById('ingresosChart');
-            const distributionCanvas = document.getElementById('distribucionChart');
-            if (!incomeCanvas || !distributionCanvas) {
+            if (!incomeCanvas) {
                 // ...código existente...
                 return;
             }
@@ -139,7 +138,7 @@ class DashboardModule {
             this.destroyAllCharts();
             // Depois criamos os novos
             this.createIncomeChart();
-            this.createDistributionChart();
+            //this.createDistributionChart();
             // ...código existente...
         } catch (error) {
             // ...código existente...
@@ -157,10 +156,6 @@ class DashboardModule {
                 this.charts.income = null;
             }
 
-            if (this.charts.distribution) {
-                this.charts.distribution.destroy();
-                this.charts.distribution = null;
-            }
             // ...código existente...
         } catch (error) {
             // ...código existente...
@@ -266,80 +261,6 @@ class DashboardModule {
     /**
      * Criar gráfico de distribuição
      */
-    createDistributionChart() {
-        let canvas = document.getElementById('distribucionChart');
-        if (!canvas) {
-            console.warn('❌ Canvas distribucionChart não encontrado');
-            return;
-        }
-
-        try {
-            // Destruir gráfico anterior se existir
-            if (this.charts.distribution) {
-                this.charts.distribution.destroy();
-                this.charts.distribution = null;
-            }
-            // Remover e recriar o canvas para garantir que Chart.js não reutilize instâncias antigas
-            const parent = canvas.parentNode;
-            parent.removeChild(canvas);
-            canvas = document.createElement('canvas');
-            canvas.id = 'distribucionChart';
-            parent.appendChild(canvas);
-
-            const chartData = this.processDistributionData();
-            if (!chartData || !chartData.labels || !chartData.values) {
-                console.warn('❌ Dados do gráfico de distribuição inválidos');
-                return;
-            }
-
-            const ctx = canvas.getContext('2d');
-            if (!ctx) {
-                console.warn('❌ Não foi possível obter contexto 2D do canvas de distribuição');
-                return;
-            }
-
-            console.log('📊 Criando gráfico de distribuição com dados:', chartData);
-
-            this.charts.distribution = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: chartData.labels,
-                    datasets: [{
-                        data: chartData.values,
-                        backgroundColor: window.AppConfig?.charts?.colors || [
-                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'
-                        ],
-                        borderWidth: 0,
-                        hoverBorderWidth: 2,
-                        hoverBorderColor: '#ffffff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 20,
-                                usePointStyle: true
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: 'white',
-                            bodyColor: 'white'
-                        }
-                    },
-                    cutout: '60%'
-                }
-            });
-
-        } catch (error) {
-            console.error('❌ Erro criando gráfico de distribuição:', error);
-            console.error('Stack trace:', error.stack);
-        }
-    }
 
     /**
      * Processar dados para gráfico de receitas
@@ -374,37 +295,6 @@ class DashboardModule {
         };
     }
 
-    /**
-     * Processar dados para gráfico de distribuição por tipo de imóvel
-     */
-    processDistributionData() {
-        const { imoveis = [] } = this.data;
-        const typeCount = {};
-
-        imoveis.forEach(imovel => {
-            // Extrair tipo do nome do imóvel (Apartamento, Casa, Comercial, etc.)
-            let tipo = 'Sem classificação';
-            if (imovel.nome) {
-                if (imovel.nome.toLowerCase().includes('apartamento')) {
-                    tipo = 'Apartamento';
-                } else if (imovel.nome.toLowerCase().includes('casa')) {
-                    tipo = 'Casa';
-                } else if (imovel.nome.toLowerCase().includes('comercial')) {
-                    tipo = 'Comercial';
-                } else if (imovel.nome.toLowerCase().includes('studio')) {
-                    tipo = 'Studio';
-                } else {
-                    tipo = 'Outro';
-                }
-            }
-            typeCount[tipo] = (typeCount[tipo] || 0) + 1;
-        });
-
-        return {
-            labels: Object.keys(typeCount),
-            values: Object.values(typeCount)
-        };
-    }
 
     /**
      * Atualizar o dashboard
