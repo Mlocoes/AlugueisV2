@@ -8,3 +8,7 @@ __pycache__/
 *.log
 *.tmp
 *.bak
+
+# Archivos sensibles de configuración
+.env
+.env.*

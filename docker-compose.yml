@@ -56,7 +56,8 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       SECRET_KEY: ${SECRET_KEY}
       DEBUG: ${DEBUG}
-      CORS_ORIGINS: ${CORS_ORIGINS}
+    # Elimina esta línea:
+    # CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
     volumes:
       - ./backend:/app
     ports:
