@@ -159,7 +159,7 @@ class ImoveisModule {
         try {
             this.uiManager.showLoading('Criando imóvel...');
             const response = await this.apiService.createImovel(payload);
-            if (response && (response.mensagem || response.message)) {
+            if (response && response.success) {
                 // Detectar el modal correcto
                 let modalId = 'novo-imovel-modal';
                 if (formElement && formElement.id === 'form-novo-imovel-importar') {
