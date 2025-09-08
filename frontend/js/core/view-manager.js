@@ -478,14 +478,7 @@ class ViewManager {
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                     <h1 class="h2"><i class="fas fa-users me-2"></i>Gestão de Proprietários</h1>
                 </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-search"></i></span>
-                            <input type="text" class="form-control" id="search-proprietarios" placeholder="Buscar por nome, sobrenome, documento ou email...">
-                        </div>
-                    </div>
-                </div>
+                <!-- Pesquisa de proprietários eliminada -->
                 <div class="card-responsive">
                     <div class="card-header-responsive">
                         <h5 class="card-title mb-0"><i class="fas fa-table me-2"></i>Lista de Proprietários</h5>

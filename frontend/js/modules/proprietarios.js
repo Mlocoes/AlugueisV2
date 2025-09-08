@@ -46,10 +46,7 @@ class ProprietariosModule {
         if (formEditar) {
             formEditar.addEventListener('submit', (e) => this.handleUpdate(e));
         }
-        const searchInput = document.getElementById('search-proprietarios');
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => this.filterProprietarios(e.target.value));
-        }
+    // Pesquisa eliminada: no se registra evento de búsqueda
         // Registrar o evento apenas quando o DOM estiver pronto
         document.addEventListener('DOMContentLoaded', () => {
             const modalNovo = document.getElementById('novo-proprietario-modal');
@@ -168,54 +165,7 @@ class ProprietariosModule {
         return html;
     }
 
-    filterProprietarios(searchTerm) {
-        const filteredData = this.proprietarios.filter(prop => {
-            const searchString = `${prop.nome} ${prop.sobrenome} ${prop.documento} ${prop.email || ''}`.toLowerCase();
-            return searchString.includes(searchTerm.toLowerCase());
-        });
-        const tbody = document.getElementById('proprietarios-table-body');
-        if (!tbody) return;
-        
-        if (filteredData.length === 0) {
-            SecurityUtils.setSafeHTML(tbody, `
-                <tr>
-                    <td colspan="6" class="text-center text-muted py-4">
-                        <i class="fas fa-search fa-2x mb-2"></i>
-                        <br>Não foram encontrados proprietários que correspondam a "${SecurityUtils.escapeHtml(searchTerm)}"
-                    </td>
-                </tr>
-            `);
-            return;
-        }
-        
-        const htmlContent = filteredData.map(prop => {
-            const nomeCompleto = prop.sobrenome ? `${SecurityUtils.escapeHtml(prop.nome)} ${SecurityUtils.escapeHtml(prop.sobrenome)}` : SecurityUtils.escapeHtml(prop.nome);
-            const documentoInfo = (prop.tipo_documento && prop.documento) ? 
-                `${SecurityUtils.escapeHtml(prop.tipo_documento)}: ${SecurityUtils.escapeHtml(prop.documento)}` : 
-                (prop.documento ? `Doc: ${SecurityUtils.escapeHtml(prop.documento)}` : 'Sem documento');
-            
-            return `
-                <tr>
-                    <td>
-                        <strong>${nomeCompleto}</strong><br>
-                        <small class="text-muted">${documentoInfo}</small>
-                    </td>
-                    <td>${this.formatContact(prop.email, prop.telefone)}</td>
-                    <td>${this.formatField(prop.endereco, 'Sem endereço')}</td>
-                    <td><div class="small">${this.formatBankInfo(prop.banco, prop.agencia, prop.conta, prop.tipo_conta)}</div></td>
-                    <td><small class="text-muted">${new Date(prop.data_cadastro).toLocaleDateString()}</small></td>
-                    <td>
-                        <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-warning admin-only" onclick="proprietariosModule.editProprietario(${prop.id})" title="Editar"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-outline-danger admin-only" onclick="proprietariosModule.deleteProprietario(${prop.id})" title="Eliminar"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-        
-        SecurityUtils.setSafeHTML(tbody, htmlContent);
-    }
+    // Método de pesquisa eliminado
 
     showNewModal() {
         const modalEl = document.getElementById('novo-proprietario-modal');
