@@ -77,6 +77,7 @@ PY
 fi
 
 echo "[3/5] Escrevendo arquivos .env..."
+
 cat > .env <<ENVEOF
 POSTGRES_DB=${POSTGRES_DB}
 POSTGRES_USER=${POSTGRES_USER}
@@ -84,7 +85,6 @@ POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_v1:5432/${POSTGRES_DB}
 SECRET_KEY=${SECRET_KEY}
 DEBUG=true
-CORS_ORIGINS=*
 ADMIN_USER=${ADMIN_USER}
 ADMIN_PASS=${ADMIN_PASS}
 
@@ -94,11 +94,19 @@ FRONTEND_DOMAIN=${FRONTEND_DOMAIN}
 BACKEND_DOMAIN=${BACKEND_DOMAIN}
 ENVEOF
 
+
 # Configurar CORS según el tipo de instalación
+
+# Agregar puerto :3000 automáticamente si no está presente en el dominio del frontend
 if [ "$USE_TRAEFIK" = "true" ]; then
-    CORS_ORIGINS="https://${FRONTEND_DOMAIN},https://${BACKEND_DOMAIN}"
+  FRONTEND_CORS_ORIGIN="$FRONTEND_DOMAIN"
+  # Si el dominio no tiene puerto, agregar :3000
+  if [[ ! "$FRONTEND_CORS_ORIGIN" =~ :[0-9]+$ ]]; then
+    FRONTEND_CORS_ORIGIN="${FRONTEND_CORS_ORIGIN}:3000"
+  fi
+  CORS_ALLOW_ORIGINS="https://${FRONTEND_CORS_ORIGIN}"
 else
-    CORS_ORIGINS="http://192.168.0.7:3000,http://192.168.0.7:8000"
+  CORS_ALLOW_ORIGINS="http://192.168.0.7:3000"
 fi
 
 mkdir -p backend
@@ -106,7 +114,7 @@ cat > backend/.env <<BENVEOF
 ENV=development
 SECRET_KEY=${SECRET_KEY}
 DEBUG=true
-CORS_ALLOW_ORIGINS=${CORS_ORIGINS}
+CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS}
 DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_v1:5432/${POSTGRES_DB}
 BENVEOF
 
