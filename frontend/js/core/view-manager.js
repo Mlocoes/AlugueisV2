@@ -545,11 +545,7 @@ class ViewManager {
         return `
             <div class="imoveis-container">
                 <!-- Encabezado eliminado -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <input type="text" class="form-control" id="imoveis-search" placeholder="Buscar imóveis...">
-                    </div>
-                </div>
+                <!-- Pesquisa de imóveis eliminada -->
                 <div class="card-responsive">
                     <div class="card-body-responsive">
                         <div class="table-responsive-custom" style="max-height: 70vh; min-height: 50vh; overflow-y: auto;">
