@@ -552,7 +552,7 @@ class ViewManager {
                 </div>
                 <div class="card-responsive">
                     <div class="card-body-responsive">
-                        <div class="table-responsive-custom" style="max-height: 60vh; overflow-y: auto;">
+                        <div class="table-responsive-custom" style="max-height: 70vh; min-height: 50vh; overflow-y: auto;">
                             <table class="table table-striped table-hover table-custom" id="imoveis-table">
                                 <thead class="table-dark">
                                     <tr>
@@ -652,7 +652,7 @@ class ViewManager {
                 <div id="participacoes-table-container" style="display: none;">
                     <div class="card-responsive">
                         <div class="card-body-responsive">
-                            <div class="table-responsive-custom" style="max-height: 60vh; overflow-y: auto; overflow-x: auto;">
+                            <div class="table-responsive-custom" style="max-height: 70vh; min-height: 50vh; overflow-y: auto; overflow-x: auto;">
                                 <table class="table table-striped table-hover matriz-table table-custom" id="participacoes-matrix-table">
                                     <thead class="table-dark" id="participacoes-matrix-head" style="white-space: nowrap;">
                                         <tr>
@@ -711,7 +711,7 @@ class ViewManager {
                 <div id="alugueis-table-container" style="display: none;">
                     <div class="card-responsive">
                         <div class="card-body-responsive">
-                            <div class="table-responsive-custom" style="max-height: 60vh; overflow-y: auto;">
+                            <div class="table-responsive-custom" style="max-height: 70vh; min-height: 50vh; overflow-y: auto;">
                                 <table class="table table-striped table-hover matriz-table table-custom" id="alugueis-matrix-table">
                                     <thead class="table-dark" id="alugueis-matrix-head">
                                     </thead>
