@@ -375,6 +375,10 @@ body {
     width: 300px;
 }
 
+.device-desktop {
+    overflow: hidden;
+}
+
 .device-tablet .main-header {
     height: 70px;
 }
@@ -382,10 +386,6 @@ body {
 /* Desktop - configuración por defecto */
 .device-desktop .sidebar {
     position: relative;
-}
-
-.device-desktop .main-body {
-    overflow-y: hidden !important;
 }
 
 /* PWA específico */
