@@ -225,7 +225,7 @@ class ProprietariosModule {
             if (form) form.reset();
 
             // Mostrar modal usando Bootstrap
-            const modal = new bootstrap.Modal(modalEl);
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
             modal.show();
         }
     }
@@ -239,7 +239,7 @@ class ProprietariosModule {
                 const modalEl = document.getElementById('novo-proprietario-modal');
                 if (document.activeElement) document.activeElement.blur();
                 document.body.focus();
-                const modal = bootstrap.Modal.getInstance(modalEl);
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
                 if (modal) modal.hide();
                 formElement.reset();
                 // Limpieza manual de cualquier backdrop residual
@@ -271,8 +271,13 @@ class ProprietariosModule {
             if (proprietario) {
                 this.currentEditId = id;
                 this.fillEditForm(proprietario);
-                const modal = new bootstrap.Modal(document.getElementById('editar-proprietario-modal'));
-                modal.show();
+                const modalElement = document.getElementById('editar-proprietario-modal');
+                if (modalElement) {
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+                    modal.show();
+                } else {
+                    throw new Error('Modal de edição não encontrado');
+                }
             } else {
                 throw new Error('Proprietário não encontrado');
             }
@@ -310,7 +315,7 @@ class ProprietariosModule {
                 // Aplicar la solución de focus management que funciona en alterar usuario
                 if (document.activeElement) document.activeElement.blur();
                 document.body.focus();
-                const modal = bootstrap.Modal.getInstance(document.getElementById('editar-proprietario-modal'));
+                const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('editar-proprietario-modal'));
                 modal.hide();
                 this.currentEditId = null;
                 await this.loadProprietarios();

@@ -89,7 +89,7 @@ class ViewManager {
             title: 'Importar Dados',
             component: 'ImportarView',
             template: this.getImportarTemplate(),
-            requiredModules: ['importacao', 'usuarioManager']
+            requiredModules: ['importacao', 'usuarioManager', 'proprietarios', 'imoveis']
         });
     }
 
@@ -859,8 +859,8 @@ class ViewManager {
                             <div class="card-body-responsive">
                                 <div class="mb-4 text-end">
                                     <div class="d-flex flex-wrap justify-content-center gap-2">
-                                        <button class="btn btn-primary" style="width:150px" id="btn-novo-proprietario"><i class="fas fa-user-plus me-2"></i> Novo Proprietário</button>
-                                        <button class="btn btn-primary" style="width:150px" id="btn-novo-imovel-importar"><i class="fas fa-building me-2"></i> Novo Imóvel</button>
+                                        <button class="btn btn-primary" style="width:150px" id="btn-novo-proprietario" data-bs-toggle="modal" data-bs-target="#novo-proprietario-modal"><i class="fas fa-user-plus me-2"></i> Novo Proprietário</button>
+                                        <button class="btn btn-primary" style="width:150px" id="btn-novo-imovel-importar" data-bs-toggle="modal" data-bs-target="#novo-imovel-importar-modal"><i class="fas fa-building me-2"></i> Novo Imóvel</button>
                                         <button class="btn btn-primary" style="width:150px" id="btn-alterar-usuario" data-bs-toggle="modal" data-bs-target="#modal-alterar-usuario"><i class="fas fa-user-edit me-2"></i> Alterar Usuário</button>
                                         <button class="btn btn-primary" style="width:150px" id="btn-cadastrar-usuario" data-bs-toggle="modal" data-bs-target="#modal-cadastrar-usuario"><i class="fas fa-user-plus me-2"></i> Cadastrar Novo Usuário</button>
                                     </div>
@@ -890,6 +890,69 @@ class ViewManager {
                                     </div>
                                 </form>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Novo Imóvel (para Importar) -->
+                <div class="modal fade" id="novo-imovel-importar-modal" tabindex="-1" aria-labelledby="novoImovelImportarModalLabel">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="novoImovelImportarModalLabel"><i class="fas fa-building me-2"></i>Novo Imóvel</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form id="form-novo-imovel-importar">
+                                <div class="modal-body p-1" style="font-size: 0.88rem; max-height: 60vh; overflow-y: auto;">
+                                    <div class="mb-1"><label class="form-label">Nome</label><input type="text" class="form-control" name="nome" required style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">Endereço</label><input type="text" class="form-control" name="endereco" required style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">Tipo</label><input type="text" class="form-control" name="tipo_imovel" style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">Área Total</label><input type="number" class="form-control" name="area_total" style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">Área Construída</label><input type="number" class="form-control" name="area_construida" style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">Valor Cadastral</label><input type="number" class="form-control" name="valor_cadastral" style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">Valor Mercado</label><input type="number" class="form-control" name="valor_mercado" style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">IPTU Mensal</label><input type="number" class="form-control" name="iptu_mensal" style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">Condomínio Mensal</label><input type="number" class="form-control" name="condominio_mensal" style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="alugado" id="alugado-novo" value="true"><label class="form-check-label" for="alugado-novo">Alugado</label></div></div>
+                                    <div class="mb-3"><label class="form-label">Data Cadastro</label><input type="date" class="form-control" name="data_cadastro" style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">Observações</label><textarea class="form-control" name="observacoes" style="font-size:0.85em;"></textarea></div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary">Salvar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Novo Proprietário -->
+                <div class="modal fade" id="novo-proprietario-modal" tabindex="-1" aria-labelledby="novoProprietarioModalLabel">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="novoProprietarioModalLabel"><i class="fas fa-user-plus me-2"></i> Novo Proprietário</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form id="form-novo-proprietario">
+                                <div class="modal-body p-1" style="font-size: 0.80rem;">
+                                    <div class="mb-1"><label class="form-label">Nome</label><input type="text" class="form-control" name="nome" required style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">Sobrenome</label><input type="text" class="form-control" name="sobrenome" style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">Documento</label><input type="text" class="form-control" name="documento" style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">Tipo de Documento</label><input type="text" class="form-control" name="tipo_documento" style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">Endereço</label><input type="text" class="form-control" name="endereco" style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">Telefone</label><input type="text" class="form-control" name="telefone" style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">Email</label><input type="email" class="form-control" name="email" style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">Banco</label><input type="text" class="form-control" name="banco" style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">Agência</label><input type="text" class="form-control" name="agencia" style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">Conta</label><input type="text" class="form-control" name="conta" style="font-size:0.85em;"></div>
+                                    <div class="mb-3"><label class="form-label">Tipo de Conta</label><input type="text" class="form-control" name="tipo_conta" style="font-size:0.85em;"></div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary">Salvar</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>

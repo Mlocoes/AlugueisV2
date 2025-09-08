@@ -109,7 +109,7 @@ class ImoveisModule {
                         // Aplicar la solución de focus management que funciona en alterar usuario
                         if (document.activeElement) document.activeElement.blur();
                         document.body.focus();
-                        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
                         modal.hide();
                     }
                 }
@@ -123,7 +123,7 @@ class ImoveisModule {
             this.uiManager.showErrorToast('Modal de novo imóvel não encontrado no DOM.');
             return;
         }
-        const modal = new bootstrap.Modal(modalEl);
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
     }
 
@@ -168,7 +168,7 @@ class ImoveisModule {
                 // Aplicar la solución de focus management que funciona en alterar usuario
                 if (document.activeElement) document.activeElement.blur();
                 document.body.focus();
-                const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
+                const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById(modalId));
                 if (modal) modal.hide();
                 formElement.reset();
                 // Limpiar backdrop residual
@@ -292,10 +292,15 @@ class ImoveisModule {
             this.currentEditId = id;
             this.fillEditForm(imovel);
 
-            const editModal = new bootstrap.Modal(document.getElementById('edit-imovel-modal'));
-            editModal.show();
+            const modalElement = document.getElementById('edit-imovel-modal');
+            if (modalElement) {
+                const editModal = bootstrap.Modal.getOrCreateInstance(modalElement);
+                editModal.show();
+            } else {
+                throw new Error('Modal de edição não encontrado');
+            }
         } catch (error) {
-            this.uiManager.showErrorToast('Erro ao carregar dados do imóvel', error.message);
+            this.uiManager.showError('Erro ao carregar dados do imóvel: ' + error.message);
             this.uiManager.hideLoading();
         }
     }
@@ -367,7 +372,7 @@ class ImoveisModule {
             // Aplicar la solución de focus management que funciona en alterar usuario
             if (document.activeElement) document.activeElement.blur();
             document.body.focus();
-            const editModal = bootstrap.Modal.getInstance(document.getElementById('edit-imovel-modal'));
+            const editModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('edit-imovel-modal'));
             editModal.hide();
             this.uiManager.showSuccessToast('Imóvel atualizado', 'Os dados foram atualizados com sucesso.');
             this.loadImoveis();
@@ -381,7 +386,7 @@ class ImoveisModule {
         this.imovelToDeleteId = id;
         const modalEl = document.getElementById('modal-confirmar-exclusao-imovel');
         if (modalEl) {
-            const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
             modal.show();
         }
     }
