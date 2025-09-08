@@ -384,10 +384,6 @@ body {
     position: relative;
 }
 
-.device-desktop .main-body {
-    overflow-y: hidden !important;
-}
-
 /* PWA específico */
 .pwa-mode .main-header {
     padding-top: env(safe-area-inset-top);
