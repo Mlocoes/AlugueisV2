@@ -313,8 +313,14 @@ class ImoveisModule {
             if (input) {
                 if (key === 'alugado') {
                     input.checked = Boolean(imovel[key]);
+                } else if (key === 'data_cadastro' && imovel[key]) {
+                    // Formatear fecha para input type="date" (formato yyyy-MM-dd)
+                    const date = new Date(imovel[key]);
+                    if (!isNaN(date.getTime())) {
+                        input.value = date.toISOString().split('T')[0];
+                    }
                 } else {
-                    input.value = imovel[key];
+                    input.value = imovel[key] || '';
                 }
             }
         }
@@ -368,7 +374,7 @@ class ImoveisModule {
         const response = await this.apiService.updateImovel(this.currentEditId, data);
         this.uiManager.hideLoading();
 
-        if (response.mensagem || response.message) {
+        if (response && (response.success || response.mensagem || response.message)) {
             // Aplicar la solución de focus management que funciona en alterar usuario
             if (document.activeElement) document.activeElement.blur();
             document.body.focus();
