@@ -375,10 +375,6 @@ body {
     width: 300px;
 }
 
-.device-desktop {
-    overflow: hidden;
-}
-
 .device-tablet .main-header {
     height: 70px;
 }
