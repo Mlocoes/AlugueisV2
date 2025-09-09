@@ -643,7 +643,7 @@ class ViewManager {
                     <div class="card-responsive">
                         <div class="card-body-responsive">
                             <div class="table-responsive-custom" style="max-height: 70vh; min-height: 50vh; overflow-y: auto; overflow-x: auto;">
-                                <table class="table table-striped table-hover matriz-table table-custom" id="participacoes-matrix-table" style="font-size: 0.8rem;">
+                                <table class="table table-striped table-hover matriz-table table-custom" id="participacoes-matrix-table" style="font-size: 0.76rem;">
                                     <thead class="table-dark" id="participacoes-matrix-head" style="white-space: nowrap;">
                                         <tr>
                                             <th width="120">Ações</th>
@@ -672,16 +672,16 @@ class ViewManager {
         return `
             <div class="alugueis-container">
                 <!-- Encabezado eliminado -->
-                <div class="row mb-3">
-                    <div class="col-md-3">
-                        <label for="alugueis-ano-select" class="form-label mb-1">Ano</label>
-                        <select id="alugueis-ano-select" class="form-select">
-                            <option value="">Selecione o ano</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label for="alugueis-mes-select" class="form-label mb-1">Mês</label>
-                        <select id="alugueis-mes-select" class="form-select" disabled>
+                <div class="row mb-3 align-items-center">
+                        <div class="col-md-3 d-flex align-items-center">
+                            <label for="alugueis-ano-select" class="form-label mb-0 me-4" style="min-width: 60px;">Ano</label>
+                            <select id="alugueis-ano-select" class="form-select">
+                                <option value="">Selecione o ano</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-center">
+                            <label for="alugueis-mes-select" class="form-label mb-0 me-4" style="min-width: 80px;">Mês</label>
+                            <select id="alugueis-mes-select" class="form-select" disabled>
                             <option value="">Selecione o mês</option>
                             <option value="1">Janeiro</option>
                             <option value="2">Fevereiro</option>
@@ -702,7 +702,7 @@ class ViewManager {
                     <div class="card-responsive">
                         <div class="card-body-responsive">
                             <div class="table-responsive-custom" style="max-height: 70vh; min-height: 50vh; overflow-y: auto;">
-                                <table class="table table-striped table-hover matriz-table table-custom" id="alugueis-matrix-table" style="font-size: 0.8rem;">
+                                <table class="table table-striped table-hover matriz-table table-custom" id="alugueis-matrix-table" style="font-size: 0.76rem;">
                                     <thead class="table-dark" id="alugueis-matrix-head">
                                     </thead>
                                     <tbody id="alugueis-matrix-body">
