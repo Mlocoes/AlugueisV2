@@ -808,8 +808,8 @@ class ViewManager {
                 <!-- Encabezado eliminado -->
                 <div class="card-responsive">
                     <div class="card-body-responsive">
-                        <div class="table-responsive-custom" style="max-height: 70vh; min-height: 50vh; overflow-y: auto;">
-                            <table class="table table-striped table-hover table-custom">
+                        <div class="table-responsive-custom" style="max-height: 10.2rem; min-height: 2.6rem; overflow-y: auto;">
+                            <table class="table table-striped table-hover table-custom" style="font-size: 0.80rem;">
                                 <thead class="table-dark">
                                     <tr>
                                         <th>Alias</th>
@@ -833,8 +833,8 @@ class ViewManager {
                 </div>
                 <div class="card-responsive mt-4">
                     <div class="card-body-responsive">
-                        <div class="table-responsive-custom" style="max-height: 60vh; overflow-y: auto;">
-                            <table class="table table-striped table-hover table-custom">
+                        <div class="table-responsive-custom" style="max-height: 80vh; min-height: 50vh; overflow-y: auto;">
+                            <table class="table table-striped table-hover table-custom" style="font-size: 0.80rem;">
                                 <thead class="table-dark">
                                     <tr>
                                         <th>Alias</th>
