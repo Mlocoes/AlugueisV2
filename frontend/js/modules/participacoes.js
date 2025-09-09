@@ -170,7 +170,7 @@ class ParticipacoesModule {
                     <div class="modal-dialog modal-xl">
                         <div class="modal-content">
                             <div class="modal-header"><h5 class="modal-title">Nova versão de participações</h5></div>
-                            <div class="modal-body">
+                            <div class="modal-body" style="font-size: 0.80rem; max-height: 70vh; overflow-y: auto;">
                                 <p>Edite os percentuais para o imóvel selecionado. A soma deve ser 100%.</p>
                                 <table class="table table-sm">
                                     <thead><tr><th>Imóvel</th>${cols}<th>Total</th></tr></thead>
@@ -191,7 +191,7 @@ class ParticipacoesModule {
             const im = this.imoveis.find(i => String(i.id) === String(imovelId));
             const tds = this.proprietarios.map(p => {
                 const value = porImovel[im.id][p.id];
-                return `<td><input type="number" step="0.01" min="0" max="100" data-prop="${SecurityUtils.escapeHtml(p.id)}" class="form-control form-control-sm" value="${SecurityUtils.escapeHtml(value)}" /></td>`;
+                return `<td><input type="number" step="0.01" min="0" max="100" data-prop="${SecurityUtils.escapeHtml(p.id)}" class="form-control form-control-sm" style="font-size:0.80rem;" value="${SecurityUtils.escapeHtml(value)}" /></td>`;
             }).join('');
             SecurityUtils.setSafeHTML(body, `<tr data-imovel="${SecurityUtils.escapeHtml(im.id)}"><td>${SecurityUtils.escapeHtml(im.nome)}</td>${tds}<td id="nv-total">0%</td></tr>`);
 
