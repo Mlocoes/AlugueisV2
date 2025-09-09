@@ -550,15 +550,11 @@ class ViewManager {
                             <table class="table table-striped table-hover table-custom" id="imoveis-table" style="font-size: 0.8rem;">
                                 <thead class="table-dark">
                                     <tr>
-                                        <th>Nome</th>
+                                        <th>Nome<br><span style="font-weight: normal; color: inherit; font-size: inherit;">Tipo</span></th>
                                         <th>Endereço</th>
-                                        <th>Tipo</th>
-                                        <th>Área Total</th>
-                                        <th>Área Construída</th>
-                                        <th>Valor Cadastral</th>
-                                        <th>Valor Mercado</th>
-                                        <th>IPTU Anual</th>
-                                        <th>Condomínio Mensal</th>
+                                        <th>Área Total<br><span style="font-weight: normal; color: inherit; font-size: inherit;">Construída</span></th>
+                                        <th>Valor Cadastral<br><span style="font-weight: normal; color: inherit; font-size: inherit;">Mercado</span></th>
+                                        <th>IPTU<br><span style="font-weight: normal; color: inherit; font-size: inherit;">Condomínio</span></th>
                                         <th>Alugado</th>
                                         <th>Data Cadastro</th>
                                         <th width="120">Ações</th>

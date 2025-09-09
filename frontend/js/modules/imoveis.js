@@ -58,63 +58,47 @@ class ImoveisModule {
 
             // INTERCEPTAR CLICS EN BOTONES DE CERRAR ANTES DE QUE BOOTSTRAP PROCESE
             const closeButtons = document.querySelectorAll('[data-bs-dismiss="modal"]');
-            closeButtons.forEach(button => {
-                const modalId = button.closest('.modal')?.id;
-                if (modalId && modalId.includes('imovel')) {
-                    button.addEventListener('click', (e) => {
-                        // Desenfocar inmediatamente ANTES de que Bootstrap inicie el proceso
-                        if (document.activeElement) document.activeElement.blur();
-                        document.body.focus();
-                        console.log(`🔧 PREEMPTIVE: Focus transferido antes del cierre por botón X en ${modalId}`);
-                    });
-                }
+            this.imoveis.forEach(imovel => {
+                const safeImovel = window.SecurityUtils.sanitizeData(imovel);
+                const row = document.createElement('tr');
+                const statusAlugado = imovel.alugado ? '<span class="badge bg-danger">Alugado</span>' : '<span class="badge bg-success">Disponível</span>';
+                // Adaptación estilo doble línea
+                const rowTemplate = `
+                    <td>
+                        <strong>${safeImovel.nome || ''}</strong><br>
+                        <small class="text-muted">${safeImovel.tipo_imovel || 'Sem tipo'}</small>
+                    </td>
+                    <td>
+                        <span>${safeImovel.endereco || '<span class=\"text-muted fst-italic\">Sem endereço</span>'}</span>
+                    </td>
+                    <td>
+                        <span>${safeImovel.area_total || '—'} m²</span><br>
+                        <small class="text-muted">Construída: ${safeImovel.area_construida || '—'} m²</small>
+                    </td>
+                    <td>
+                        <span>R$ ${safeImovel.valor_cadastral || '—'}</span><br>
+                        <small class="text-muted">Mercado: R$ ${safeImovel.valor_mercado || '—'}</small>
+                    </td>
+                    <td>
+                        <span>IPTU: R$ ${safeImovel.iptu_mensal || '—'}</span><br>
+                        <small class="text-muted">Condomínio: R$ ${safeImovel.condominio_mensal || '—'}</small>
+                    </td>
+                    <td>${statusAlugado}</td>
+                    <td><small class="text-muted">${imovel.data_cadastro ? new Date(imovel.data_cadastro).toLocaleDateString() : ''}</small></td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-warning admin-only" onclick="window.imoveisModule.editImovel(${imovel.id})" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-outline-danger admin-only" onclick="window.imoveisModule.deleteImovel(${imovel.id})" title="Excluir">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                row.innerHTML = rowTemplate;
+                tableBody.appendChild(row);
             });
-        this.initialized = true;
-    }
-
-    async load() {
-        this.init();
-        await this.loadImoveis();
-    }
-
-    bindEvents() {
-        // Botão e modal para novo imóvel
-        const btnNovo = document.getElementById('btn-novo-imovel');
-        if (btnNovo) {
-            btnNovo.addEventListener('click', () => this.showNewModal());
-        }
-        const formNovo = document.getElementById('form-novo-imovel');
-        if (formNovo) {
-            formNovo.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const formData = new FormData(formNovo);
-                const data = Object.fromEntries(formData.entries());
-                this.handleCreateData(data, formNovo);
-            });
-        }
-        // Formulário de edição
-        const form = document.getElementById('edit-imovel-form');
-        if (form) {
-            form.addEventListener('submit', (event) => this.handleUpdate(event));
-        }
-        // Integrar o botão de confirmação do modal visual
-        const btnConfirmarExclusao = document.getElementById('btn-confirmar-exclusao-imovel');
-        if (btnConfirmarExclusao) {
-            btnConfirmarExclusao.addEventListener('click', () => {
-                if (this.imovelToDeleteId) {
-                    this._deleteImovelConfirmed(this.imovelToDeleteId);
-                    this.imovelToDeleteId = null;
-                    const modalEl = document.getElementById('modal-confirmar-exclusao-imovel');
-                    if (modalEl) {
-                        // Aplicar la solución de focus management que funciona en alterar usuario
-                        if (document.activeElement) document.activeElement.blur();
-                        document.body.focus();
-                        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-                        modal.hide();
-                    }
-                }
-            });
-        }
     }
 
     showNewModal() {
@@ -126,6 +110,10 @@ class ImoveisModule {
         const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
     }
+                            // Método de compatibilidade para eliminar advertências legacy
+                            load() {
+                                return this.loadImoveis();
+                            }
 
     async handleCreateData(data, formElement) {
         // Adaptar campos según modelo Imovel actualizado
@@ -210,33 +198,44 @@ class ImoveisModule {
     renderTable() {
         const tableBody = document.getElementById('imoveis-table-body');
         if (!tableBody) return;
-
-        // Limpiar tabla
         tableBody.innerHTML = '';
-
+        if (this.imoveis.length === 0) {
+            window.SecurityUtils.setSafeHTML(tableBody, `
+                <tr>
+                    <td colspan="12" class="text-center text-muted py-4">
+                        <i class="fas fa-home fa-2x mb-2"></i>
+                        <br>Não há imóveis registrados
+                    </td>
+                </tr>
+            `);
+            return;
+        }
         this.imoveis.forEach(imovel => {
-            // Usar SecurityUtils para escapar datos del usuario
             const safeImovel = window.SecurityUtils.sanitizeData(imovel);
-            
-            // Crear elementos de forma segura
             const row = document.createElement('tr');
-            
-            // Status badge (contenido confiable del sistema)
             const statusAlugado = imovel.alugado ? '<span class="badge bg-danger">Alugado</span>' : '<span class="badge bg-success">Disponível</span>';
-            
-            // Usar template con datos escapados
             const rowTemplate = `
-                <td>\${nome}</td>
-                <td>\${endereco}</td>
-                <td>\${tipo_imovel}</td>
-                <td>\${area_total}</td>
-                <td>\${area_construida}</td>
-                <td>\${valor_cadastral}</td>
-                <td>\${valor_mercado}</td>
-                <td>\${iptu_mensal}</td>
-                <td>\${condominio_mensal}</td>
+                <td>
+                    <strong>${safeImovel.nome || ''}</strong><br>
+                    <small class="text-muted">${safeImovel.tipo_imovel || 'Sem tipo'}</small>
+                </td>
+                <td>
+                    <span>${safeImovel.endereco || '<span class=\"text-muted fst-italic\">Sem endereço</span>'}</span>
+                </td>
+                <td>
+                    <span>${safeImovel.area_total || '—'} m²</span><br>
+                    <span>${safeImovel.area_construida || '—'} m²</span>
+                </td>
+                <td>
+                    <span>R$ ${safeImovel.valor_cadastral || '—'}</span><br>
+                    <span>R$ ${safeImovel.valor_mercado || '—'}</span>
+                </td>
+                <td>
+                    <span>R$ ${safeImovel.iptu_mensal || '—'}</span><br>
+                    <span>R$ ${safeImovel.condominio_mensal || '—'}</span>
+                </td>
                 <td>${statusAlugado}</td>
-                <td>\${data_cadastro}</td>
+                <td><small class="text-muted">${imovel.data_cadastro ? new Date(imovel.data_cadastro).toLocaleDateString() : ''}</small></td>
                 <td>
                     <div class="btn-group btn-group-sm">
                         <button class="btn btn-outline-warning admin-only" onclick="window.imoveisModule.editImovel(${imovel.id})" title="Editar">
@@ -248,23 +247,7 @@ class ImoveisModule {
                     </div>
                 </td>
             `;
-
-            // Preparar datos con fecha formateada
-            const templateData = {
-                nome: safeImovel.nome || '',
-                endereco: safeImovel.endereco || '',
-                tipo_imovel: safeImovel.tipo_imovel || '',
-                area_total: safeImovel.area_total || '',
-                area_construida: safeImovel.area_construida || '',
-                valor_cadastral: safeImovel.valor_cadastral || '',
-                valor_mercado: safeImovel.valor_mercado || '',
-                iptu_mensal: safeImovel.iptu_mensal || '',
-                condominio_mensal: safeImovel.condominio_mensal || '',
-                data_cadastro: imovel.data_cadastro ? new Date(imovel.data_cadastro).toLocaleDateString() : ''
-            };
-
-            // Usar función de seguridad para establecer HTML
-            window.SecurityUtils.setSafeHTML(row, rowTemplate, templateData);
+            row.innerHTML = rowTemplate;
             tableBody.appendChild(row);
         });
     }
