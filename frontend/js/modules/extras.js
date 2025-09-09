@@ -447,6 +447,8 @@ class ExtrasManager {
         } else {
             modalTitle.innerHTML = '<i class="fas fa-plus me-2"></i>Novo Alias';
             form.reset();
+            // Cargar lista de proprietários disponibles
+            this.loadProprietarios();
         }
 
         // Limpar alertas
@@ -1128,4 +1130,25 @@ document.addEventListener('DOMContentLoaded', function() {
     window.extrasModule = window.extrasManager;
     
     console.log('✅ ExtrasManager inicializado');
+
+    // Evento para botão Novo Alias na Importar
+    const btnNovoAlias = document.getElementById('btn-novo-alias');
+    if (btnNovoAlias) {
+        btnNovoAlias.addEventListener('click', function() {
+            // Cadastro de novo alias: limpiar el formulario y abrir el modal en modo "novo"
+            if (window.extrasModule && typeof window.extrasModule.showAliasModal === 'function') {
+                window.extrasModule.showAliasModal(null); // null para modo novo
+            } else {
+                // Fallback: limpiar y mostrar modal diretamente
+                const form = document.getElementById('form-alias');
+                if (form) form.reset();
+                const modalTitle = document.getElementById('modalAliasLabel');
+                if (modalTitle) modalTitle.innerHTML = '<i class="fas fa-plus me-2"></i>Novo Alias';
+                const modal = document.getElementById('modal-alias');
+                if (modal) {
+                    bootstrap.Modal.getOrCreateInstance(modal).show();
+                }
+            }
+        });
+    }
 });

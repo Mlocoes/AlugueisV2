@@ -204,6 +204,27 @@ class ViewManager {
         
         // Aplicar configuraciones específicas del dispositivo
         this.applyDeviceSpecificConfig(view);
+
+        // Registrar evento para el botón Novo Alias si estamos en la vista importar
+        if (view.id === 'importar') {
+            const btnNovoAlias = document.getElementById('btn-novo-alias');
+            if (btnNovoAlias) {
+                btnNovoAlias.addEventListener('click', function() {
+                    if (window.extrasModule && typeof window.extrasModule.showAliasModal === 'function') {
+                        window.extrasModule.showAliasModal(null);
+                    } else {
+                        const form = document.getElementById('form-alias');
+                        if (form) form.reset();
+                        const modalTitle = document.getElementById('modalAliasLabel');
+                        if (modalTitle) modalTitle.innerHTML = '<i class="fas fa-plus me-2"></i>Novo Alias';
+                        const modal = document.getElementById('modal-alias');
+                        if (modal) {
+                            bootstrap.Modal.getOrCreateInstance(modal).show();
+                        }
+                    }
+                });
+            }
+        }
     }
 
     /**
@@ -881,6 +902,7 @@ class ViewManager {
                                         <button class="btn btn-primary" style="width:150px" id="btn-novo-imovel-importar" data-bs-toggle="modal" data-bs-target="#novo-imovel-importar-modal"><i class="fas fa-building me-2"></i> Novo Imóvel</button>
                                         <button class="btn btn-primary" style="width:150px" id="btn-alterar-usuario" data-bs-toggle="modal" data-bs-target="#modal-alterar-usuario"><i class="fas fa-user-edit me-2"></i> Alterar Usuário</button>
                                         <button class="btn btn-primary" style="width:150px" id="btn-cadastrar-usuario" data-bs-toggle="modal" data-bs-target="#modal-cadastrar-usuario"><i class="fas fa-user-plus me-2"></i> Cadastrar Novo Usuário</button>
+                                            <button class="btn btn-primary" style="width:150px" id="btn-novo-alias" type="button"><i class="fas fa-user-tag me-2"></i> Novo Alias</button>
                                     </div>
                                 </div>
                                 <form id="importar-form-proprietarios" class="mb-3" enctype="multipart/form-data">
