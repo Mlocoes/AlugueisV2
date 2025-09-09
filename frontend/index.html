@@ -119,7 +119,37 @@
     </div>
 
     <!-- Modales (serão adicionados dinamicamente conforme necessário) -->
-    <div id="modals-container"></div>
+        <div id="modals-container">
+            <!-- Modal Alias -->
+            <div class="modal fade" id="modal-alias" tabindex="-1" aria-labelledby="modalAliasLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title" id="modalAliasLabel"><i class="fas fa-edit me-2"></i>Editar Alias</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-2" style="font-size: 0.85rem; max-height: 60vh; overflow-y: auto;">
+                            <div id="alias-alerts"></div>
+                            <form id="form-alias">
+                                <div class="mb-3">
+                                    <label for="alias-nome" class="form-label">Nome do Alias</label>
+                                    <input type="text" class="form-control" id="alias-nome" name="alias-nome" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="alias-proprietarios" class="form-label">Proprietários</label>
+                                    <select multiple class="form-select" id="alias-proprietarios" name="alias-proprietarios"></select>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" id="btn-salvar-alias">Salvar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Fin Modal Alias -->
+        </div>
 
     <!-- Scripts -->
     <!-- Bootstrap JS -->
