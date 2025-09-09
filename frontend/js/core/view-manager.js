@@ -729,21 +729,17 @@ class ViewManager {
             <div class="relatorios-container">
                 <!-- Encabezado eliminado -->
                 <div id="relatorios-alerts"></div>
-                <div class="card-responsive mb-4">
-                    <div class="card-header-responsive">
-                        <h5 class="card-title mb-0"><i class="fas fa-filter me-2"></i>Filtros</h5>
-                    </div>
-                    <div class="card-body-responsive">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <label for="relatorios-ano-select" class="form-label mb-1">Ano</label>
-                                <select id="relatorios-ano-select" class="form-select">
+                <!-- Filtros sin rectángulo, estilo Participação -->
+                        <div class="d-flex align-items-center mb-4" style="gap: 24px; flex-wrap: wrap;">
+                            <div class="d-flex align-items-center me-3">
+                                <label for="relatorios-ano-select" class="form-label mb-0 me-2" style="min-width: 50px;">Ano</label>
+                                <select id="relatorios-ano-select" class="form-select" style="width: 160px; min-width: 140px;">
                                     <option value="">Carregando...</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <label for="relatorios-mes-select" class="form-label mb-1">Mês</label>
-                                <select id="relatorios-mes-select" class="form-select">
+                            <div class="d-flex align-items-center me-3">
+                                <label for="relatorios-mes-select" class="form-label mb-0 me-2" style="min-width: 50px;">Mês</label>
+                                <select id="relatorios-mes-select" class="form-select" style="width: 160px; min-width: 140px;">
                                     <option value="">Todos os meses</option>
                                     <option value="1">Janeiro</option>
                                     <option value="2">Fevereiro</option>
@@ -759,31 +755,25 @@ class ViewManager {
                                     <option value="12">Dezembro</option>
                                 </select>
                             </div>
-                            <div class="col-md-4">
-                                <label for="relatorios-proprietario-select" class="form-label mb-1">Proprietário</label>
-                                <select id="relatorios-proprietario-select" class="form-select">
+                            <div class="d-flex align-items-center me-3">
+                                <label for="relatorios-proprietario-select" class="form-label mb-0 me-2" style="min-width: 80px;">Proprietário</label>
+                                <select id="relatorios-proprietario-select" class="form-select" style="width: 200px; min-width: 160px;">
                                     <option value="">Carregando...</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
-                                <label class="form-label mb-1">&nbsp;</label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="relatorios-transferencias-check">
-                                    <label class="form-check-label" for="relatorios-transferencias-check">
-                                        <i class="fas fa-exchange-alt me-1"></i>Transferências
-                                    </label>
-                                </div>
+                            <div class="d-flex align-items-center">
+                                <input class="form-check-input me-2" type="checkbox" id="relatorios-transferencias-check">
+                                <label class="form-check-label" for="relatorios-transferencias-check">
+                                    <i class="fas fa-exchange-alt me-1"></i>Transferências
+                                </label>
                             </div>
                         </div>
-                    </div>
-                </div>
+                
                 <div class="card-responsive">
-                    <div class="card-header-responsive">
-                        <h5 class="card-title mb-0"><i class="fas fa-table me-2"></i>Relatório de Aluguéis por Proprietário</h5>
-                    </div>
+                    <!-- Título eliminado por solicitud del usuario -->
                     <div class="card-body-responsive">
-                        <div class="table-responsive-custom" style="max-height: 60vh; overflow-y: auto;">
-                            <table class="table table-striped table-hover table-custom">
+                            <div class="table-responsive-custom" style="max-height: 70vh; min-height: 50vh; overflow-y: auto;">
+                            <table class="table table-striped table-hover table-custom" style="font-size: 0.76rem;">
                                 <thead class="table-dark">
                                     <tr>
                                         <th width="50">Nº</th>
@@ -807,13 +797,6 @@ class ViewManager {
                             </table>
                         </div>
                     </div>
-                    <div class="card-footer">
-                        <small class="text-muted">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Use os filtros acima para refinar os dados. 
-                            Os valores são calculados automaticamente com base nos aluguéis registrados e participações.
-                        </small>
-                    </div>
                 </div>
             </div>
         `;
@@ -825,7 +808,7 @@ class ViewManager {
                 <!-- Encabezado eliminado -->
                 <div class="card-responsive">
                     <div class="card-body-responsive">
-                        <div class="table-responsive-custom" style="max-height: 60vh; overflow-y: auto;">
+                        <div class="table-responsive-custom" style="max-height: 70vh; min-height: 50vh; overflow-y: auto;">
                             <table class="table table-striped table-hover table-custom">
                                 <thead class="table-dark">
                                     <tr>
