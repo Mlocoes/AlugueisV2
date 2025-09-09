@@ -526,8 +526,6 @@ class RelatoriosManager {
                 <td class="text-center">${item.mes}/${item.ano}</td>
                 <td class="text-end">
                     ${this.formatMoney(somaAlugueis)}
-                    ${incluirTransferencias && somaAlugueis !== parseFloat(item.soma_alugueis || 0) ? 
-                        '<i class="fas fa-exchange-alt ms-1 text-info" title="Inclui transferências"></i>' : ''}
                 </td>
                 <td class="text-end">${this.formatMoney(item.soma_taxas)}</td>
                 <td class="text-center">
