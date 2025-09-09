@@ -686,7 +686,7 @@ class ExtrasManager {
                 .filter(id => !isNaN(id));
 
             const aliasData = {
-                alias: formData.get('alias').trim(),
+                alias: formData.get('alias-nome').trim(),
                 id_proprietarios: proprietariosSelecionados.length > 0 ? JSON.stringify(proprietariosSelecionados) : null
             };
 
