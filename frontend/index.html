@@ -139,17 +139,84 @@
                                     <label for="alias-proprietarios" class="form-label">Proprietários</label>
                                     <select multiple class="form-select" id="alias-proprietarios" name="alias-proprietarios"></select>
                                 </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary" id="btn-salvar-alias">Salvar</button>
+                                </div>
                             </form>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary" id="btn-salvar-alias">Salvar</button>
                         </div>
                     </div>
                 </div>
             </div>
             <!-- Fin Modal Alias -->
-        </div>
+                <!-- Modal Transferencias -->
+                <div class="modal fade" id="modal-transferencias" tabindex="-1" aria-labelledby="modalTransferenciasLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="modalTransferenciasLabel"><i class="fas fa-exchange-alt me-2"></i>Editar Transferência</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body p-2" style="font-size: 0.85rem; max-height: 60vh; overflow-y: auto;">
+                                <div id="transferencia-alerts"></div>
+                                <form id="form-transferencias">
+                                    <div class="mb-1">
+                                        <label for="transferencia-alias" class="form-label">Selecionar Alias *</label>
+                                        <select class="form-select" id="transferencia-alias" name="alias_id" required style="font-size:0.85em;">
+                                            <option value="">Selecione um alias...</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="transferencia-nome" class="form-label">Nome da Transferência *</label>
+                                        <input type="text" class="form-control" id="transferencia-nome" name="nome_transferencia" placeholder="Digite o nome da transferência" required style="font-size:0.85em;">
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="transferencia-data-criacao" class="form-label">Data Criação *</label>
+                                            <input type="date" class="form-control" id="transferencia-data-criacao" name="data_criacao" required style="font-size:0.85em;">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="transferencia-data-fim" class="form-label">Data Fim</label>
+                                            <input type="date" class="form-control" id="transferencia-data-fim" name="data_fim" style="font-size:0.85em;">
+                                        </div>
+                                    </div>
+                                    <div id="transferencia-proprietarios-container" style="display: none;">
+                                        <label class="form-label">Proprietários</label>
+                                        <table class="table table-sm table-bordered" style="font-size:0.80em;">
+                                            <thead><tr><th>Nome</th><th>Participação</th></tr></thead>
+                                            <tbody id="transferencia-proprietarios-table"></tbody>
+                                        </table>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-primary" id="btn-salvar-transferencias">Salvar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Fin Modal Transferencias -->
+                                <!-- Modal Confirmar Exclusão Extras -->
+                                <div class="modal fade" id="modal-confirmar-exclusao-extras" tabindex="-1" aria-labelledby="modalConfirmarExclusaoExtrasLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-danger text-white">
+                                                <h5 class="modal-title" id="modalConfirmarExclusaoExtrasLabel"><i class="fas fa-trash me-2"></i>Confirmar Exclusão</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p class="mb-3" id="modal-confirmar-exclusao-extras-msg">Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="button" class="btn btn-danger" id="btn-confirmar-exclusao-extras"><i class="fas fa-trash me-1"></i> Excluir</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Fin Modal Confirmar Exclusão Extras -->
+                                </div>
 
     <!-- Scripts -->
     <!-- Bootstrap JS -->
