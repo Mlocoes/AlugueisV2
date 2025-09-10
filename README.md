@@ -1,6 +1,6 @@
 # 🏠 Sistema de Gestão de Aluguéis V2
 
-**Plataforma completa e profissional para gestão de aluguéis, proprietários, imóveis e participações. Desenvolvida com uma arquitetura moderna, escalável e uma interface responsiva para desktop e dispositivos móveis.**
+**Plataforma completa e profissional para gestão de aluguéis, proprietários, imóveis e participações. Arquitetura moderna, escalável e com interface responsiva para desktop e mobile.**
 
 [![Versão](https://img.shields.io/badge/versão-2.0-blue.svg)](./VERSION)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
@@ -12,48 +12,45 @@
 
 ## 📋 Visão Geral
 
-O Sistema de Gestão de Aluguéis V2 é uma solução robusta para administração imobiliária, oferecendo funcionalidades completas para o gerenciamento de proprietários, imóveis, aluguéis mensais e participações societárias. A plataforma foi construída com um backend modular em FastAPI, um frontend responsivo e uma versão mobile PWA, garantindo uma experiência de usuário fluida e acessível em qualquer dispositivo.
+O Sistema de Gestão de Aluguéis V2 é uma solução completa para administração imobiliária, oferecendo funcionalidades robustas para gestão de proprietários, imóveis, aluguéis mensais e participações societárias. A plataforma conta com backend modular FastAPI, frontend responsivo e versão mobile PWA.
 
 ### ✨ Características Principais
 
-- 🔐 **Autenticação Segura**: Sistema de autenticação baseado em JWT (JSON Web Tokens) com login obrigatório.
-- 📱 **Interface Responsiva e PWA**: Experiência otimizada para desktop e uma versão mobile progressiva (PWA).
-- 📊 **Dashboard Interativo**: Gráficos e métricas em tempo real para visualização de dados importantes.
-- 📈 **Relatórios Avançados**: Geração de relatórios com filtros por período e proprietário.
-- 📤 **Importação de Dados via Excel**: Funcionalidade de arrastar e soltar (drag & drop) para importar planilhas, com validação automática de dados.
-- 🐳 **Pronto para Docker**: Orquestração completa do ambiente com Docker Compose, simplificando a instalação e o deploy.
+- 🔐 **Autenticação Segura**: Sistema JWT com login obrigatório.
+- 📱 **Interface Responsiva**: Desktop e versão mobile PWA.
+- 📊 **Dashboard Interativo**: Gráficos e métricas em tempo real.
+- 📈 **Relatórios Avançados**: Filtros por período e proprietário.
+- 📤 **Importação Excel**: Drag & drop com validação automática.
+- 🐳 **Docker Ready**: Orquestração completa com Docker Compose.
 
 ---
 
 ## 🏗️ Arquitetura do Sistema
 
-O sistema é dividido em três componentes principais que operam de forma integrada: Backend, Frontend e Banco de Dados.
+### Estrutura de Pastas
 
 ```text
 AlugueisV2/
-├── backend/                    # API modular em FastAPI
-│   ├── main.py                # Ponto de entrada da aplicação
-│   ├── models_final.py        # Modelos de dados (SQLAlchemy)
-│   ├── routers/               # Endpoints da API (ex: /imoveis, /proprietarios)
-│   ├── services/              # Lógica de negócio
+├── backend/                    # API FastAPI modular
+│   ├── main.py                # Aplicação principal
+│   ├── models_final.py        # Modelos de dados
+│   ├── routers/               # Endpoints organizados
 │   └── ...
-├── frontend/                   # Interface web (Vanilla JS)
-│   ├── index.html             # Página principal da aplicação
-│   ├── js/                    # Código JavaScript
-│   │   ├── app.js             # Lógica principal do frontend
-│   │   ├── modules/           # Componentes funcionais (telas)
-│   │   └── services/          # Comunicação com a API
-│   └── css/                   # Estilos
-├── database/                   # Scripts de banco de dados e migrações
-├── docs/                       # Documentação técnica detalhada
-├── docker-compose.yml          # Arquivo de orquestração dos contêineres
+├── frontend/                   # Interface web principal
+│   ├── index.html             # Página principal
+│   ├── mobile/                # Versão PWA mobile
+│   └── src/
+│       ├── css/
+│       └── js/
+│           ├── app.js         # Aplicação principal
+│           ├── modules/       # Módulos funcionais
+│           └── services/      # Serviços
+├── database/                   # Scripts BD e backups
+├── docs/                       # Documentação técnica
+├── scripts/                    # Scripts automação
+├── docker-compose.yml          # Orquestração containers
 └── README.md                   # Este arquivo
 ```
-
-### Fluxo de Dados
-1.  O **Frontend** envia requisições HTTP para o **Backend**.
-2.  O **Backend** (API FastAPI) processa as requisições, aplica a lógica de negócio e interage com o **Banco de Dados** (PostgreSQL).
-3.  O **Banco de Dados** armazena e recupera os dados, que são retornados ao **Frontend** para exibição ao usuário.
 
 ---
 
@@ -61,69 +58,135 @@ AlugueisV2/
 
 ### Backend
 - **🐍 Python 3.10+**
-- **⚡ FastAPI** para a construção da API.
-- **🗄️ PostgreSQL 15+** como banco de dados.
-- **🔗 SQLAlchemy** para o ORM (Mapeamento Objeto-Relacional).
-- **📊 Pandas** para manipulação de dados, especialmente na importação.
-- **🔐 python-jose[cryptography]** para a implementação de JWT.
+- **⚡ FastAPI**
+- **🗄️ PostgreSQL 15+**
+- **🔗 SQLAlchemy**
+- **📊 Pandas**
+- **🔐 JWT**
 
 ### Frontend
-- **🌐 HTML5, CSS3, JavaScript (ES6+)** (Vanilla JS).
-- **🎨 CSS Grid e Flexbox** para layouts responsivos.
-- **📊 Chart.js** para a criação de gráficos dinâmicos.
-- **📱 PWA (Progressive Web App)** para a experiência mobile.
+- **🌐 HTML5/CSS3/JavaScript ES6+**
+- **🎨 Bootstrap 5**
+- **📊 Chart.js**
+- **📱 PWA**
 
 ### DevOps & Infraestrutura
-- **🐳 Docker & Docker Compose** para containerização.
-- **🌐 Nginx** como servidor web para o frontend.
-- **🔄 Traefik** (opcional, em `docker-compose.traefik.yml`) para proxy reverso e SSL.
+- **🐳 Docker & Docker Compose**
+- **🌐 Nginx**
 
 ---
 
-## 🚀 Instalação e Execução
+## 🚀 Instalação e Configuração
 
 ### Pré-requisitos
 
-- **Docker** e **Docker Compose** instalados na sua máquina.
-- **Git** para clonar o repositório.
+- **Docker** & **Docker Compose** instalados
+- **Git** para clonagem do repositório
 
 ### Instalação Rápida
 
-1.  **Clone o repositório:**
-    ```bash
-    git clone https://github.com/seu-usuario/AlugueisV2.git
-    cd AlugueisV2
-    ```
+1. **Clone o repositório**
+   ```bash
+   git clone https://github.com/Mlocoes/AlugueisV2.git
+   cd AlugueisV2
+   ```
 
-2.  **Inicie os contêineres com Docker Compose:**
-    Este comando irá construir as imagens e iniciar todos os serviços (backend, frontend e banco de dados).
-    ```bash
-    docker-compose up -d --build
-    ```
+2. **Inicie o sistema completo**
+   ```bash
+   docker-compose up -d --build
+   ```
 
-3.  **Acesse a aplicação no seu navegador:**
-    - 🌐 **Frontend Desktop**: [http://localhost:3000](http://localhost:3000)
-    - 📚 **Documentação da API (Swagger UI)**: [http://localhost:8000/docs](http://localhost:8000/docs)
+3. **Acesse a aplicação**
+   - 🌐 **Frontend Desktop**: [http://192.168.0.7:3000](http://192.168.0.7:3000)
+   - 📱 **Versão Mobile**: [http://192.168.0.7:3000/mobile](http://192.168.0.7:3000/mobile)
+   - 📚 **Documentação API**: [http://192.168.0.7:8000/docs](http://192.168.0.7:8000/docs)
 
-### Credenciais Padrão
+### Usuário Padrão
 
--   **Usuário**: `admin`
--   **Senha**: `admin`
-
----
-
-## 🤝 Como Contribuir
-
-Contribuições são bem-vindas! Se você deseja melhorar o sistema, siga os passos abaixo:
-
-1.  **Faça um Fork** do projeto.
-2.  **Crie uma nova Branch** para sua feature: `git checkout -b feature/minha-feature`.
-3.  **Faça suas alterações** e realize os commits: `git commit -m 'feat: Adiciona minha nova feature'`.
-4.  **Envie suas alterações** para a sua branch: `git push origin feature/minha-feature`.
-5.  **Abra um Pull Request** para que possamos avaliar as mudanças.
+- **Usuário**: `admin`
+- **Senha**: `admin`
 
 ---
 
-## 📄 Licença
+## 🧩 Módulos e Funcionalidades
 
-Este projeto está licenciado sob a **MIT License**. Veja o arquivo [LICENSE](./LICENSE) para mais detalhes.
+### 🏠 Gestão de Proprietários
+- CRUD completo de proprietários.
+- Dados pessoais, contato e informações bancárias.
+- Sistema de busca avançada.
+
+### 🏢 Gestão de Imóveis
+- CRUD completo de imóveis.
+- Informações detalhadas: localização, características, valores.
+
+### 💰 Gestão de Aluguéis
+- Registro mensal por proprietário e imóvel.
+- Cálculos automáticos de valores.
+
+### 📊 Sistema de Participações
+- Gestão de co-propriedade e sociedade.
+- Controle por versões com histórico.
+- Percentuais de participação por imóvel.
+
+### 📈 Dashboard e Relatórios
+- Gráficos interativos com Chart.js.
+- Resumos por proprietário e período.
+- Filtros avançados (ano, proprietário).
+
+### 📤 Importação de Dados
+- Upload via drag & drop.
+- Templates Excel pré-formatados.
+- Validação automática de dados.
+
+### 🔐 Sistema de Autenticação
+- Login obrigatório com JWT.
+- Sessões seguras.
+- Controle de tipos de usuário.
+
+---
+
+## �️ Solução de Problemas
+
+### Importação de Alquileres (0 registros importados)
+
+**Problema**: Al importar Excel de alquileres se leen los registros correctamente pero se importan 0.
+
+**Causa**: Error en trigger `calcular_taxa_proprietario_automatico()` que buscaba columna `participacao` inexistente.
+
+**Solución**: 
+- Para **nuevas instalaciones**: ya está corregido en `database/init-scripts/000_estrutura_nova.sql`
+- Para **instalaciones existentes**: ejecutar `database/migrations/009_fix_trigger_taxa_proprietario.sql`
+
+```sql
+-- Aplicar corrección manualmente si necesario:
+CREATE OR REPLACE FUNCTION calcular_taxa_proprietario_automatico()
+RETURNS TRIGGER AS $$
+BEGIN
+    SELECT (porcentagem / 100.0) * NEW.taxa_administracao_total
+    INTO NEW.taxa_administracao_proprietario
+    FROM participacoes 
+    WHERE proprietario_id = NEW.proprietario_id 
+    AND imovel_id = NEW.imovel_id 
+    LIMIT 1;
+    
+    IF NEW.taxa_administracao_proprietario IS NULL THEN
+        NEW.taxa_administracao_proprietario := 0;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### Verificación de Importación Exitosa
+
+```bash
+# Verificar registros importados
+docker exec -t alugueisV1_postgres psql -U alugueisv1_usuario -d alugueisv1_db -c "SELECT COUNT(*) FROM alugueis;"
+```
+
+---
+
+## �📄 Licença
+
+Este projeto está licenciado sob a **MIT License** - veja o arquivo [LICENSE](LICENSE) para detalhes.
