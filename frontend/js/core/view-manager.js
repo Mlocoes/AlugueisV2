@@ -224,6 +224,36 @@ class ViewManager {
                     }
                 });
             }
+            // Registrar evento para Novas Transferências
+            const btnNovasTransferencias = document.getElementById('btn-novas-transferencias');
+            if (btnNovasTransferencias) {
+                btnNovasTransferencias.addEventListener('click', function() {
+                    // Forzar modo de nova transferência
+                    if (window.extrasModule && typeof window.extrasModule.showTransferenciasModal === 'function') {
+                        window.extrasModule.currentTransferencia = null;
+                        window.extrasModule.showTransferenciasModal();
+                    } else {
+                        // Fallback: limpiar y mostrar modal diretamente
+                        const form = document.getElementById('form-transferencias');
+                        if (form) form.reset();
+                        const modal = document.getElementById('modal-transferencias');
+                        if (modal) {
+                            bootstrap.Modal.getOrCreateInstance(modal).show();
+                        }
+                    }
+                });
+            }
+            // Registrar evento para el select de alias en transferencias
+            setTimeout(() => {
+                const aliasSelect = document.getElementById('transferencia-alias');
+                if (aliasSelect) {
+                    aliasSelect.addEventListener('change', function(e) {
+                        if (window.extrasModule && typeof window.extrasModule.carregarProprietariosAlias === 'function') {
+                            window.extrasModule.carregarProprietariosAlias(e.target.value);
+                        }
+                    });
+                }
+            }, 400);
         }
     }
 
@@ -902,7 +932,8 @@ class ViewManager {
                                         <button class="btn btn-primary" style="width:150px" id="btn-novo-imovel-importar" data-bs-toggle="modal" data-bs-target="#novo-imovel-importar-modal"><i class="fas fa-building me-2"></i> Novo Imóvel</button>
                                         <button class="btn btn-primary" style="width:150px" id="btn-alterar-usuario" data-bs-toggle="modal" data-bs-target="#modal-alterar-usuario"><i class="fas fa-user-edit me-2"></i> Alterar Usuário</button>
                                         <button class="btn btn-primary" style="width:150px" id="btn-cadastrar-usuario" data-bs-toggle="modal" data-bs-target="#modal-cadastrar-usuario"><i class="fas fa-user-plus me-2"></i> Cadastrar Novo Usuário</button>
-                                            <button class="btn btn-primary" style="width:150px" id="btn-novo-alias" type="button"><i class="fas fa-user-tag me-2"></i> Novo Alias</button>
+                                        <button class="btn btn-primary" style="width:150px" id="btn-novo-alias" type="button"><i class="fas fa-user-tag me-2"></i> Novo Alias</button>
+                                        <button class="btn btn-primary" style="width:150px" id="btn-novas-transferencias" type="button"><i class="fas fa-exchange-alt me-2"></i> Nova Transferência</button>
                                     </div>
                                 </div>
                                 <form id="importar-form-proprietarios" class="mb-3" enctype="multipart/form-data">

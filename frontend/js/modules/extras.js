@@ -1,3 +1,10 @@
+        // Si hay alias seleccionado, cargar propietarios automáticamente
+        if (!this.currentTransferencia) {
+            const aliasSelect = document.getElementById('transferencia-alias');
+            if (aliasSelect && aliasSelect.value) {
+                this.carregarProprietariosAlias(aliasSelect.value);
+            }
+        }
 /**
  * Módulo de Extras - Sistema de Alias
  * Acesso exclusivo para administradores
@@ -5,8 +12,21 @@
 
 class ExtrasManager {
     /**
-     * Mostrar modal de confirmação de exclusão para Alias ou Transferência
+     * Cierra el modal por id y devuelve el foco al botón indicado
      */
+    safeCloseModal(modalId, buttonId) {
+        const modalEl = document.getElementById(modalId);
+        if (modalEl) {
+            const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            modalInstance.hide();
+        }
+        if (buttonId) {
+            const btn = document.getElementById(buttonId);
+            if (btn) {
+                setTimeout(() => btn.focus(), 300);
+            }
+        }
+    }
     confirmarExclusao(tipo, id, nome) {
         console.log('🗑️ Iniciando confirmação de exclusão:', { tipo, id, nome });
         
@@ -16,26 +36,11 @@ class ExtrasManager {
         
         const modalMsg = document.getElementById('modal-confirmar-exclusao-extras-msg');
         if (modalMsg) {
-            if (tipo === 'alias') {
-                modalMsg.textContent = `Tem certeza que deseja excluir o alias "${nome}"? Esta ação não pode ser desfeita.`;
-            } else if (tipo === 'transferencia') {
-                modalMsg.textContent = `Tem certeza que deseja excluir a transferência "${nome}"? Esta ação não pode ser desfeita.`;
-            } else {
-                modalMsg.textContent = 'Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.';
-            }
+            // ...existing code...
         }
-        
-        // Usar data-bs-toggle para abrir el modal de forma más simple
-        const modal = document.getElementById('modal-confirmar-exclusao-extras');
-        if (modal) {
-            // Crear instancia solo si no existe
-            let bsModal = bootstrap.Modal.getInstance(modal);
-            if (!bsModal) {
-                bsModal = new bootstrap.Modal(modal);
-            }
-            bsModal.show();
-        }
+        // ...existing code...
     }
+
     constructor() {
         this.apiService = window.apiService;
         this.uiManager = window.uiManager;
@@ -45,56 +50,69 @@ class ExtrasManager {
         this.allTransferencias = [];
         this.allProprietarios = [];
         this.initialized = false;
-        
-        // Controle de operações para evitar bloqueios
         this.pendingOperations = new Set();
-        
         // Binding de métodos
         this.load = this.load.bind(this);
         this.loadExtras = this.loadExtras.bind(this);
         this.loadProprietarios = this.loadProprietarios.bind(this);
     }
 
-    /**
-     * Helper para fechar modais de forma segura para acessibilidade
-     */
-    safeCloseModal(modalId, buttonId = null) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-
-        // 1. Remover foco de todos os elementos dentro do modal
-        const focusedElements = modal.querySelectorAll(':focus');
-        focusedElements.forEach(element => element.blur());
-
-        // 2. Remover foco do botão específico se fornecido
-        if (buttonId) {
-            const button = document.getElementById(buttonId);
-            if (button) button.blur();
-        }
-
-        // 3. Remover foco de botões comuns do modal
-        const commonButtons = modal.querySelectorAll('.btn-secondary, .btn-primary, button[data-bs-dismiss="modal"]');
-        commonButtons.forEach(button => {
-            if (button.matches(':focus')) {
-                button.blur();
+    showTransferenciasModal() {
+        const modal = document.getElementById('modal-transferencias');
+        const form = document.getElementById('form-transferencias');
+        // Limpiar estado y campos SIEMPRE al abrir Nova Transferência
+        const modalTitle = document.getElementById('modalTransferenciasLabel');
+        if (!this.currentTransferencia) {
+            this.currentTransferencia = null;
+            if (form) form.reset();
+            if (modalTitle) {
+                modalTitle.innerHTML = '<i class="fas fa-exchange-alt me-2"></i>Nova Transferência';
             }
-        });
-
-        // Fechar modal diretamente - Bootstrap lida com aria-hidden automaticamente
-        if (modalId === 'modal-confirmar-exclusao-extras') {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                const bootstrapModal = bootstrap.Modal.getInstance(modal);
-                if (bootstrapModal) {
-                    bootstrapModal.hide();
-                }
+            const nomeInput = document.getElementById('transferencia-nome');
+            if (nomeInput) nomeInput.value = '';
+            const dataCriacaoInput = document.getElementById('transferencia-data-criacao');
+            if (dataCriacaoInput) {
+                const hoje = new Date();
+                const dataFormatada = hoje.toISOString().split('T')[0];
+                dataCriacaoInput.value = dataFormatada;
             }
+            const dataFimInput = document.getElementById('transferencia-data-fim');
+            if (dataFimInput) dataFimInput.value = '';
+            const container = document.getElementById('transferencia-proprietarios-container');
+            if (container) container.style.display = 'none';
+            const proprietariosTable = document.getElementById('transferencia-proprietarios-table');
+            if (proprietariosTable) proprietariosTable.innerHTML = '';
         } else {
-            const bootstrapModal = bootstrap.Modal.getInstance(modal);
-            if (bootstrapModal) {
-                bootstrapModal.hide();
+            if (modalTitle) {
+                modalTitle.innerHTML = '<i class="fas fa-exchange-alt me-2"></i>Editar Transferência';
             }
         }
+        // Carregar aliases disponíveis (sempre)
+        this.carregarAliasParaTransferencia();
+        // Limpar alertas
+        const alerts = document.getElementById('transferencia-alerts');
+        if (alerts) alerts.innerHTML = '';
+        // Criar instância do modal
+        const bootstrapModal = new bootstrap.Modal(modal);
+        // Configurar eventos mais robustos - usando 'once' para evitar acúmulo
+        modal.addEventListener('shown.bs.modal', () => {
+            setTimeout(() => {
+                const firstSelect = modal.querySelector('select:not([disabled])');
+                if (firstSelect && !firstSelect.matches(':focus')) {
+                    firstSelect.focus();
+                }
+            }, 200);
+        }, { once: true });
+        modal.addEventListener('hide.bs.modal', () => {
+            const focusedElement = modal.querySelector(':focus');
+            if (focusedElement) {
+                focusedElement.blur();
+            }
+        }, { once: true });
+        modal.addEventListener('hidden.bs.modal', () => {
+            modal.removeAttribute('aria-modal');
+        }, { once: true });
+        bootstrapModal.show();
     }
 
     /**
@@ -511,17 +529,47 @@ class ExtrasManager {
      * Mostrar modal de transferências
      */
     showTransferenciasModal() {
+        // Si los propietarios no están cargados, cargarlos primero y continuar
+        if (!this.allProprietarios || this.allProprietarios.length === 0) {
+            this.loadProprietarios().then(() => {
+                this.showTransferenciasModal();
+            });
+            return;
+        }
+        // Mostrar integrantes si hay alias seleccionado y cargar propietarios
+        setTimeout(() => {
+            const aliasSelect = document.getElementById('transferencia-alias');
+            const container = document.getElementById('transferencia-proprietarios-container');
+            if (aliasSelect && container && aliasSelect.value) {
+                container.style.display = '';
+                // Copia lógica de edición: cargar propietarios del alias seleccionado
+                if (typeof this.carregarProprietariosAlias === 'function') {
+                    this.carregarProprietariosAlias(aliasSelect.value);
+                }
+            }
+        }, 300);
+        // Si estamos en modo creación y ya hay un alias seleccionado, cargar propietarios igual que en edición
+        if (!this.currentTransferencia) {
+            const aliasSelect = document.getElementById('transferencia-alias');
+            if (aliasSelect && aliasSelect.value) {
+                if (typeof this.carregarProprietariosAlias === 'function') {
+                    this.carregarProprietariosAlias(aliasSelect.value);
+                }
+            }
+        }
         const modal = document.getElementById('modal-transferencias');
         const form = document.getElementById('form-transferencias');
-        
-        // Se NÃO estivermos editando, limpar tudo
+        const modalTitle = document.getElementById('modalTransferenciasLabel');
+
+        // Se NÃO estivermos editando, limpiar todo y forzar título
         if (!this.currentTransferencia) {
             form.reset();
-            
+            if (modalTitle) {
+                modalTitle.innerHTML = '<i class="fas fa-exchange-alt me-2"></i>Nova Transferência';
+            }
             // Limpar campo de nome da transferência
             const nomeInput = document.getElementById('transferencia-nome');
             if (nomeInput) nomeInput.value = '';
-            
             // Inicializar data de criação com a data atual
             const dataCriacaoInput = document.getElementById('transferencia-data-criacao');
             if (dataCriacaoInput) {
@@ -529,11 +577,9 @@ class ExtrasManager {
                 const dataFormatada = hoje.toISOString().split('T')[0];
                 dataCriacaoInput.value = dataFormatada;
             }
-            
             // Limpar data fim
             const dataFimInput = document.getElementById('transferencia-data-fim');
             if (dataFimInput) dataFimInput.value = '';
-            
             // Ocultar contêiner de proprietários até selecionar alias
             const container = document.getElementById('transferencia-proprietarios-container');
             if (container) container.style.display = 'none';
@@ -585,7 +631,6 @@ class ExtrasManager {
         try {
             const response = await this.apiService.get('/api/extras/?ativo=true');
             const aliasSelect = document.getElementById('transferencia-alias');
-            
             if (response && response.success && Array.isArray(response.data)) {
                 aliasSelect.innerHTML = '<option value="">Selecione um alias...</option>';
                 response.data.forEach(alias => {
@@ -595,6 +640,14 @@ class ExtrasManager {
                     option.dataset.proprietarios = alias.id_proprietarios;
                     aliasSelect.appendChild(option);
                 });
+                // Seleccionar automáticamente si solo hay un alias
+                if (response.data.length === 1) {
+                    aliasSelect.value = response.data[0].id;
+                    if (typeof this.carregarProprietariosAlias === 'function') {
+                        this.carregarProprietariosAlias(aliasSelect.value);
+                    }
+                }
+                console.log('Opciones de alias cargadas:', Array.from(aliasSelect.options).map(opt => ({value: opt.value, text: opt.textContent, proprietarios: opt.dataset.proprietarios})));
             }
         } catch (error) {
             console.error('Erro ao carregar aliases:', error);
@@ -608,30 +661,20 @@ class ExtrasManager {
     async carregarProprietariosAlias(aliasId) {
         const container = document.getElementById('transferencia-proprietarios-container');
         const tableBody = document.getElementById('transferencia-proprietarios-table');
-        
+    // ...existing code...
         if (!aliasId) {
             container.style.display = 'none';
             return;
         }
-
         try {
-            // Obter dados do alias selecionado
             const aliasSelect = document.getElementById('transferencia-alias');
             const selectedOption = aliasSelect.querySelector(`option[value="${aliasId}"]`);
-            
             if (selectedOption && selectedOption.dataset.proprietarios) {
                 const proprietarioIds = JSON.parse(selectedOption.dataset.proprietarios);
-                
-                // Buscar nomes dos proprietários
                 tableBody.innerHTML = '';
-                
-                console.log('👥 Carregando proprietários para tabela:', proprietarioIds);
-                console.log('📝 Editando transferência?', this.currentTransferencia ? 'SIM' : 'NÃO');
-                
                 for (const id of proprietarioIds) {
                     const proprietario = this.allProprietarios.find(p => p.id === parseInt(id));
                     if (proprietario) {
-                        // Se estivermos editando, buscar o valor salvo
                         let valorSalvo = '';
                         if (this.currentTransferencia && this.currentTransferencia.id_proprietarios) {
                             try {
@@ -639,38 +682,35 @@ class ExtrasManager {
                                 const proprietarioSalvo = proprietariosSalvos.find(p => p.id === proprietario.id);
                                 if (proprietarioSalvo) {
                                     valorSalvo = proprietarioSalvo.valor || '';
-                                    console.log(`💰 Valor salvo para ${proprietario.nome}:`, valorSalvo);
                                 }
                             } catch (error) {
-                                console.error('Erro ao fazer parsing de id_proprietarios:', error);
+                                // ...existing code...
                             }
                         }
-                        
                         const row = document.createElement('tr');
                         row.innerHTML = `
                             <td>
                                 <strong>${proprietario.nome} ${proprietario.sobrenome || ''}</strong>
                             </td>
                             <td>
-                                <div class="input-group">
-                                    <span class="input-group-text" style="font-size:0.80rem;">R$</span>
-                                    <input type="number" class="form-control" style="font-size:0.80rem;" 
-                                           name="transferencia_${proprietario.id}" 
-                                           step="0.01" placeholder="0,00"
-                                           value="${valorSalvo}">
+                                <div class=\"input-group\">
+                                    <span class=\"input-group-text\" style=\"font-size:0.80rem;\">R$</span>
+                                    <input type=\"number\" class=\"form-control\" style=\"font-size:0.80rem;\" 
+                                           name=\"transferencia_${proprietario.id}\" 
+                                           step=\"0.01\" placeholder=\"0,00\"
+                                           value=\"${valorSalvo}\">
                                 </div>
                             </td>
                         `;
                         tableBody.appendChild(row);
                     }
                 }
-                
-                container.style.display = 'block';
-                console.log('✅ Tabela de proprietários carregada com valores salvos');
+                container.style.display = proprietarioIds.length > 0 ? 'block' : 'none';
+            } else {
+                container.style.display = 'none';
             }
         } catch (error) {
-            console.error('Erro ao carregar proprietários do alias:', error);
-            this.showError('Erro ao carregar proprietários: ' + error.message);
+            debugDiv.innerHTML += `<br>Erro ao carregar proprietarios: ${error}`;
         }
     }
 
@@ -708,13 +748,16 @@ class ExtrasManager {
             let response;
             if (this.currentExtra) {
                 // Editar
+                   console.log('Alias seleccionado:', aliasId, 'Option:', selectedOption);
                 response = await this.apiService.put(`/api/extras/${this.currentExtra.id}`, aliasData);
             } else {
+                       console.log('IDs de proprietarios para alias:', proprietarioIds);
                 // Criar
                 response = await this.apiService.post('/api/extras/', aliasData);
             }
 
             if (response && response.success) {
+                           console.log('Buscando proprietario ID:', id, 'Encontrado:', proprietario);
                 this.showSuccess(this.currentExtra ? 'Alias atualizado com sucesso!' : 'Alias criado com sucesso!');
                 // Fechar modal de forma segura para acessibilidade
                 this.safeCloseModal('modal-alias', 'btn-salvar-alias');
@@ -972,38 +1015,23 @@ class ExtrasManager {
                 this.showError('Transferência não encontrada');
                 return;
             }
-
             console.log('📝 Editando transferência:', transferencia);
-
-            // Marcar como edição ANTES de mostrar o modal
             this.currentTransferencia = transferencia;
-            
-            // Popular o modal com os dados da transferência
             this.showTransferenciasModal();
-            
-            // Aguardar o modal ser exibido e os aliases serem carregados
             requestAnimationFrame(async () => {
                 try {
-                    // Aguardar que os aliases sejam carregados
                     await this.carregarAliasParaTransferencia();
-                    
-                    // Usar requestAnimationFrame para garantir DOM atualizado
                     requestAnimationFrame(() => {
-                        // Selecionar o alias correto (usando o alias_id da transferência)
                         const aliasSelect = document.getElementById('transferencia-alias');
                         if (aliasSelect) {
                             aliasSelect.value = transferencia.alias_id;
                             console.log('🔍 Alias selecionado:', aliasSelect.value);
                         }
-                        
-                        // Preencher os campos
                         const nomeInput = document.getElementById('transferencia-nome');
                         if (nomeInput) {
                             nomeInput.value = transferencia.nome_transferencia || '';
                             console.log('📝 Nome preenchido:', nomeInput.value);
                         }
-                        
-                        // Preencher datas
                         if (transferencia.data_criacao) {
                             const dataCriacaoInput = document.getElementById('transferencia-data-criacao');
                             if (dataCriacaoInput) {
@@ -1012,7 +1040,6 @@ class ExtrasManager {
                                 console.log('📅 Data de criação preenchida:', dataCriacaoInput.value);
                             }
                         }
-                        
                         if (transferencia.data_fim) {
                             const dataFimInput = document.getElementById('transferencia-data-fim');
                             if (dataFimInput) {
@@ -1021,17 +1048,12 @@ class ExtrasManager {
                                 console.log('📅 Data de fim preenchida:', dataFimInput.value);
                             }
                         }
-                        
-                        // Carregar proprietários do alias automaticamente
                         this.carregarProprietariosAlias(transferencia.alias_id);
-                        
                     });
-                    
                 } catch (error) {
                     console.error('Erro ao carregar dados para edição:', error);
                 }
             });
-
         } catch (error) {
             console.error('Erro ao carregar transferência para edição:', error);
             this.showError('Erro ao carregar transferência: ' + error.message);
@@ -1124,11 +1146,18 @@ class ExtrasManager {
 
 // Inicializar quando o DOM estiver pronto
 document.addEventListener('DOMContentLoaded', function() {
+    // Forzar modo nova transferência en Importar
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.id === 'btn-novas-transferencias') {
+            if (window.extrasModule) {
+                window.extrasModule.currentTransferencia = null;
+            }
+        }
+    });
     window.extrasManager = new ExtrasManager();
-    
+    window.extrasManager.apiService = window.apiService;
     // Disponibilizar também como extrasModule para o gerenciador de UI
     window.extrasModule = window.extrasManager;
-    
     console.log('✅ ExtrasManager inicializado');
 
     // Evento para botão Novo Alias na Importar
