@@ -47,6 +47,59 @@ window.apiService = {
 
         return headers;
     },
+        // Método para subir archivos (usado en importação de proprietários, alugueis, etc)
+        async upload(endpoint, file, options = {}) {
+            // Versión backup: acepta formData directamente
+            const url = `${this.getBaseUrl()}${endpoint}`;
+            // Si el primer parámetro es un FormData, úsalo directamente
+            let formData = file;
+            // Si no es FormData, crea uno (compatibilidad)
+            if (!(formData instanceof FormData)) {
+                formData = new FormData();
+                formData.append('file', file);
+            }
+            const headers = this.getHeaders();
+            if (headers['Content-Type']) {
+                delete headers['Content-Type'];
+            }
+            const requestOptions = {
+                method: 'POST',
+                headers,
+                body: formData,
+                ...options
+            };
+            try {
+                const response = await fetch(url, requestOptions);
+                let responseData;
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    responseData = await response.json();
+                } else {
+                    responseData = await response.text();
+                }
+                if (!response.ok) {
+                    let errorMsg = '';
+                    if (typeof responseData === 'object') {
+                        errorMsg = JSON.stringify(responseData);
+                    } else {
+                        errorMsg = responseData;
+                    }
+                    throw new Error(errorMsg || 'Error al subir archivo');
+                }
+                return {
+                    success: true,
+                    data: responseData.data || responseData,
+                    status: response.status,
+                    statusText: response.statusText
+                };
+            } catch (error) {
+                console.error('❌ Error en upload:', error);
+                return {
+                    success: false,
+                    error: error.message || error
+                };
+            }
+        },
 
     // Método genérico GET
     async get(endpoint, options = {}) {
