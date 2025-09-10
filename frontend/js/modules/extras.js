@@ -36,9 +36,20 @@ class ExtrasManager {
         
         const modalMsg = document.getElementById('modal-confirmar-exclusao-extras-msg');
         if (modalMsg) {
-            // ...existing code...
+            if (tipo === 'alias') {
+                modalMsg.textContent = `Tem certeza que deseja excluir o alias "${nome}"? Esta ação não pode ser desfeita.`;
+            } else if (tipo === 'transferencia') {
+                modalMsg.textContent = `Tem certeza que deseja excluir a transferência "${nome}"? Esta ação não pode ser desfeita.`;
+            } else {
+                modalMsg.textContent = 'Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.';
+            }
         }
-        // ...existing code...
+        // Mostrar el modal de confirmación
+        const modalEl = document.getElementById('modal-confirmar-exclusao-extras');
+        if (modalEl) {
+            const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            modalInstance.show();
+        }
     }
 
     constructor() {
