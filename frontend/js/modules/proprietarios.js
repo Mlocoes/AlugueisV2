@@ -9,6 +9,8 @@ class ProprietariosModule {
         // ...código existente...
         this.apiService = window.apiService;
         this.uiManager = window.uiManager;
+        this.modalManager = new ModalManager('novo-proprietario-modal', 'editar-proprietario-modal');
+        this.tableManager = new TableManager('proprietarios-table-body');
         this.proprietarios = [];
         this.currentEditId = null;
         this.initialized = false;
@@ -93,48 +95,42 @@ class ProprietariosModule {
     }
 
     renderTable() {
-        const tbody = document.getElementById('proprietarios-table-body');
-        if (!tbody) return;
+        const noDataMessage = `
+            <tr>
+                <td colspan="7" class="text-center text-muted py-4">
+                    <i class="fas fa-users fa-2x mb-2"></i>
+                    <br>Não há proprietários registrados
+                </td>
+            </tr>
+        `;
+
+        this.tableManager.render(this.proprietarios, this.renderProprietarioRow.bind(this), noDataMessage);
+    }
+
+    renderProprietarioRow(prop) {
+        const nomeCompleto = prop.sobrenome ? `${SecurityUtils.escapeHtml(prop.nome)} ${SecurityUtils.escapeHtml(prop.sobrenome)}` : SecurityUtils.escapeHtml(prop.nome);
+        const documentoInfo = (prop.tipo_documento && prop.documento) ? 
+            `${SecurityUtils.escapeHtml(prop.tipo_documento)}: ${SecurityUtils.escapeHtml(prop.documento)}` : 
+            (prop.documento ? `Doc: ${SecurityUtils.escapeHtml(prop.documento)}` : 'Sem documento');
         
-        if (this.proprietarios.length === 0) {
-            SecurityUtils.setSafeHTML(tbody, `
-                <tr>
-                    <td colspan="7" class="text-center text-muted py-4">
-                        <i class="fas fa-users fa-2x mb-2"></i>
-                        <br>Não há proprietários registrados
-                    </td>
-                </tr>
-            `);
-            return;
-        }
-        
-        const htmlContent = this.proprietarios.map(prop => {
-            const nomeCompleto = prop.sobrenome ? `${SecurityUtils.escapeHtml(prop.nome)} ${SecurityUtils.escapeHtml(prop.sobrenome)}` : SecurityUtils.escapeHtml(prop.nome);
-            const documentoInfo = (prop.tipo_documento && prop.documento) ? 
-                `${SecurityUtils.escapeHtml(prop.tipo_documento)}: ${SecurityUtils.escapeHtml(prop.documento)}` : 
-                (prop.documento ? `Doc: ${SecurityUtils.escapeHtml(prop.documento)}` : 'Sem documento');
-            
-            return `
-                <tr>
-                    <td>
-                        <strong>${nomeCompleto}</strong><br>
-                        <small class="text-muted">${documentoInfo}</small>
-                    </td>
-                    <td>${this.formatContact(prop.email, prop.telefone)}</td>
-                    <td>${this.formatField(prop.endereco, 'Sem endereço')}</td>
-                    <td><div class="small">${this.formatBankInfo(prop.banco, prop.agencia, prop.conta, prop.tipo_conta)}</div></td>
-                    <td><small class="text-muted">${new Date(prop.data_cadastro).toLocaleDateString()}</small></td>
-                    <td>
-                        <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-warning admin-only" onclick="proprietariosModule.editProprietario(${prop.id})" title="Editar"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-outline-danger admin-only" onclick="proprietariosModule.deleteProprietario(${prop.id})" title="Eliminar"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-        
-        SecurityUtils.setSafeHTML(tbody, htmlContent);
+        return `
+            <tr>
+                <td>
+                    <strong>${nomeCompleto}</strong><br>
+                    <small class="text-muted">${documentoInfo}</small>
+                </td>
+                <td>${this.formatContact(prop.email, prop.telefone)}</td>
+                <td>${this.formatField(prop.endereco, 'Sem endereço')}</td>
+                <td><div class="small">${this.formatBankInfo(prop.banco, prop.agencia, prop.conta, prop.tipo_conta)}</div></td>
+                <td><small class="text-muted">${new Date(prop.data_cadastro).toLocaleDateString()}</small></td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-warning admin-only" onclick="proprietariosModule.editProprietario(${prop.id})" title="Editar"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-outline-danger admin-only" onclick="proprietariosModule.deleteProprietario(${prop.id})" title="Eliminar"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `;
     }
 
     formatField(value, placeholder = '—', prefix = '', suffix = '') {
@@ -168,16 +164,9 @@ class ProprietariosModule {
     // Método de pesquisa eliminado
 
     showNewModal() {
-        const modalEl = document.getElementById('novo-proprietario-modal');
-        if (modalEl) {
-            // Limpiar el formulario
-            const form = document.getElementById('form-novo-proprietario');
-            if (form) form.reset();
-
-            // Mostrar modal usando Bootstrap
-            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-            modal.show();
-        }
+        const form = document.getElementById('form-novo-proprietario');
+        if (form) form.reset();
+        this.modalManager.abrirModalCadastro();
     }
 
     async handleCreateData(data, formElement) {
@@ -185,32 +174,16 @@ class ProprietariosModule {
             this.uiManager.showLoading('Criando proprietário...');
             const response = await this.apiService.createProprietario(data);
             if (response && (response.success || response.mensagem)) {
-                // Blur y focus al body antes de cerrar el modal (igual que Novo Imóvel)
-                const modalEl = document.getElementById('novo-proprietario-modal');
-                if (document.activeElement) document.activeElement.blur();
-                document.body.focus();
-                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-                if (modal) modal.hide();
+                this.modalManager.fecharModalCadastro();
                 formElement.reset();
-                // Limpieza manual de cualquier backdrop residual
-                const backdrops = document.querySelectorAll('.modal-backdrop');
-                backdrops.forEach(bd => bd.remove());
-                // Recargar lista automáticamente
                 await this.loadProprietarios();
             } else {
                 throw new Error(response?.error || 'Erro ao criar proprietário');
             }
         } catch (error) {
             this.uiManager.showError('Erro ao criar proprietário: ' + error.message);
-        }
-        // Oculta el loader siempre, incluso si no hay recarga de lista
-        // ...existing code...
-        this.uiManager.hideLoading();
-        // ...existing code...
-        // Eliminación forzada del loader global si persiste
-        const loader = document.getElementById('global-loader');
-        if (loader) {
-            loader.remove();
+        } finally {
+            this.uiManager.hideLoading();
         }
     }
 
@@ -221,13 +194,7 @@ class ProprietariosModule {
             if (proprietario) {
                 this.currentEditId = id;
                 this.fillEditForm(proprietario);
-                const modalElement = document.getElementById('editar-proprietario-modal');
-                if (modalElement) {
-                    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
-                    modal.show();
-                } else {
-                    throw new Error('Modal de edição não encontrado');
-                }
+                this.modalManager.abrirModalEdicao();
             } else {
                 throw new Error('Proprietário não encontrado');
             }
@@ -262,11 +229,7 @@ class ProprietariosModule {
             this.uiManager.showLoading('Atualizando proprietário...');
             const response = await this.apiService.updateProprietario(this.currentEditId, data);
             if (response && (response.success || response.mensagem)) {
-                // Aplicar la solución de focus management que funciona en alterar usuario
-                if (document.activeElement) document.activeElement.blur();
-                document.body.focus();
-                const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('editar-proprietario-modal'));
-                modal.hide();
+                this.modalManager.fecharModalEdicao();
                 this.currentEditId = null;
                 await this.loadProprietarios();
             } else {

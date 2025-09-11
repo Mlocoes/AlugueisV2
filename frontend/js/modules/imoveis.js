@@ -6,6 +6,8 @@ class ImoveisModule {
     constructor() {
         this.apiService = window.apiService;
         this.uiManager = window.uiManager;
+        this.modalManager = new ModalManager('novo-imovel-modal', 'edit-imovel-modal');
+        this.modalManager.modalConfirmarExclusao = new bootstrap.Modal(document.getElementById('modal-confirmar-exclusao-imovel'));
         this.imoveis = [];
         this.currentEditId = null;
         this.initialized = false;
@@ -73,7 +75,7 @@ class ImoveisModule {
                     </td>
                     <td>
                         <span>${safeImovel.area_total || '—'} m²</span><br>
-                        <small class="text-muted">Construída: ${safeImovel.area_construida || '—'} m²</small>
+                        <span>${safeImovel.area_construida || '—'} m²</span>
                     </td>
                     <td>
                         <span>R$ ${safeImovel.valor_cadastral || '—'}</span><br>
@@ -102,18 +104,15 @@ class ImoveisModule {
     }
 
     showNewModal() {
-        const modalEl = document.getElementById('novo-imovel-modal');
-        if (!modalEl) {
-            this.uiManager.showErrorToast('Modal de novo imóvel não encontrado no DOM.');
-            return;
-        }
-        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-        modal.show();
+        const form = document.getElementById('form-novo-imovel');
+        if (form) form.reset();
+        this.modalManager.abrirModalCadastro();
     }
-                            // Método de compatibilidade para eliminar advertências legacy
-                            load() {
-                                return this.loadImoveis();
-                            }
+
+    // Método de compatibilidade para eliminar advertências legacy
+    load() {
+        return this.loadImoveis();
+    }
 
     async handleCreateData(data, formElement) {
         // Adaptar campos según modelo Imovel actualizado
@@ -148,21 +147,8 @@ class ImoveisModule {
             this.uiManager.showLoading('Criando imóvel...');
             const response = await this.apiService.createImovel(payload);
             if (response && response.success) {
-                // Detectar el modal correcto
-                let modalId = 'novo-imovel-modal';
-                if (formElement && formElement.id === 'form-novo-imovel-importar') {
-                    modalId = 'novo-imovel-importar-modal';
-                }
-                // Aplicar la solución de focus management que funciona en alterar usuario
-                if (document.activeElement) document.activeElement.blur();
-                document.body.focus();
-                const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById(modalId));
-                if (modal) modal.hide();
+                this.modalManager.fecharModalCadastro();
                 formElement.reset();
-                // Limpiar backdrop residual
-                const backdrops = document.querySelectorAll('.modal-backdrop');
-                backdrops.forEach(bd => bd.remove());
-                // Recargar lista de imóveis
                 await this.loadImoveis();
                 this.uiManager.showSuccessToast('Imóvel cadastrado', 'O imóvel foi cadastrado com sucesso.');
             } else {
@@ -200,14 +186,14 @@ class ImoveisModule {
         if (!tableBody) return;
         tableBody.innerHTML = '';
         if (this.imoveis.length === 0) {
-            window.SecurityUtils.setSafeHTML(tableBody, `
+            window.SecurityUtils.setSafeHTML(tableBody, '
                 <tr>
                     <td colspan="12" class="text-center text-muted py-4">
                         <i class="fas fa-home fa-2x mb-2"></i>
                         <br>Não há imóveis registrados
                     </td>
                 </tr>
-            `);
+            ');
             return;
         }
         this.imoveis.forEach(imovel => {
@@ -275,13 +261,7 @@ class ImoveisModule {
             this.currentEditId = id;
             this.fillEditForm(imovel);
 
-            const modalElement = document.getElementById('edit-imovel-modal');
-            if (modalElement) {
-                const editModal = bootstrap.Modal.getOrCreateInstance(modalElement);
-                editModal.show();
-            } else {
-                throw new Error('Modal de edição não encontrado');
-            }
+            this.modalManager.abrirModalEdicao();
         } catch (error) {
             this.uiManager.showError('Erro ao carregar dados do imóvel: ' + error.message);
             this.uiManager.hideLoading();
@@ -358,11 +338,7 @@ class ImoveisModule {
         this.uiManager.hideLoading();
 
         if (response && (response.success || response.mensagem || response.message)) {
-            // Aplicar la solución de focus management que funciona en alterar usuario
-            if (document.activeElement) document.activeElement.blur();
-            document.body.focus();
-            const editModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('edit-imovel-modal'));
-            editModal.hide();
+            this.modalManager.fecharModalEdicao();
             this.uiManager.showSuccessToast('Imóvel atualizado', 'Os dados foram atualizados com sucesso.');
             this.loadImoveis();
         } else {
@@ -371,13 +347,8 @@ class ImoveisModule {
     }
 
     deleteImovel(id) {
-        // Mostrar el modal visual en vez de confirm()
         this.imovelToDeleteId = id;
-        const modalEl = document.getElementById('modal-confirmar-exclusao-imovel');
-        if (modalEl) {
-            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-            modal.show();
-        }
+        this.modalManager.modalConfirmarExclusao.show();
     }
 
     async _deleteImovelConfirmed(id) {
@@ -386,6 +357,7 @@ class ImoveisModule {
         this.uiManager.hideLoading();
 
         if (response && (response.success || response.mensagem || response.message)) {
+            this.modalManager.modalConfirmarExclusao.hide();
             this.uiManager.showSuccessToast('Imóvel excluído', 'O imóvel foi excluído com sucesso.');
             this.loadImoveis();
         } else {
