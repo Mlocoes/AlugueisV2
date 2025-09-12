@@ -153,7 +153,7 @@ BEGIN
     END IF;
     
     -- Calcular valor líquido
-    NEW.valor_liquido_proprietario := COALESCE(NEW.valor_liquido_proprietario, 0) - NEW.taxa_administracao_proprietario;
+
     
     RETURN NEW;
 END;
@@ -344,7 +344,7 @@ BEGIN
     END IF;
     
     -- Calcular valor líquido
-    NEW.valor_liquido_proprietario := COALESCE(NEW.valor_liquido_proprietario, 0) - NEW.taxa_administracao_proprietario;
+
     
     RETURN NEW;
 END;
