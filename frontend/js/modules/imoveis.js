@@ -39,6 +39,11 @@ class ImoveisModule {
             });
         }
 
+        const formEditar = document.getElementById('edit-imovel-form');
+        if (formEditar) {
+            formEditar.addEventListener('submit', (e) => this.handleUpdate(e));
+        }
+
         // Aplicar el patrón de focus management
         const modals = ['novo-imovel-modal', 'novo-imovel-importar-modal', 'editar-imovel-modal'];
         modals.forEach(modalId => {
@@ -60,8 +65,11 @@ class ImoveisModule {
     }
 
     // Método de compatibilidade para eliminar advertências legacy
-    load() {
-        return this.loadImoveis();
+    async load() {
+        if (!this.initialized) {
+            this.init();
+        }
+        await this.loadImoveis();
     }
 
     async handleCreateData(data, formElement) {
