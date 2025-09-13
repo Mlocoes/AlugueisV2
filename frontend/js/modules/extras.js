@@ -159,6 +159,14 @@ class ExtrasManager {
         });
 
         // Formulários
+
+        // Formulários
+        document.getElementById('form-alias')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.salvarAlias();
+        });
+
+        // Formulários
         document.getElementById('form-alias')?.addEventListener('submit', (e) => {
             e.preventDefault();
             this.salvarAlias();
@@ -486,7 +494,18 @@ class ExtrasManager {
 
         // Criar instância do modal
         const bootstrapModal = new bootstrap.Modal(modal);
-        
+
+        const saveBtn = document.getElementById('btn-salvar-alias');
+        if(saveBtn) {
+            const newSaveBtn = saveBtn.cloneNode(true);
+            saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+    
+            newSaveBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.salvarAlias();
+            });
+        }
+
         // Configurar eventos mais robustos - usando 'once' para evitar acúmulo
         modal.addEventListener('shown.bs.modal', () => {
             // Permitir que o Bootstrap termine de configurar o modal primeiro
@@ -759,16 +778,13 @@ class ExtrasManager {
             let response;
             if (this.currentExtra) {
                 // Editar
-                   console.log('Alias seleccionado:', aliasId, 'Option:', selectedOption);
                 response = await this.apiService.put(`/api/extras/${this.currentExtra.id}`, aliasData);
             } else {
-                       console.log('IDs de proprietarios para alias:', proprietarioIds);
                 // Criar
                 response = await this.apiService.post('/api/extras/', aliasData);
             }
 
             if (response && response.success) {
-                           console.log('Buscando proprietario ID:', id, 'Encontrado:', proprietario);
                 this.showSuccess(this.currentExtra ? 'Alias atualizado com sucesso!' : 'Alias criado com sucesso!');
                 // Fechar modal de forma segura para acessibilidade
                 this.safeCloseModal('modal-alias', 'btn-salvar-alias');
