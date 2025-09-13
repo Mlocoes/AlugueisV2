@@ -2,10 +2,21 @@
 class ModalManager {
     constructor(modalCadastroId, modalEdicaoId) {
         if (modalCadastroId) {
-            this.modalCadastro = new bootstrap.Modal(document.getElementById(modalCadastroId));
+            const modalCadastroEl = document.getElementById(modalCadastroId);
+            if (modalCadastroEl) {
+                this.modalCadastro = new bootstrap.Modal(modalCadastroEl);
+            } else {
+                console.warn(`Modal com ID "${modalCadastroId}" não encontrado.`);
+            }
         }
+
         if (modalEdicaoId) {
-            this.modalEdicao = new bootstrap.Modal(document.getElementById(modalEdicaoId));
+            const modalEdicaoEl = document.getElementById(modalEdicaoId);
+            if (modalEdicaoEl) {
+                this.modalEdicao = new bootstrap.Modal(modalEdicaoEl);
+            } else {
+                console.warn(`Modal com ID "${modalEdicaoId}" não encontrado.`);
+            }
         }
     }
 

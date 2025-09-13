@@ -249,17 +249,6 @@ class SistemaAlugueisApp {
         const initialTab = window.AppConfig?.ui?.defaultTab || 'dashboard';
         console.log(`🎯 Carregando aba inicial: ${initialTab}`);
         window.uiManager?.showTab(initialTab);
-
-        // Inicializar módulos também em Importar
-        const importarTab = document.getElementById('importar');
-        if (importarTab) {
-            if (typeof window.proprietariosModule !== 'undefined') {
-                window.proprietariosModule.init();
-            }
-            if (typeof window.imoveisModule !== 'undefined') {
-                window.imoveisModule.init();
-            }
-        }
     }
 
     /**

@@ -6,101 +6,51 @@ class ImoveisModule {
     constructor() {
         this.apiService = window.apiService;
         this.uiManager = window.uiManager;
-        this.modalManager = new ModalManager('novo-imovel-modal', 'edit-imovel-modal');
-        this.modalManager.modalConfirmarExclusao = new bootstrap.Modal(document.getElementById('modal-confirmar-exclusao-imovel'));
+        this.modalManager = null; // Será inicializado no init
         this.imoveis = [];
         this.currentEditId = null;
         this.initialized = false;
-        this.imovelToDeleteId = null; // <-- Novo campo para guardar o id a ser eliminado
+        this.imovelToDeleteId = null;
     }
-
 
     init() {
         if (this.initialized) return;
-        // ...código existente...
+
+        // Inicializar ModalManager aqui
+        this.modalManager = new ModalManager('novo-imovel-modal', 'edit-imovel-modal');
+        const confirmarExclusaoModalEl = document.getElementById('modal-confirmar-exclusao-imovel');
+        if (confirmarExclusaoModalEl) {
+            this.modalManager.modalConfirmarExclusao = new bootstrap.Modal(confirmarExclusaoModalEl);
+        }
+
         this.bindEvents();
-            // Interceptar submit do formulário de Importar (Novo Imóvel)
-            const formNovoImportar = document.getElementById('form-novo-imovel-importar');
-            if (formNovoImportar) {
-                formNovoImportar.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const formData = new FormData(formNovoImportar);
-                    const data = Object.fromEntries(formData.entries());
-                    this.handleCreateData(data, formNovoImportar);
-                });
-            }
+        this.initialized = true;
+    }
 
-            // Aplicar el patrón de focus management que funciona en usuario alterar
-            const modalNovoImovel = document.getElementById('novo-imovel-modal');
-            if (modalNovoImovel) {
-                modalNovoImovel.addEventListener('hide.bs.modal', () => {
-                    if (document.activeElement) document.activeElement.blur();
-                    document.body.focus();
-                    console.log('🔧 Focus transferido antes del cierre del modal novo-imovel');
-                });
-            }
-
-            const modalNovoImovelImportar = document.getElementById('novo-imovel-importar-modal');
-            if (modalNovoImovelImportar) {
-                modalNovoImovelImportar.addEventListener('hide.bs.modal', () => {
-                    if (document.activeElement) document.activeElement.blur();
-                    document.body.focus();
-                    console.log('🔧 Focus transferido antes del cierre del modal novo-imovel-importar');
-                });
-            }
-
-            const modalEditarImovel = document.getElementById('editar-imovel-modal');
-            if (modalEditarImovel) {
-                modalEditarImovel.addEventListener('hide.bs.modal', () => {
-                    if (document.activeElement) document.activeElement.blur();
-                    document.body.focus();
-                    console.log('🔧 Focus transferido antes del cierre del modal editar-imovel');
-                });
-            }
-
-            // INTERCEPTAR CLICS EN BOTONES DE CERRAR ANTES DE QUE BOOTSTRAP PROCESE
-            const closeButtons = document.querySelectorAll('[data-bs-dismiss="modal"]');
-            this.imoveis.forEach(imovel => {
-                const safeImovel = window.SecurityUtils.sanitizeData(imovel);
-                const row = document.createElement('tr');
-                const statusAlugado = imovel.alugado ? '<span class="badge bg-danger">Alugado</span>' : '<span class="badge bg-success">Disponível</span>';
-                // Adaptación estilo doble línea
-                const rowTemplate = `
-                    <td>
-                        <strong>${safeImovel.nome || ''}</strong><br>
-                        <small class="text-muted">${safeImovel.tipo_imovel || 'Sem tipo'}</small>
-                    </td>
-                    <td>
-                        <span>${safeImovel.endereco || '<span class=\"text-muted fst-italic\">Sem endereço</span>'}</span>
-                    </td>
-                    <td>
-                        <span>${safeImovel.area_total || '—'} m²</span><br>
-                        <span>${safeImovel.area_construida || '—'} m²</span>
-                    </td>
-                    <td>
-                        <span>R$ ${safeImovel.valor_cadastral || '—'}</span><br>
-                        <small class="text-muted">Mercado: R$ ${safeImovel.valor_mercado || '—'}</small>
-                    </td>
-                    <td>
-                        <span>IPTU: R$ ${safeImovel.iptu_mensal || '—'}</span><br>
-                        <small class="text-muted">Condomínio: R$ ${safeImovel.condominio_mensal || '—'}</small>
-                    </td>
-                    <td>${statusAlugado}</td>
-                    <td><small class="text-muted">${imovel.data_cadastro ? new Date(imovel.data_cadastro).toLocaleDateString() : ''}</small></td>
-                    <td>
-                        <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-warning admin-only" onclick="window.imoveisModule.editImovel(${imovel.id})" title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-outline-danger admin-only" onclick="window.imoveisModule.deleteImovel(${imovel.id})" title="Excluir">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                `;
-                row.innerHTML = rowTemplate;
-                tableBody.appendChild(row);
+    bindEvents() {
+        // Interceptar submit do formulário de Importar (Novo Imóvel)
+        const formNovoImportar = document.getElementById('form-novo-imovel-importar');
+        if (formNovoImportar) {
+            formNovoImportar.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(formNovoImportar);
+                const data = Object.fromEntries(formData.entries());
+                this.handleCreateData(data, formNovoImportar);
             });
+        }
+
+        // Aplicar el patrón de focus management
+        const modals = ['novo-imovel-modal', 'novo-imovel-importar-modal', 'editar-imovel-modal'];
+        modals.forEach(modalId => {
+            const modalEl = document.getElementById(modalId);
+            if (modalEl) {
+                modalEl.addEventListener('hide.bs.modal', () => {
+                    if (document.activeElement) document.activeElement.blur();
+                    document.body.focus();
+                    console.log(`🔧 Focus transferido antes del cierre del modal ${modalId}`);
+                });
+            }
+        });
     }
 
     showNewModal() {
@@ -186,14 +136,14 @@ class ImoveisModule {
         if (!tableBody) return;
         tableBody.innerHTML = '';
         if (this.imoveis.length === 0) {
-            window.SecurityUtils.setSafeHTML(tableBody, '
+            window.SecurityUtils.setSafeHTML(tableBody, `
                 <tr>
                     <td colspan="12" class="text-center text-muted py-4">
                         <i class="fas fa-home fa-2x mb-2"></i>
                         <br>Não há imóveis registrados
                     </td>
                 </tr>
-            ');
+            `);
             return;
         }
         this.imoveis.forEach(imovel => {
@@ -206,7 +156,7 @@ class ImoveisModule {
                     <small class="text-muted">${safeImovel.tipo_imovel || 'Sem tipo'}</small>
                 </td>
                 <td>
-                    <span>${safeImovel.endereco || '<span class=\"text-muted fst-italic\">Sem endereço</span>'}</span>
+                    <span>${safeImovel.endereco || '<span class="text-muted fst-italic">Sem endereço</span>'}</span>
                 </td>
                 <td>
                     <span>${safeImovel.area_total || '—'} m²</span><br>

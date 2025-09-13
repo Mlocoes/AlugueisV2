@@ -21,8 +21,20 @@ class UsuarioManager {
         if (this.initialized) return;
 
         // Obter elementos do DOM
-        this.modal = new bootstrap.Modal(document.getElementById('modal-cadastrar-usuario'));
-        this.modalAlterar = new bootstrap.Modal(document.getElementById('modal-alterar-usuario'));
+        const modalEl = document.getElementById('modal-cadastrar-usuario');
+        if (modalEl) {
+            this.modal = new bootstrap.Modal(modalEl);
+        } else {
+            console.warn('Modal com ID "modal-cadastrar-usuario" não encontrado.');
+        }
+
+        const modalAlterarEl = document.getElementById('modal-alterar-usuario');
+        if (modalAlterarEl) {
+            this.modalAlterar = new bootstrap.Modal(modalAlterarEl);
+        } else {
+            console.warn('Modal com ID "modal-alterar-usuario" não encontrado.');
+        }
+
         this.form = document.getElementById('form-cadastrar-usuario');
         this.formAlterar = document.getElementById('form-alterar-usuario');
 

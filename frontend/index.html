@@ -375,6 +375,9 @@
 
             async initializeAppComponents() {
                 try {
+                    // Inicializar todos los módulos
+                    this.initializeModules();
+
                     // Inicializar navegador
                     if (window.unifiedNavigator) {
                         window.unifiedNavigator.init();
@@ -399,6 +402,58 @@
                 } catch (error) {
                     console.error('❌ Error inicializando componentes:', error);
                 }
+            }
+
+            initializeModules() {
+                console.log('📦 Inicializando módulos...');
+
+                // Criar instâncias dos módulos
+                if (typeof DashboardModule !== 'undefined') {
+                    window.dashboardModule = new DashboardModule();
+                    console.log('✅ Módulo Dashboard criado');
+                }
+
+                if (typeof ProprietariosModule !== 'undefined') {
+                    window.proprietariosModule = new ProprietariosModule();
+                    console.log('✅ Módulo Proprietarios criado');
+                }
+
+                if (typeof ImoveisModule !== 'undefined') {
+                    window.imoveisModule = new ImoveisModule();
+                    console.log('✅ Módulo Imoveis criado');
+                }
+
+                if (typeof ParticipacoesModule !== 'undefined') {
+                    window.participacoesModule = new ParticipacoesModule();
+                    console.log('✅ Módulo Participacoes criado');
+                }
+
+                if (typeof ImportacaoModule !== 'undefined') {
+                    window.importacaoModule = new ImportacaoModule();
+                    console.log('✅ Módulo Importacao criado');
+                }
+
+                if (typeof AlugueisModule !== 'undefined') {
+                    window.alugueisModule = new AlugueisModule();
+                    console.log('✅ Módulo Alugueis criado');
+                }
+
+                if (typeof ExtrasModule !== 'undefined') {
+                    window.extrasModule = new ExtrasModule();
+                    console.log('✅ Módulo Extras criado');
+                }
+
+                if (typeof RelatoriosModule !== 'undefined') {
+                    window.relatoriosModule = new RelatoriosModule();
+                    console.log('✅ Módulo Relatorios criado');
+                }
+
+                if (typeof window.usuarioManager !== 'undefined') {
+                    window.usuarioManager.init();
+                    console.log('✅ Gerenciador de usuário inicializado');
+                }
+
+                console.log('✅ Módulos inicializados');
             }
 
             setupEventListeners() {

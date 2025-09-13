@@ -9,8 +9,7 @@ class ProprietariosModule {
         // ...código existente...
         this.apiService = window.apiService;
         this.uiManager = window.uiManager;
-        this.modalManager = new ModalManager('novo-proprietario-modal', 'editar-proprietario-modal');
-        this.tableManager = new TableManager('proprietarios-table-body');
+        this.modalManager = null; // Inicializado como nulo
         this.proprietarios = [];
         this.currentEditId = null;
         this.initialized = false;
@@ -18,6 +17,10 @@ class ProprietariosModule {
 
     init() {
         if (this.initialized) return;
+        
+        // Mova a inicialização do ModalManager para cá
+        this.modalManager = new ModalManager(null, 'editar-proprietario-modal');
+        
         // ...código existente...
         this.bindEvents();
         this.initialized = true;
@@ -25,7 +28,9 @@ class ProprietariosModule {
     }
 
     async load() {
-        this.init();
+        if (!this.initialized) {
+            this.init();
+        }
         await this.loadProprietarios();
     }
 
@@ -95,6 +100,9 @@ class ProprietariosModule {
     }
 
     renderTable() {
+        const tableBody = document.getElementById('proprietarios-table-body');
+        if (!tableBody) return;
+
         const noDataMessage = `
             <tr>
                 <td colspan="7" class="text-center text-muted py-4">
@@ -104,7 +112,13 @@ class ProprietariosModule {
             </tr>
         `;
 
-        this.tableManager.render(this.proprietarios, this.renderProprietarioRow.bind(this), noDataMessage);
+        if (this.proprietarios.length === 0) {
+            tableBody.innerHTML = noDataMessage;
+            return;
+        }
+
+        const htmlContent = this.proprietarios.map(prop => this.renderProprietarioRow(prop)).join('');
+        tableBody.innerHTML = htmlContent;
     }
 
     renderProprietarioRow(prop) {
@@ -310,11 +324,4 @@ class ProprietariosModule {
     }
 }
 
-// Inicializar módulo quando o DOM estiver pronto
-document.addEventListener('DOMContentLoaded', () => {
-    // Evita inicializar en la pantalla de importar
-    const isImportScreen = window.location.hash.includes('importar') || window.location.pathname.includes('importar');
-    if (AppConfig.modules.proprietarios && !isImportScreen) {
-        window.proprietariosModule = new ProprietariosModule();
-    }
-});
+
