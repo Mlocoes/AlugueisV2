@@ -7,6 +7,7 @@ class ImoveisModule {
         this.apiService = window.apiService;
         this.uiManager = window.uiManager;
         this.modalManager = null; // Será inicializado no init
+        this.modalManagerImportar = null; // Manager para o modal de importação
         this.imoveis = [];
         this.currentEditId = null;
         this.initialized = false;
@@ -16,8 +17,10 @@ class ImoveisModule {
     init() {
         if (this.initialized) return;
 
-        // Inicializar ModalManager aqui
+        // Inicializar ModalManagers
         this.modalManager = new ModalManager('novo-imovel-modal', 'edit-imovel-modal');
+        this.modalManagerImportar = new ModalManager('novo-imovel-importar-modal');
+        
         const confirmarExclusaoModalEl = document.getElementById('modal-confirmar-exclusao-imovel');
         if (confirmarExclusaoModalEl) {
             this.modalManager.modalConfirmarExclusao = new bootstrap.Modal(confirmarExclusaoModalEl);
@@ -28,14 +31,25 @@ class ImoveisModule {
     }
 
     bindEvents() {
-        // Interceptar submit do formulário de Importar (Novo Imóvel)
+        // Interceptar submit do formulário de Cadastro (Novo Imóvel)
+        const formNovoImovel = document.getElementById('form-novo-imovel');
+        if (formNovoImovel) {
+            formNovoImovel.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(formNovoImovel);
+                const data = Object.fromEntries(formData.entries());
+                this.handleCreateData(data, formNovoImovel, 'main');
+            });
+        }
+
+        // Interceptar submit do formulário de Importar (Novo Imóvel Importar)
         const formNovoImportar = document.getElementById('form-novo-imovel-importar');
         if (formNovoImportar) {
             formNovoImportar.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const formData = new FormData(formNovoImportar);
                 const data = Object.fromEntries(formData.entries());
-                this.handleCreateData(data, formNovoImportar);
+                this.handleCreateData(data, formNovoImportar, 'import');
             });
         }
 
@@ -59,9 +73,9 @@ class ImoveisModule {
     }
 
     showNewModal() {
-        const form = document.getElementById('form-novo-imovel');
-        if (form) form.reset();
-        this.modalManager.abrirModalCadastro();
+    const form = document.getElementById('form-novo-imovel');
+    if (form) form.reset();
+    this.modalManager.abrirModalCadastro();
     }
 
     // Método de compatibilidade para eliminar advertências legacy
@@ -72,28 +86,24 @@ class ImoveisModule {
         await this.loadImoveis();
     }
 
-    async handleCreateData(data, formElement) {
+    async handleCreateData(data, formElement, source = 'main') {
         // Adaptar campos según modelo Imovel actualizado
-        const allowed = ['nome', 'endereco', 'tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem', 'alugado'];
-        const numericFields = ['area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem'];
-        const payload = {};
-        for (const key of allowed) {
-            if (key in data) {
-                let val = data[key];
-                if (val === '') { val = null; }
-                if (numericFields.includes(key)) {
-                    payload[key] = val !== null ? Number(val) : null;
-                } else if (key === 'alugado') {
-                    payload[key] = val === 'true' || val === true;
-                } else {
-                    payload[key] = val;
-                }
-            } else if (key === 'alugado') {
-                // Los checkboxes no aparecen en FormData cuando no están marcados
-                payload[key] = false;
+        const nullableFields = ['tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem', 'alugado'];
+        const payload = { ...data };
+        // Eliminar campo 'observacoes' si existe
+        if ('observacoes' in payload) {
+            delete payload.observacoes;
+        }
+        // Si data_cadastro está vacío, asignar la fecha actual en formato ISO
+        if (!payload.data_cadastro || payload.data_cadastro === '') {
+            payload.data_cadastro = new Date().toISOString();
+        }
+        for (const field of nullableFields) {
+            if (payload[field] === '') {
+                payload[field] = null;
             }
         }
-        // Validación de campos obligatorios
+        // Validación de campos obrigatórios
         const requiredFields = ['nome', 'endereco'];
         for (const field of requiredFields) {
             if (!payload[field] || payload[field].trim() === '') {
@@ -105,22 +115,20 @@ class ImoveisModule {
             this.uiManager.showLoading('Criando imóvel...');
             const response = await this.apiService.createImovel(payload);
             if (response && response.success) {
-                this.modalManager.fecharModalCadastro();
+                if (source === 'import') {
+                    this.modalManagerImportar.fecharModalCadastro();
+                } else {
+                    this.modalManager.fecharModalCadastro();
+                }
                 formElement.reset();
                 await this.loadImoveis();
-                this.uiManager.showSuccessToast('Imóvel cadastrado', 'O imóvel foi cadastrado com sucesso.');
             } else {
-                // Lanzar error con mensaje siempre
-                throw new Error('Erro ao criar imóvel');
+                throw new Error(response?.error || 'Erro ao criar imóvel');
             }
         } catch (error) {
-            const msg = error && error.message ? error.message : 'Erro desconhecido ao criar imóvel';
-            this.uiManager.showErrorToast('Erro ao criar imóvel', msg);
+            this.uiManager.showErrorToast('Erro ao criar imóvel', error.message);
         } finally {
             this.uiManager.hideLoading();
-            // Eliminación forzada del loader global si persiste
-            const loader = document.getElementById('global-loader');
-            if (loader) loader.remove();
         }
     }
 
