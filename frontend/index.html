@@ -120,6 +120,78 @@
 
     <!-- Modales (serão adicionados dinamicamente conforme necessário) -->
         <div id="modals-container">
+            <!-- Modal Novo Imóvel -->
+            <div class="modal fade" id="novo-imovel-modal" tabindex="-1" aria-labelledby="novoImovelModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title" id="novoImovelModalLabel"><i class="fas fa-plus me-2"></i>Novo Imóvel</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="form-novo-imovel">
+                                <div class="mb-3">
+                                    <label for="novo-imovel-nome" class="form-label">Nome do Imóvel *</label>
+                                    <input type="text" class="form-control" id="novo-imovel-nome" name="nome" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="novo-imovel-endereco" class="form-label">Endereço</label>
+                                    <input type="text" class="form-control" id="novo-imovel-endereco" name="endereco">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="novo-imovel-tipo" class="form-label">Tipo</label>
+                                    <input type="text" class="form-control" id="novo-imovel-tipo" name="tipo">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="novo-imovel-proprietario" class="form-label">Proprietário</label>
+                                    <select class="form-select" id="novo-imovel-proprietario" name="proprietario_id"></select>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-success">Salvar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Modal Editar Imóvel -->
+            <div class="modal fade" id="edit-imovel-modal" tabindex="-1" aria-labelledby="editImovelModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-warning text-dark">
+                            <h5 class="modal-title" id="editImovelModalLabel"><i class="fas fa-edit me-2"></i>Editar Imóvel</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="form-edit-imovel">
+                                <div class="mb-3">
+                                    <label for="edit-imovel-nome" class="form-label">Nome do Imóvel *</label>
+                                    <input type="text" class="form-control" id="edit-imovel-nome" name="nome" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="edit-imovel-endereco" class="form-label">Endereço</label>
+                                    <input type="text" class="form-control" id="edit-imovel-endereco" name="endereco">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="edit-imovel-tipo" class="form-label">Tipo</label>
+                                    <input type="text" class="form-control" id="edit-imovel-tipo" name="tipo">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="edit-imovel-proprietario" class="form-label">Proprietário</label>
+                                    <select class="form-select" id="edit-imovel-proprietario" name="proprietario_id"></select>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-warning">Salvar Alterações</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Fin Modal Editar Imóvel -->
+            <!-- Fin Modal Novo Imóvel -->
             <!-- Modal Alias -->
             <div class="modal fade" id="modal-alias" tabindex="-1" aria-labelledby="modalAliasLabel" aria-hidden="true">
                 <div class="modal-dialog">
@@ -197,6 +269,108 @@
                     </div>
                 </div>
                 <!-- Fin Modal Transferencias -->
+
+                <!-- Modal Editar Proprietario -->
+                <div class="modal fade" id="editar-proprietario-modal" tabindex="-1" aria-labelledby="modalEditarProprietarioLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header bg-warning text-dark">
+                                <h5 class="modal-title" id="modalEditarProprietarioLabel"><i class="fas fa-edit me-2"></i>Editar Proprietário</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="form-editar-proprietario">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editar-proprietario-nome" class="form-label">Nome *</label>
+                                                <input type="text" class="form-control" id="editar-proprietario-nome" name="nome" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editar-proprietario-sobrenome" class="form-label">Sobrenome</label>
+                                                <input type="text" class="form-control" id="editar-proprietario-sobrenome" name="sobrenome">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editar-proprietario-tipo_documento" class="form-label">Tipo de Documento</label>
+                                                <input type="text" class="form-control" id="editar-proprietario-tipo_documento" name="tipo_documento">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editar-proprietario-documento" class="form-label">Documento</label>
+                                                <input type="text" class="form-control" id="editar-proprietario-documento" name="documento">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="editar-proprietario-endereco" class="form-label">Endereço</label>
+                                        <input type="text" class="form-control" id="editar-proprietario-endereco" name="endereco">
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editar-proprietario-telefone" class="form-label">Telefone</label>
+                                                <input type="text" class="form-control" id="editar-proprietario-telefone" name="telefone">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editar-proprietario-email" class="form-label">Email</label>
+                                                <input type="email" class="form-control" id="editar-proprietario-email" name="email">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <h5>Dados Bancários</h5>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editar-proprietario-banco" class="form-label">Banco</label>
+                                                <input type="text" class="form-control" id="editar-proprietario-banco" name="banco">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editar-proprietario-agencia" class="form-label">Agência</label>
+                                                <input type="text" class="form-control" id="editar-proprietario-agencia" name="agencia">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editar-proprietario-conta" class="form-label">Conta</label>
+                                                <input type="text" class="form-control" id="editar-proprietario-conta" name="conta">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="editar-proprietario-tipo_conta" class="form-label">Tipo de Conta</label>
+                                                <input type="text" class="form-control" id="editar-proprietario-tipo_conta" name="tipo_conta">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="editar-proprietario-observacoes" class="form-label">Observações</label>
+                                        <textarea class="form-control" id="editar-proprietario-observacoes" name="observacoes" rows="3"></textarea>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Fin Modal Editar Proprietario -->
+
                                 <!-- Modal Confirmar Exclusão Extras -->
                                 <div class="modal fade" id="modal-confirmar-exclusao-extras" tabindex="-1" aria-labelledby="modalConfirmarExclusaoExtrasLabel" aria-hidden="true">
                                     <div class="modal-dialog">

@@ -61,7 +61,7 @@ if "*" in ALLOW_ORIGINS:
 CORS_CONFIG = {
     "allow_origins": ALLOW_ORIGINS,
     "allow_credentials": allow_credentials_effective,
-    "allow_methods": ["*"],
+    "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     "allow_headers": ["*"]
 }
 

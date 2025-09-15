@@ -4,7 +4,7 @@ from typing import List, Dict
 import pandas as pd
 import traceback
 from datetime import datetime
-from models_final import Proprietario, AluguelSimples, Usuario, Participacao
+from models_final import Proprietario, AluguelSimples, Usuario, Participacao, ProprietarioUpdateSchema
 from config import get_db
 from .auth import verify_token, verify_token_flexible
 
@@ -59,16 +59,15 @@ def obter_proprietario(proprietario_id: int, db: Session = Depends(get_db), curr
     }
 
 @router.put("/{proprietario_id}", response_model=Dict)
-def atualizar_proprietario(proprietario_id: int, dados: Dict, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+def atualizar_proprietario(proprietario_id: int, dados: ProprietarioUpdateSchema, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
     """Atualiza os dados de um proprietário existente."""
     proprietario = db.query(Proprietario).filter(Proprietario.id == proprietario_id).first()
     if not proprietario:
         raise HTTPException(status_code=404, detail="Proprietário não encontrado")
 
-    campos_modelo = [c.key for c in Proprietario.__table__.columns]
-    for campo, valor in dados.items():
-        if campo in campos_modelo:
-            setattr(proprietario, campo, valor)
+    update_data = dados.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(proprietario, field, value)
 
     db.commit()
     db.refresh(proprietario)

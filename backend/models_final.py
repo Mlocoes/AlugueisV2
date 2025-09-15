@@ -477,7 +477,7 @@ class ResumenCalculator:
     """Calculadora de resumos e estatísticas"""
     
     @staticmethod
-    def calcular_resumen_propiedad(alquileres: list[AluguelSimples]) -> dict:
+    def calcular_resumen_propriedad(alquileres: list[AluguelSimples]) -> dict:
         if not alquileres:
             return {
                 'total_alquileres': 0,
@@ -499,3 +499,23 @@ class ResumenCalculator:
             'taxa_total': taxa_total,
             'liquido_total': liquido_total
         }
+
+class ProprietarioUpdateSchema(BaseModel):
+    nome: Optional[str] = None
+    sobrenome: Optional[str] = None
+    documento: Optional[str] = None
+    tipo_documento: Optional[str] = None
+    endereco: Optional[str] = None
+    telefone: Optional[str] = None
+    email: Optional[str] = None
+    banco: Optional[str] = None
+    agencia: Optional[str] = None
+    conta: Optional[str] = None
+    tipo_conta: Optional[str] = None
+    observacoes: Optional[str] = None
+
+    @validator('documento', pre=True, always=True)
+    def clean_documento(cls, v):
+        if isinstance(v, str) and v.strip() == '':
+            return None
+        return v

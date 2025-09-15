@@ -6,10 +6,9 @@
 
 class ProprietariosModule {
     constructor() {
-        // ...código existente...
         this.apiService = window.apiService;
         this.uiManager = window.uiManager;
-        this.modalManager = null; // Inicializado como nulo
+        this.modalManager = null; 
         this.proprietarios = [];
         this.currentEditId = null;
         this.initialized = false;
@@ -18,13 +17,10 @@ class ProprietariosModule {
     init() {
         if (this.initialized) return;
         
-        // Mova a inicialização do ModalManager para cá
-        this.modalManager = new ModalManager(null, 'editar-proprietario-modal');
+        this.modalManager = new ModalManager('novo-proprietario-modal', 'editar-proprietario-modal');
         
-        // ...código existente...
         this.bindEvents();
         this.initialized = true;
-        // ...código existente...
     }
 
     async load() {
@@ -48,13 +44,11 @@ class ProprietariosModule {
                 this.handleCreateData(data, formNovo);
             });
         }
-        // ...código existente...
         const formEditar = document.getElementById('form-editar-proprietario');
         if (formEditar) {
             formEditar.addEventListener('submit', (e) => this.handleUpdate(e));
         }
-    // Pesquisa eliminada: no se registra evento de búsqueda
-        // Registrar o evento apenas quando o DOM estiver pronto
+
         document.addEventListener('DOMContentLoaded', () => {
             const modalNovo = document.getElementById('novo-proprietario-modal');
             if (modalNovo) {
@@ -67,13 +61,11 @@ class ProprietariosModule {
             }
         });
 
-        // INTERCEPTAR CLICS EN BOTONES DE CERRAR ANTES DE QUE BOOTSTRAP PROCESE
         const closeButtons = document.querySelectorAll('[data-bs-dismiss="modal"]');
         closeButtons.forEach(button => {
             const modalId = button.closest('.modal')?.id;
             if (modalId && modalId.includes('proprietario')) {
                 button.addEventListener('click', (e) => {
-                    // Desenfocar inmediatamente ANTES de que Bootstrap inicie el proceso
                     if (document.activeElement) document.activeElement.blur();
                     document.body.focus();
                     console.log(`🔧 PREEMPTIVE: Focus transferido antes del cierre por botón X en ${modalId}`);
@@ -175,8 +167,6 @@ class ProprietariosModule {
         return html;
     }
 
-    // Método de pesquisa eliminado
-
     showNewModal() {
         const form = document.getElementById('form-novo-proprietario');
         if (form) form.reset();
@@ -184,9 +174,18 @@ class ProprietariosModule {
     }
 
     async handleCreateData(data, formElement) {
+        const nullableFields = ['sobrenome', 'documento', 'tipo_documento', 'endereco', 'telefone', 'email', 'banco', 'agencia', 'conta', 'tipo_conta', 'observacoes'];
+        const payload = { ...data };
+
+        for (const field of nullableFields) {
+            if (payload[field] === '') {
+                payload[field] = null;
+            }
+        }
+
         try {
             this.uiManager.showLoading('Criando proprietário...');
-            const response = await this.apiService.createProprietario(data);
+            const response = await this.apiService.createProprietario(payload);
             if (response && (response.success || response.mensagem)) {
                 this.modalManager.fecharModalCadastro();
                 formElement.reset();
@@ -222,7 +221,7 @@ class ProprietariosModule {
     fillEditForm(proprietario) {
         const form = document.getElementById('form-editar-proprietario');
         if (!form) return;
-        const fields = ['nome', 'sobrenome', 'documento', 'tipo_documento', 'endereco', 'telefone', 'email', 'banco', 'agencia', 'conta', 'tipo_conta'];
+        const fields = ['nome', 'sobrenome', 'documento', 'tipo_documento', 'endereco', 'telefone', 'email', 'banco', 'agencia', 'conta', 'tipo_conta', 'observacoes'];
         fields.forEach(field => {
             const input = form.querySelector(`[name="${field}"]`);
             if (input) {
