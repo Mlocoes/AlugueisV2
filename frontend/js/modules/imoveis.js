@@ -25,6 +25,10 @@ class ImoveisModule {
         const confirmarExclusaoModalEl = document.getElementById('modal-confirmar-exclusao-imovel');
         if (confirmarExclusaoModalEl) {
             this.modalManager.modalConfirmarExclusao = new bootstrap.Modal(confirmarExclusaoModalEl);
+            // Add event listener to ensure aria-hidden is false when modal is shown
+            confirmarExclusaoModalEl.addEventListener('shown.bs.modal', () => {
+                confirmarExclusaoModalEl.setAttribute('aria-hidden', 'false');
+            });
         }
 
         this.bindEvents();
@@ -57,6 +61,16 @@ class ImoveisModule {
         const formEditar = document.getElementById('edit-imovel-form');
         if (formEditar) {
             formEditar.addEventListener('submit', (e) => this.handleUpdate(e));
+        }
+
+        // Botão de confirmação de exclusão
+        const btnConfirmarExclusao = document.getElementById('btn-confirmar-exclusao-imovel');
+        if (btnConfirmarExclusao) {
+            btnConfirmarExclusao.addEventListener('click', () => {
+                if (this.imovelToDeleteId) {
+                    this._deleteImovelConfirmed(this.imovelToDeleteId);
+                }
+            });
         }
 
         // Aplicar el patrón de focus management
