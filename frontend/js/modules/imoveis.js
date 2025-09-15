@@ -2,6 +2,7 @@
  * Módulo Imóveis - Gestão completa de imóveis
  * Inclui CRUD, importação, exportação e validações
  */
+
 class ImoveisModule {
     constructor() {
         this.apiService = window.apiService;
