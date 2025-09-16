@@ -148,9 +148,9 @@ class SistemaAlugueisApp {
     async initializeModules() {
         console.log('📦 Inicializando módulos...');
 
-        // Criar instâncias dos módulos
-        if (typeof DashboardModule !== 'undefined') {
-            this.modules.dashboard = new DashboardModule();
+        // Instanciar DashboardModule ANTES del login
+        if (typeof window.DashboardModule !== 'undefined') {
+            this.modules.dashboard = new window.DashboardModule();
             window.dashboardModule = this.modules.dashboard;
             console.log('✅ Módulo Dashboard criado');
         }
@@ -174,9 +174,8 @@ class SistemaAlugueisApp {
         }
 
         if (typeof ImportacaoModule !== 'undefined') {
-            this.modules.importacao = new ImportacaoModule();
-            window.importacaoModule = this.modules.importacao;
-            console.log('✅ Módulo Importacao criado');
+            // Inicializar ImportacaoModule apenas ao acessar a tela importar
+            // Instanciação movida para UI Manager
         }
 
         if (typeof AlugueisModule !== 'undefined') {
@@ -191,11 +190,8 @@ class SistemaAlugueisApp {
         }
 
         if (typeof ExtrasManager !== 'undefined') {
-            this.modules.extras = new ExtrasManager();
-            window.extrasModule = this.modules.extras;
-            console.log('✅ Módulo Extras criado');
-            // Chamar o método load() do ExtrasModule para carregar dados iniciais
-            await window.extrasModule.load();
+            // Inicializar ExtrasManager apenas ao acessar a tela extras
+            // Instanciação movida para UI Manager
         }
 
         console.log('✅ Módulos inicializados:', Object.keys(this.modules));
@@ -254,9 +250,8 @@ class SistemaAlugueisApp {
      * Carregar aba inicial
      */
     loadInitialTab() {
-        const initialTab = window.AppConfig?.ui?.defaultTab || 'dashboard';
-        console.log(`🎯 Carregando aba inicial: ${initialTab}`);
-        window.uiManager?.showTab(initialTab);
+    // No cargar ninguna pestaña automáticamente, esperar login exitoso
+    console.log('⏸️ Carga de aba inicial bloqueada hasta login exitoso');
     }
 
     /**

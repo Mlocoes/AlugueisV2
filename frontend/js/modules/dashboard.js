@@ -1,9 +1,14 @@
+console.log('📦 dashboard.js cargado');
 /**
  * Módulo Dashboard - Gestão do dashboard principal
  * Exibe estatísticas, gráficos e resumo do sistema
  */
 
 class DashboardModule {
+    // Log de definición de clase
+    static logDefinition() {
+        console.log('✅ DashboardModule definido en window');
+    }
     constructor() {
         this.charts = {};
         this.data = {};
@@ -306,8 +311,7 @@ class DashboardModule {
 
 // Expor globalmente
 window.DashboardModule = DashboardModule;
+DashboardModule.logDefinition();
 
 // Criar instância global apenas se não existir
-if (!window.dashboardModule) {
-    window.dashboardModule = new DashboardModule();
-}
+// window.dashboardModule solo se inicializa tras login exitoso

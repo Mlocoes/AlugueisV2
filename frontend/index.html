@@ -114,6 +114,8 @@
                         <div class="mt-3">Inicializando aplicação...</div>
                     </div>
                 </div>
+
+                <!-- Fin Dashboard Section -->
             </main>
         </div>
     </div>
@@ -450,17 +452,34 @@
     <script src="js/core/ui-manager.js"></script>
     <script src="js/core/modal-manager.js"></script>
     
-    <!-- Module Scripts -->
-    <script src="js/modules/loginManager.js"></script>
+
+    <!-- Module Scripts: dashboard debe ir antes de app.js -->
     <script src="js/modules/dashboard.js"></script>
+
+    <!-- Main App Script -->
+    <script src="js/app.js"></script>
+
+    <!-- Resto de módulos -->
+    <script src="js/modules/loginManager.js"></script>
     <script src="js/modules/proprietarios.js"></script>
     <script src="js/modules/imoveis.js"></script>
     <script src="js/modules/participacoes.js"></script>
     <script src="js/modules/alugueis.js"></script>
     <script src="js/modules/relatorios.js"></script>
     <script src="js/modules/extras.js"></script>
+
     <script src="js/modules/importacao.js"></script>
     <script src="js/modules/usuarioManager.js"></script>
+
+    <!-- Inicialización automática de la app -->
+    <script>
+        if (typeof window.initApp === 'function') {
+            window.initApp();
+            console.log('🚀 window.initApp() llamado automáticamente al final de index.html');
+        } else {
+            console.error('❌ window.initApp no está disponible al final de index.html');
+        }
+    </script>
 
     <!-- Main App Script -->
     <script>
@@ -477,7 +496,7 @@
             async init() {
                 if (this.isInitialized) return;
 
-                console.log('🚀 Inicializando aplicación unificada...');
+                console.log('🚀 Inicializando aplicação unificada...');
 
                 try {
                     // Limpiar localStorage corrupto al inicio
@@ -489,7 +508,7 @@
                         window.deviceManager.setupResponsiveListeners();
                     }
 
-                    // Verificar autenticación guardada
+                    // Verificar autenticação guardada
                     await this.checkSavedAuth();
 
                     // Si no está autenticado, mostrar login
@@ -588,7 +607,7 @@
 
             async initializeAppComponents() {
                 try {
-                    // Inicializar todos los módulos
+                    // Inicializar todos os módulos
                     this.initializeModules();
 
                     // Inicializar navegador
@@ -621,11 +640,6 @@
                 console.log('📦 Inicializando módulos...');
 
                 // Criar instâncias dos módulos
-                if (typeof DashboardModule !== 'undefined') {
-                    window.dashboardModule = new DashboardModule();
-                    console.log('✅ Módulo Dashboard criado');
-                }
-
                 if (typeof ProprietariosModule !== 'undefined') {
                     window.proprietariosModule = new ProprietariosModule();
                     console.log('✅ Módulo Proprietarios criado');
@@ -746,7 +760,7 @@
                     alertDiv.textContent = error.message || 'Error al iniciar sesión';
                     alertDiv.style.display = 'block';
                 } finally {
-                    // Restaurar botón
+                    // Restaurar botão
                     submitBtn.disabled = false;
                     SecurityUtils.setSafeHTML(submitBtn, '<i class="fas fa-sign-in-alt me-2"></i>Entrar');
                 }
