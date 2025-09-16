@@ -21,29 +21,27 @@ class ExtrasManager {
         }
     }
     confirmarExclusao(tipo, id, nome) {
+    console.log('[DEBUG] Entrando en confirmarExclusao:', { tipo, id, nome });
         console.log('🗑️ Iniciando confirmação de exclusão:', { tipo, id, nome });
-        // Refuerzo: recargar alias antes de mostrar el modal
-        this.loadExtras().then(() => {
-            this.exclusaoTipo = tipo;
-            this.exclusaoId = id;
-            this.exclusaoNome = nome;
-            const modalMsg = document.getElementById('modal-confirmar-exclusao-extras-msg');
-            if (modalMsg) {
-                if (tipo === 'alias') {
-                    modalMsg.textContent = `Tem certeza que deseja excluir o alias "${nome}"? Esta ação não pode ser desfeita.`;
-                } else if (tipo === 'transferencia') {
-                    modalMsg.textContent = `Tem certeza que deseja excluir a transferência "${nome}"? Esta ação não pode ser desfeita.`;
-                } else {
-                    modalMsg.textContent = 'Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.';
-                }
+        this.exclusaoTipo = tipo;
+        this.exclusaoId = id;
+        this.exclusaoNome = nome;
+        const modalMsg = document.getElementById('modal-confirmar-exclusao-extras-msg');
+        if (modalMsg) {
+            if (tipo === 'alias') {
+                modalMsg.textContent = `Tem certeza que deseja excluir o alias "${nome}"? Esta ação não pode ser desfeita.`;
+            } else if (tipo === 'transferencia') {
+                modalMsg.textContent = `Tem certeza que deseja excluir a transferência "${nome}"? Esta ação não pode ser desfeita.`;
+            } else {
+                modalMsg.textContent = 'Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.';
             }
-            // Mostrar el modal de confirmación
-            const modalEl = document.getElementById('modal-confirmar-exclusao-extras');
-            if (modalEl) {
-                const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-                modalInstance.show();
-            }
-        });
+        }
+        // Mostrar el modal de confirmación
+        const modalEl = document.getElementById('modal-confirmar-exclusao-extras');
+        if (modalEl) {
+            const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            modalInstance.show();
+        }
     }
 
     constructor() {
@@ -70,20 +68,39 @@ class ExtrasManager {
     setupEvents() {
         // Botón de confirmar exclusão no modal
         const btnConfirmarExclusao = document.getElementById('btn-confirmar-exclusao-extras');
-        if (btnConfirmarExclusao) {
-            btnConfirmarExclusao.addEventListener('click', async () => {
-                console.log('🔥 Ejecutando exclusão:', { tipo: this.exclusaoTipo, id: this.exclusaoId });
-                try {
-                    if (this.exclusaoTipo === 'alias') {
-                        await this.excluirAlias(this.exclusaoId);
-                    } else if (this.exclusaoTipo === 'transferencia') {
-                        await this.excluirTransferencia(this.exclusaoId);
+        const modalExclusao = document.getElementById('modal-confirmar-exclusao-extras');
+        if (btnConfirmarExclusao && modalExclusao) {
+            // Listener para mostrar el modal: vincular el evento solo cuando se muestra
+            modalExclusao.addEventListener('shown.bs.modal', () => {
+                // Eliminar listener anterior si existe
+                if (this._exclusaoListener) {
+                    btnConfirmarExclusao.removeEventListener('click', this._exclusaoListener);
+                }
+                this._exclusaoListener = async (e) => {
+                    console.log('[DEBUG] Click en btn-confirmar-exclusao-extras:', { tipo: this.exclusaoTipo, id: this.exclusaoId });
+                    // Detener propagación y eliminar listener inmediatamente
+                    e.stopImmediatePropagation();
+                    btnConfirmarExclusao.removeEventListener('click', this._exclusaoListener);
+                    console.log('🔥 Ejecutando exclusão:', { tipo: this.exclusaoTipo, id: this.exclusaoId });
+                    try {
+                        if (this.exclusaoTipo === 'alias') {
+                            await this.excluirAlias(this.exclusaoId);
+                        } else if (this.exclusaoTipo === 'transferencia') {
+                            await this.excluirTransferencia(this.exclusaoId);
+                        }
+                        // Fechar modal após exclusão
+                        this.safeCloseModal('modal-confirmar-exclusao-extras', 'btn-confirmar-exclusao-extras');
+                    } catch (error) {
+                        console.error('❌ Erro durante exclusão:', error);
+                        this.showError('Erro ao excluir: ' + error.message);
                     }
-                    // Fechar modal após exclusão
-                    this.safeCloseModal('modal-confirmar-exclusao-extras', 'btn-confirmar-exclusao-extras');
-                } catch (error) {
-                    console.error('❌ Erro durante exclusão:', error);
-                    this.showError('Erro ao excluir: ' + error.message);
+                };
+                btnConfirmarExclusao.addEventListener('click', this._exclusaoListener);
+            });
+            // Listener para ocultar el modal: eliminar el evento
+            modalExclusao.addEventListener('hidden.bs.modal', () => {
+                if (this._exclusaoListener) {
+                    btnConfirmarExclusao.removeEventListener('click', this._exclusaoListener);
                 }
             });
         }
@@ -104,20 +121,6 @@ class ExtrasManager {
 
         document.addEventListener('DOMContentLoaded', () => {
             console.log('[DEBUG] JS extras.js cargado y DOM listo');
-            const formTransferencias = document.getElementById('form-transferencias');
-            if (formTransferencias) {
-                formTransferencias.addEventListener('submit', (e) => {
-                    console.log('[DEBUG] Submit interceptado en form-transferencias');
-                    e.preventDefault();
-                    try {
-                        this.salvarTransferencias();
-                    } catch (err) {
-                        console.error('[DEBUG] Error al llamar salvarTransferencias:', err);
-                    }
-                });
-            } else {
-                console.warn('[DEBUG] No se encontró el formulario form-transferencias en el DOM');
-            }
         });
 
         // Evento para carregar proprietários do alias selecionado
@@ -367,6 +370,7 @@ class ExtrasManager {
             
             tbody.appendChild(row);
         });
+        // ...no llamar a setupEvents aquí...
     }
 
     /**
@@ -538,6 +542,21 @@ class ExtrasManager {
         const form = document.getElementById('form-transferencias');
         const modalTitle = document.getElementById('modalTransferenciasLabel');
 
+        // Registrar evento submit cada vez que se muestra el modal
+        if (form) {
+            // Eliminar cualquier submit anterior para evitar duplicados
+            form.onsubmit = null;
+            form.addEventListener('submit', (e) => {
+                console.log('[DEBUG] Submit interceptado en form-transferencias');
+                e.preventDefault();
+                try {
+                    this.salvarTransferencias();
+                } catch (err) {
+                    console.error('[DEBUG] Error al llamar salvarTransferencias:', err);
+                }
+            });
+        }
+
         // Se NÃO estivermos editando, limpiar todo y forçar título
         if (!this.currentTransferencia) {
             form.reset();
@@ -642,7 +661,7 @@ class ExtrasManager {
     async carregarProprietariosAlias(aliasId) {
         const container = document.getElementById('transferencia-proprietarios-container');
         const tableBody = document.getElementById('transferencia-proprietarios-table');
-    console.log('[DEBUG] Ejecutando showAliasModal', extra);
+    // ...
     // ...existing code...
         if (!aliasId) {
             container.style.display = 'none';
@@ -1039,14 +1058,17 @@ class ExtrasManager {
      * Excluir transferência
      */
     async excluirTransferencia(id) {
+    console.log('[DEBUG] allTransferencias:', this.allTransferencias);
+    console.log('[DEBUG] Entrando en excluirTransferencia:', id);
         try {
             // Buscar a transferência sem operações pesadas
-            const transferencia = this.allTransferencias.find(t => t.id === id);
+        const transferencia = this.allTransferencias.find(t => t.id == id);
             if (!transferencia) {
                 this.showError('Transferência não encontrada');
                 return;
             }
             // Executar a exclusão diretamente (modal já confirma)
+            console.log('[DEBUG] Llamando executeDeleteTransferencia con:', id);
             await this.executeDeleteTransferencia(id);
         } catch (error) {
             console.error('Erro ao excluir transferência:', error);
@@ -1068,6 +1090,7 @@ class ExtrasManager {
         
         try {
             console.log('🗑️ Excluindo transferência:', id);
+            console.log('[DEBUG] Llamando apiService.delete con:', `/api/transferencias/${id}`);
 
             // Chamada de API sem bloquear a UI
             const response = await this.apiService.delete(`/api/transferencias/${id}`);
@@ -1130,9 +1153,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     // Eliminada inicialización global. Instanciar desde UnifiedApp/initializeModules.
-    window.extrasManager = new ExtrasManager();
-window.extrasManager.apiService = window.apiService;
-window.extrasModule = window.extrasManager;
-window.extrasManager.setupEvents();
-console.log('✅ ExtrasManager inicializado');
+        window.extrasManager = new ExtrasManager();
+        window.extrasManager.apiService = window.apiService;
+        window.extrasModule = window.extrasManager;
+        window.extrasManager.setupEvents();
+        window.extrasManager.load();
+        console.log('✅ ExtrasManager inicializado y datos cargados');
 });
