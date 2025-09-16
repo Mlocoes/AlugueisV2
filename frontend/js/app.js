@@ -190,6 +190,14 @@ class SistemaAlugueisApp {
             console.log('✅ Gerenciador de usuário inicializado');
         }
 
+        if (typeof ExtrasManager !== 'undefined') {
+            this.modules.extras = new ExtrasManager();
+            window.extrasModule = this.modules.extras;
+            console.log('✅ Módulo Extras criado');
+            // Chamar o método load() do ExtrasModule para carregar dados iniciais
+            await window.extrasModule.load();
+        }
+
         console.log('✅ Módulos inicializados:', Object.keys(this.modules));
     }
 

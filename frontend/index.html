@@ -651,9 +651,11 @@
                     console.log('✅ Módulo Alugueis criado');
                 }
 
-                if (typeof ExtrasModule !== 'undefined') {
-                    window.extrasModule = new ExtrasModule();
+                if (typeof ExtrasManager !== 'undefined') {
+                    window.extrasModule = new ExtrasManager();
                     console.log('✅ Módulo Extras criado');
+                    // Chamar o método load() do ExtrasModule para carregar dados iniciais
+                    window.extrasModule.load();
                 }
 
                 if (typeof RelatoriosModule !== 'undefined') {

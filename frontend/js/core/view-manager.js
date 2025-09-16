@@ -209,8 +209,13 @@ class ViewManager {
         if (view.id === 'importar') {
             const btnNovoAlias = document.getElementById('btn-novo-alias');
             if (btnNovoAlias) {
-                btnNovoAlias.addEventListener('click', function() {
-                    if (window.extrasModule && typeof window.extrasModule.showAliasModal === 'function') {
+                btnNovoAlias.addEventListener('click', async function() {
+                    console.log('[DEBUG] Botón Novo Alias clicado (view-manager.js)');
+                    if (window.extrasModule && typeof window.extrasModule.loadProprietarios === 'function') {
+                        await window.extrasModule.loadProprietarios();
+                        console.log('[DEBUG] loadProprietarios ejecutado antes de abrir el modal (view-manager.js)');
+                        window.extrasModule.showAliasModal(null);
+                    } else if (window.extrasModule && typeof window.extrasModule.showAliasModal === 'function') {
                         window.extrasModule.showAliasModal(null);
                     } else {
                         const form = document.getElementById('form-alias');
@@ -254,6 +259,14 @@ class ViewManager {
                     });
                 }
             }, 400);
+        }
+
+        // Forzar la recarga de alias al cargar la vista extras para asegurar que allExtras siempre esté actualizado
+        if (view.id === 'extras') {
+            if (window.extrasModule && typeof window.extrasModule.loadExtras === 'function') {
+                window.extrasModule.loadExtras();
+                console.log('[DEBUG] loadExtras ejecutado al cargar la vista extras');
+            }
         }
     }
 

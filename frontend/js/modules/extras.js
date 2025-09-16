@@ -1,10 +1,3 @@
-        // Si hay alias seleccionado, cargar propietarios automáticamente
-        if (!this.currentTransferencia) {
-            const aliasSelect = document.getElementById('transferencia-alias');
-            if (aliasSelect && aliasSelect.value) {
-                this.carregarProprietariosAlias(aliasSelect.value);
-            }
-        }
 /**
  * Módulo de Extras - Sistema de Alias
  * Acesso exclusivo para administradores
@@ -29,27 +22,28 @@ class ExtrasManager {
     }
     confirmarExclusao(tipo, id, nome) {
         console.log('🗑️ Iniciando confirmação de exclusão:', { tipo, id, nome });
-        
-        this.exclusaoTipo = tipo;
-        this.exclusaoId = id;
-        this.exclusaoNome = nome;
-        
-        const modalMsg = document.getElementById('modal-confirmar-exclusao-extras-msg');
-        if (modalMsg) {
-            if (tipo === 'alias') {
-                modalMsg.textContent = `Tem certeza que deseja excluir o alias "${nome}"? Esta ação não pode ser desfeita.`;
-            } else if (tipo === 'transferencia') {
-                modalMsg.textContent = `Tem certeza que deseja excluir a transferência "${nome}"? Esta ação não pode ser desfeita.`;
-            } else {
-                modalMsg.textContent = 'Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.';
+        // Refuerzo: recargar alias antes de mostrar el modal
+        this.loadExtras().then(() => {
+            this.exclusaoTipo = tipo;
+            this.exclusaoId = id;
+            this.exclusaoNome = nome;
+            const modalMsg = document.getElementById('modal-confirmar-exclusao-extras-msg');
+            if (modalMsg) {
+                if (tipo === 'alias') {
+                    modalMsg.textContent = `Tem certeza que deseja excluir o alias "${nome}"? Esta ação não pode ser desfeita.`;
+                } else if (tipo === 'transferencia') {
+                    modalMsg.textContent = `Tem certeza que deseja excluir a transferência "${nome}"? Esta ação não pode ser desfeita.`;
+                } else {
+                    modalMsg.textContent = 'Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.';
+                }
             }
-        }
-        // Mostrar el modal de confirmación
-        const modalEl = document.getElementById('modal-confirmar-exclusao-extras');
-        if (modalEl) {
-            const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-            modalInstance.show();
-        }
+            // Mostrar el modal de confirmación
+            const modalEl = document.getElementById('modal-confirmar-exclusao-extras');
+            if (modalEl) {
+                const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                modalInstance.show();
+            }
+        });
     }
 
     constructor() {
@@ -68,63 +62,7 @@ class ExtrasManager {
         this.loadProprietarios = this.loadProprietarios.bind(this);
     }
 
-    showTransferenciasModal() {
-        const modal = document.getElementById('modal-transferencias');
-        const form = document.getElementById('form-transferencias');
-        // Limpiar estado y campos SIEMPRE al abrir Nova Transferência
-        const modalTitle = document.getElementById('modalTransferenciasLabel');
-        if (!this.currentTransferencia) {
-            this.currentTransferencia = null;
-            if (form) form.reset();
-            if (modalTitle) {
-                modalTitle.innerHTML = '<i class="fas fa-exchange-alt me-2"></i>Nova Transferência';
-            }
-            const nomeInput = document.getElementById('transferencia-nome');
-            if (nomeInput) nomeInput.value = '';
-            const dataCriacaoInput = document.getElementById('transferencia-data-criacao');
-            if (dataCriacaoInput) {
-                const hoje = new Date();
-                const dataFormatada = hoje.toISOString().split('T')[0];
-                dataCriacaoInput.value = dataFormatada;
-            }
-            const dataFimInput = document.getElementById('transferencia-data-fim');
-            if (dataFimInput) dataFimInput.value = '';
-            const container = document.getElementById('transferencia-proprietarios-container');
-            if (container) container.style.display = 'none';
-            const proprietariosTable = document.getElementById('transferencia-proprietarios-table');
-            if (proprietariosTable) proprietariosTable.innerHTML = '';
-        } else {
-            if (modalTitle) {
-                modalTitle.innerHTML = '<i class="fas fa-exchange-alt me-2"></i>Editar Transferência';
-            }
-        }
-        // Carregar aliases disponíveis (sempre)
-        this.carregarAliasParaTransferencia();
-        // Limpar alertas
-        const alerts = document.getElementById('transferencia-alerts');
-        if (alerts) alerts.innerHTML = '';
-        // Criar instância do modal
-        const bootstrapModal = new bootstrap.Modal(modal);
-        // Configurar eventos mais robustos - usando 'once' para evitar acúmulo
-        modal.addEventListener('shown.bs.modal', () => {
-            setTimeout(() => {
-                const firstSelect = modal.querySelector('select:not([disabled])');
-                if (firstSelect && !firstSelect.matches(':focus')) {
-                    firstSelect.focus();
-                }
-            }, 200);
-        }, { once: true });
-        modal.addEventListener('hide.bs.modal', () => {
-            const focusedElement = modal.querySelector(':focus');
-            if (focusedElement) {
-                focusedElement.blur();
-            }
-        }, { once: true });
-        modal.addEventListener('hidden.bs.modal', () => {
-            modal.removeAttribute('aria-modal');
-        }, { once: true });
-        bootstrapModal.show();
-    }
+    
 
     /**
      * Inicializar eventos
@@ -159,22 +97,27 @@ class ExtrasManager {
         });
 
         // Formulários
-
-        // Formulários
         document.getElementById('form-alias')?.addEventListener('submit', (e) => {
             e.preventDefault();
             this.salvarAlias();
         });
 
-        // Formulários
-        document.getElementById('form-alias')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.salvarAlias();
-        });
-
-        document.getElementById('form-transferencias')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.salvarTransferencias();
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('[DEBUG] JS extras.js cargado y DOM listo');
+            const formTransferencias = document.getElementById('form-transferencias');
+            if (formTransferencias) {
+                formTransferencias.addEventListener('submit', (e) => {
+                    console.log('[DEBUG] Submit interceptado en form-transferencias');
+                    e.preventDefault();
+                    try {
+                        this.salvarTransferencias();
+                    } catch (err) {
+                        console.error('[DEBUG] Error al llamar salvarTransferencias:', err);
+                    }
+                });
+            } else {
+                console.warn('[DEBUG] No se encontró el formulario form-transferencias en el DOM');
+            }
         });
 
         // Evento para carregar proprietários do alias selecionado
@@ -235,12 +178,14 @@ class ExtrasManager {
      */
     async loadExtras() {
         try {
-            console.log('� Carregando extras...');
+            console.log(' Carregando extras...');
             
             const response = await this.apiService.get('/api/extras/?ativo=true');
             
             if (response && response.success && Array.isArray(response.data)) {
                 this.allExtras = response.data;
+                // Refuerzo: recargar propietarios antes de renderizar la tabla
+                await this.loadProprietarios();
                 this.renderExtrasTable(this.allExtras);
                 console.log(`✅ ${response.data.length} extras carregados`);
             } else {
@@ -261,6 +206,7 @@ class ExtrasManager {
             console.log('📥 Carregando proprietários...');
             
             const response = await this.apiService.get('/api/extras/proprietarios/disponiveis');
+            console.log('API response for proprietarios:', response); // Add this line
             
             if (response && response.success && Array.isArray(response.data)) {
                 this.allProprietarios = response.data;
@@ -282,6 +228,11 @@ class ExtrasManager {
         const tbody = document.getElementById('extras-table-body');
         if (!tbody) return;
 
+        // Limpiar completamente el tbody antes de repintar
+        while (tbody.firstChild) {
+            tbody.removeChild(tbody.firstChild);
+        }
+
         if (!extras || extras.length === 0) {
             tbody.innerHTML = `
                 <tr>
@@ -294,11 +245,8 @@ class ExtrasManager {
             return;
         }
 
-        tbody.innerHTML = '';
-        
         extras.forEach((extra, index) => {
             const row = document.createElement('tr');
-            
             // Processar proprietários
             let proprietariosText = 'Nenhum';
             if (extra.id_proprietarios) {
@@ -313,7 +261,6 @@ class ExtrasManager {
                     proprietariosText = 'Erro no formato';
                 }
             }
-
             row.innerHTML = `
                 <td><strong>${extra.alias}</strong></td>
                 <td title="${proprietariosText}">
@@ -333,7 +280,6 @@ class ExtrasManager {
                     </div>
                 </td>
             `;
-            
             tbody.appendChild(row);
         });
     }
@@ -472,7 +418,7 @@ class ExtrasManager {
     /**
      * Mostrar modal de alias
      */
-    showAliasModal(extra = null) {
+    async showAliasModal(extra = null) { // Added async here
         this.currentExtra = extra;
         const modal = document.getElementById('modal-alias');
         const modalTitle = document.getElementById('modalAliasLabel');
@@ -484,8 +430,9 @@ class ExtrasManager {
         } else {
             modalTitle.innerHTML = '<i class="fas fa-plus me-2"></i>Novo Alias';
             form.reset();
+            console.log('Calling loadProprietarios from showAliasModal (Novo Alias mode)');
             // Cargar lista de proprietários disponibles
-            this.loadProprietarios();
+            await this.loadProprietarios();
         }
 
         // Limpar alertas
@@ -572,7 +519,7 @@ class ExtrasManager {
             const container = document.getElementById('transferencia-proprietarios-container');
             if (aliasSelect && container && aliasSelect.value) {
                 container.style.display = '';
-                // Copia lógica de edición: cargar propietarios del alias seleccionado
+                // Copia lógica de edição: carregar proprietários do alias selecionado
                 if (typeof this.carregarProprietariosAlias === 'function') {
                     this.carregarProprietariosAlias(aliasSelect.value);
                 }
@@ -591,7 +538,7 @@ class ExtrasManager {
         const form = document.getElementById('form-transferencias');
         const modalTitle = document.getElementById('modalTransferenciasLabel');
 
-        // Se NÃO estivermos editando, limpiar todo y forzar título
+        // Se NÃO estivermos editando, limpiar todo y forçar título
         if (!this.currentTransferencia) {
             form.reset();
             if (modalTitle) {
@@ -659,7 +606,9 @@ class ExtrasManager {
      */
     async carregarAliasParaTransferencia() {
         try {
+            console.log('[DEBUG] Ejecutando carregarAliasParaTransferencia');
             const response = await this.apiService.get('/api/extras/?ativo=true');
+            console.log('[DEBUG] Respuesta de API para alias:', response);
             const aliasSelect = document.getElementById('transferencia-alias');
             if (response && response.success && Array.isArray(response.data)) {
                 aliasSelect.innerHTML = '<option value="">Selecione um alias...</option>';
@@ -677,10 +626,12 @@ class ExtrasManager {
                         this.carregarProprietariosAlias(aliasSelect.value);
                     }
                 }
-                console.log('Opciones de alias cargadas:', Array.from(aliasSelect.options).map(opt => ({value: opt.value, text: opt.textContent, proprietarios: opt.dataset.proprietarios})));
+                console.log('[DEBUG] Opciones de alias cargadas:', Array.from(aliasSelect.options).map(opt => ({value: opt.value, text: opt.textContent, proprietarios: opt.dataset.proprietarios})));
+            } else {
+                console.warn('[DEBUG] No se recibieron alias válidos de la API');
             }
         } catch (error) {
-            console.error('Erro ao carregar aliases:', error);
+            console.error('[DEBUG] Erro ao carregar aliases:', error);
             this.showError('Erro ao carregar aliases: ' + error.message);
         }
     }
@@ -691,6 +642,7 @@ class ExtrasManager {
     async carregarProprietariosAlias(aliasId) {
         const container = document.getElementById('transferencia-proprietarios-container');
         const tableBody = document.getElementById('transferencia-proprietarios-table');
+    console.log('[DEBUG] Ejecutando showAliasModal', extra);
     // ...existing code...
         if (!aliasId) {
             container.style.display = 'none';
@@ -723,12 +675,12 @@ class ExtrasManager {
                                 <strong>${proprietario.nome} ${proprietario.sobrenome || ''}</strong>
                             </td>
                             <td>
-                                <div class=\"input-group\">
-                                    <span class=\"input-group-text\" style=\"font-size:0.80rem;\">R$</span>
-                                    <input type=\"number\" class=\"form-control\" style=\"font-size:0.80rem;\" 
-                                           name=\"transferencia_${proprietario.id}\" 
-                                           step=\"0.01\" placeholder=\"0,00\"
-                                           value=\"${valorSalvo}\">
+                                <div class="input-group">
+                                    <span class="input-group-text" style="font-size:0.80rem;">R$</span>
+                                    <input type="number" class="form-control" style="font-size:0.80rem;" 
+                                           name="transferencia_${proprietario.id}" 
+                                           step="0.01" placeholder="0,00"
+                                           value="${valorSalvo}">
                                 </div>
                             </td>
                         `;
@@ -740,7 +692,7 @@ class ExtrasManager {
                 container.style.display = 'none';
             }
         } catch (error) {
-            debugDiv.innerHTML += `<br>Erro ao carregar proprietarios: ${error}`;
+            // debugDiv.innerHTML += `<br>Erro ao carregar proprietarios: ${error}`;
         }
     }
 
@@ -814,7 +766,8 @@ class ExtrasManager {
      * Salvar transferências
      */
     async salvarTransferencias() {
-        try {
+    console.log('[DEBUG] Entrando en salvarTransferencias');
+    try {
             const aliasId = document.getElementById('transferencia-alias').value;
             const nomeTransferencia = document.getElementById('transferencia-nome').value.trim();
             const dataCriacao = document.getElementById('transferencia-data-criacao').value;
@@ -895,7 +848,7 @@ class ExtrasManager {
                 this.currentTransferencia = null;
                 // Fechar modal de forma segura para acessibilidade
                 this.safeCloseModal('modal-transferencias', 'btn-salvar-transferencia');
-                // Recargar la lista de transferencias para mostrar la nueva transferencia
+                // Recargar la lista de transferencias para mostrar la nova transferência
                 await this.loadTransferencias();
             }
 
@@ -928,14 +881,15 @@ class ExtrasManager {
      */
     async excluirAlias(id) {
         try {
-            // Buscar o extra sem operações pesadas
-            const extra = this.allExtras.find(e => e.id === id);
+            // Buscar o extra sem operações pesadas (comparando como número)
+            const extra = this.allExtras.find(e => parseInt(e.id) === parseInt(id));
             if (!extra) {
+                console.error('[DEBUG] Alias não encontrado para exclusão. id:', id, 'allExtras:', this.allExtras);
                 this.showError('Alias não encontrado');
                 return;
             }
             // Executar a exclusão diretamente (modal já confirma)
-            await this.executeDeleteAlias(id);
+            await this.executeDeleteAlias(parseInt(id));
         } catch (error) {
             console.error('Erro ao excluir alias:', error);
             this.showError('Erro ao excluir alias: ' + error.message);
@@ -961,15 +915,9 @@ class ExtrasManager {
             const response = await this.apiService.delete(`/api/extras/${id}`);
             
             if (response && response.success) {
-                // Actualizar dados localmente sem renderizar imediatamente
-                this.allExtras = this.allExtras.filter(e => e.id !== id);
-                
-                // Mostrar sucesso e renderizar no próximo frame
                 this.showSuccess('Alias excluído com sucesso!');
-                requestAnimationFrame(() => {
-                    this.renderExtrasTable(this.allExtras);
-                });
-                
+                // Refuerzo: recargar lista completa desde backend e renderizar
+                await this.loadExtras();
             } else {
                 throw new Error('Resposta inválida do servidor');
             }
@@ -1181,30 +1129,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    // Eliminada inicialización global. Instanciar desde UnifiedApp/initializeModules.
     window.extrasManager = new ExtrasManager();
-    window.extrasManager.apiService = window.apiService;
-    // Disponibilizar também como extrasModule para o gerenciador de UI
-    window.extrasModule = window.extrasManager;
-    console.log('✅ ExtrasManager inicializado');
-
-    // Evento para botão Novo Alias na Importar
-    const btnNovoAlias = document.getElementById('btn-novo-alias');
-    if (btnNovoAlias) {
-        btnNovoAlias.addEventListener('click', function() {
-            // Cadastro de novo alias: limpiar el formulario y abrir el modal en modo "novo"
-            if (window.extrasModule && typeof window.extrasModule.showAliasModal === 'function') {
-                window.extrasModule.showAliasModal(null); // null para modo novo
-            } else {
-                // Fallback: limpiar y mostrar modal diretamente
-                const form = document.getElementById('form-alias');
-                if (form) form.reset();
-                const modalTitle = document.getElementById('modalAliasLabel');
-                if (modalTitle) modalTitle.innerHTML = '<i class="fas fa-plus me-2"></i>Novo Alias';
-                const modal = document.getElementById('modal-alias');
-                if (modal) {
-                    bootstrap.Modal.getOrCreateInstance(modal).show();
-                }
-            }
-        });
-    }
+window.extrasManager.apiService = window.apiService;
+window.extrasModule = window.extrasManager;
+window.extrasManager.setupEvents();
+console.log('✅ ExtrasManager inicializado');
 });
