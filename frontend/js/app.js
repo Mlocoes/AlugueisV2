@@ -29,6 +29,13 @@ class SistemaAlugueisApp {
             }
 
             // Verificar conexão com o backend
+                // Inicializar view manager antes de cualquier navegación
+                if (window.viewManager && typeof window.viewManager.init === 'function') {
+                    window.viewManager.init();
+                    console.log('✅ ViewManager inicializado antes de login/navegación');
+                } else {
+                    console.warn('⚠️ ViewManager no disponible para inicializar');
+                }
             await this.checkBackendConnection();
 
             // Inicializar módulos
@@ -37,14 +44,19 @@ class SistemaAlugueisApp {
             // Configurar eventos globais
             this.setupGlobalEvents();
 
-            // Carregar aba inicial
-            this.loadInitialTab();
+            // Delegar gestión de autenticación y visibilidad a loginManager
+            if (window.loginManager && typeof window.loginManager.init === 'function') {
+                window.loginManager.init();
+                console.log('🔒 Gestión de login y visibilidad delegada a loginManager');
+            } else {
+                // Fallback: mostrar login si no existe loginManager
+                document.getElementById('app-container').style.display = 'none';
+                document.getElementById('login-screen').style.display = 'block';
+                console.warn('⚠️ loginManager no disponible, mostrando login por fallback');
+            }
 
             this.initialized = true;
             console.log('✅ Sistema de Aluguéis inicializado corretamente');
-
-            // Mostrar mensagem de boas-vindas
-            // ...código existente...
 
         } catch (error) {
             console.error('❌ Erro inicializando a aplicação:', error);

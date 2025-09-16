@@ -19,12 +19,23 @@ class LoginManager {
         // Obter elementos do DOM
         this.loginScreen = document.getElementById('login-screen');
         this.loginForm = document.getElementById('login-form');
+        const appContainer = document.getElementById('app-container');
 
         // Configurar eventos
         this.setupEvents();
 
-        // Verificar se o usuário já está autenticado
-        this.checkAuthentication();
+        // Verificar autenticación y gestionar visibilidad
+        if (window.authService && window.authService.isAuthenticated()) {
+            if (appContainer) appContainer.style.display = 'block';
+            if (this.loginScreen) this.loginScreen.style.display = 'none';
+            console.log('🔓 Usuario autenticado, mostrando app');
+        } else {
+            if (appContainer) appContainer.style.display = 'none';
+            if (this.loginScreen) this.loginScreen.style.display = 'block';
+            this.clearAllData();
+            this.clearLoginForm();
+            console.log('🔒 No autenticado, mostrando pantalla de login');
+        }
 
         this.initialized = true;
     }
@@ -178,6 +189,13 @@ class LoginManager {
         this.updateUserInterface();
 
         // Inicializar ExtrasManager SOLO después de login exitoso
+        // Inicializar navegador unificado (menú lateral) tras login exitoso
+        if (window.unifiedNavigator && typeof window.unifiedNavigator.init === 'function') {
+            window.unifiedNavigator.init();
+            console.log('✅ Navegador unificado inicializado após login');
+        } else {
+            console.warn('⚠️ Navegador unificado não disponível para inicializar após login');
+        }
 
         // Inicializar Dashboard SOLO depois de login exitoso
         // Inicializar Dashboard ANTES del login, disponible globalmente
