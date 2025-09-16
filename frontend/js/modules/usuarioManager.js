@@ -20,26 +20,25 @@ class UsuarioManager {
     init() {
         if (this.initialized) return;
 
-        // Obter elementos do DOM
-        const modalEl = document.getElementById('modal-cadastrar-usuario');
-        if (modalEl) {
-            this.modal = new bootstrap.Modal(modalEl);
-        } else {
-            console.warn('Modal com ID "modal-cadastrar-usuario" não encontrado.');
+        // Solo inicializar los modales si la pantalla activa es 'importar'
+        if (window.uiManager?.currentTab === 'importar') {
+            // Obter elementos do DOM
+            const modalEl = document.getElementById('modal-cadastrar-usuario');
+            if (modalEl) {
+                this.modal = new bootstrap.Modal(modalEl);
+            }
+
+            const modalAlterarEl = document.getElementById('modal-alterar-usuario');
+            if (modalAlterarEl) {
+                this.modalAlterar = new bootstrap.Modal(modalAlterarEl);
+            }
+
+            this.form = document.getElementById('form-cadastrar-usuario');
+            this.formAlterar = document.getElementById('form-alterar-usuario');
+
+            // Configurar eventos
+            this.setupEvents();
         }
-
-        const modalAlterarEl = document.getElementById('modal-alterar-usuario');
-        if (modalAlterarEl) {
-            this.modalAlterar = new bootstrap.Modal(modalAlterarEl);
-        } else {
-            console.warn('Modal com ID "modal-alterar-usuario" não encontrado.');
-        }
-
-        this.form = document.getElementById('form-cadastrar-usuario');
-        this.formAlterar = document.getElementById('form-alterar-usuario');
-
-        // Configurar eventos
-        this.setupEvents();
 
         this.initialized = true;
     }

@@ -1,11 +1,11 @@
 /**
  * Gerenciador de Login
- * Controla o modal de login e a autenticação da aplicação
+ * Controla a tela de login e a autenticação da aplicação
  */
 
 class LoginManager {
     constructor() {
-        this.loginModal = null;
+        this.loginScreen = null;
         this.loginForm = null;
         this.initialized = false;
     }
@@ -17,8 +17,8 @@ class LoginManager {
         if (this.initialized) return;
 
         // Obter elementos do DOM
-        this.loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-        this.loginForm = document.getElementById('loginForm');
+        this.loginScreen = document.getElementById('login-screen');
+        this.loginForm = document.getElementById('login-form');
 
         // Configurar eventos
         this.setupEvents();
@@ -41,22 +41,12 @@ class LoginManager {
         }
 
         // Evento para Enter no formulário
-        const senhaField = document.getElementById('senha');
+        const senhaField = document.getElementById('login-senha');
         if (senhaField) {
             senhaField.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     this.handleLogin();
                 }
-            });
-        }
-
-        // Evento de abertura do modal para garantir limpeza
-        const modalElement = document.getElementById('loginModal');
-        if (modalElement) {
-            modalElement.addEventListener('shown.bs.modal', () => {
-                console.log('🔧 Modal aberto, forçando limpeza dos campos');
-                this.clearLoginForm();
-                document.getElementById('usuario').focus();
             });
         }
     }
@@ -72,8 +62,42 @@ class LoginManager {
 
         // SEMPRE solicitar login, independente de tokens salvos
         console.log('🔐 Forçando novo login (política de segurança)');
-        this.showLoginModal();
-    }    /**
+        this.showLoginScreen();
+    }
+
+    /**
+     * Mostrar tela de login
+     */
+    showLoginScreen() {
+        // Sempre limpar os campos antes de mostrar a tela de login
+        this.clearLoginForm();
+
+        if (this.loginScreen) {
+            this.loginScreen.style.display = '';
+
+            // Focar no campo usuário após um delay para garantir que a tela esteja visível
+            setTimeout(() => {
+                const usuarioInput = document.getElementById('login-usuario');
+                if (usuarioInput) usuarioInput.focus();
+            }, 300);
+        }
+
+        const appContainer = document.getElementById('app-container');
+        if (appContainer) appContainer.style.display = 'none';
+    }
+
+    /**
+     * Esconder tela de login
+     */
+    hideLoginScreen() {
+        if (this.loginScreen) {
+            this.loginScreen.style.display = 'none';
+        }
+        const appContainer = document.getElementById('app-container');
+        if (appContainer) appContainer.style.display = '';
+    }
+
+    /**
      * Limpar todos os dados de autenticação
      */
     clearAllData() {
@@ -82,30 +106,15 @@ class LoginManager {
             window.authService.clearStorage();
         }
         this.clearLoginForm();
-    }    /**
-     * Mostrar modal de login
-     */
-    showLoginModal() {
-        // Sempre limpar os campos antes de mostrar o modal
-        this.clearLoginForm();
-
-        if (this.loginModal) {
-            this.loginModal.show();
-
-            // Focar no campo usuário após um delay para garantir que o modal esteja visível
-            setTimeout(() => {
-                document.getElementById('usuario').focus();
-            }, 500);
-        }
     }
 
     /**
      * Limpar formulário de login
      */
     clearLoginForm() {
-        const usuarioField = document.getElementById('usuario');
-        const senhaField = document.getElementById('senha');
-        const errorDiv = document.getElementById('loginError');
+        const usuarioField = document.getElementById('login-usuario');
+        const senhaField = document.getElementById('login-senha');
+        const errorDiv = document.getElementById('login-alert');
 
         if (usuarioField) {
             usuarioField.value = '';
@@ -114,29 +123,20 @@ class LoginManager {
             senhaField.value = '';
         }
         if (errorDiv) {
-            errorDiv.classList.add('d-none');
+            errorDiv.style.display = 'none';
         }
 
         console.log('🧹 Campos de login limpos');
     }
 
     /**
-     * Esconder modal de login
-     */
-    hideLoginModal() {
-        if (this.loginModal) {
-            this.loginModal.hide();
-        }
-    }
-
-    /**
      * Processar tentativa de login
      */
     async handleLogin() {
-        const usuario = document.getElementById('usuario').value.trim();
-        const senha = document.getElementById('senha').value;
-        const errorDiv = document.getElementById('loginError');
-        const submitBtn = this.loginForm.querySelector('button[type="submit"]');
+        const usuario = document.getElementById('login-usuario').value.trim();
+        const senha = document.getElementById('login-senha').value;
+        const errorDiv = document.getElementById('login-alert');
+        const submitBtn = document.getElementById('login-submit');
 
         // Validar campos
         if (!usuario || !senha) {
@@ -153,7 +153,7 @@ class LoginManager {
             const result = await window.authService.login(usuario, senha);
 
             if (result.success) {
-                // Login bem-sucedido
+                // Login bem-sucedido solo en memoria
                 this.onLoginSuccess();
             } else {
                 // Erro no login
@@ -171,11 +171,58 @@ class LoginManager {
      * Ações após login bem-sucedido
      */
     onLoginSuccess() {
-        // Esconder modal
-        this.hideLoginModal();
+        // Esconder tela de login
+        this.hideLoginScreen();
 
         // Atualizar interface com dados do usuário
         this.updateUserInterface();
+
+        // Inicializar ExtrasManager SOLO después de login exitoso
+
+        // Inicializar Dashboard SOLO depois de login exitoso
+        // Inicializar Dashboard ANTES del login, disponible globalmente
+        if (!window.dashboardModule) {
+            window.dashboardModule = new DashboardModule();
+            console.log('✅ DashboardModule instanciado antes del login');
+        }
+        // Después del login, solo cargar datos y navegar
+        (async () => {
+            let retries = 0;
+            while ((!window.dashboardModule || typeof window.dashboardModule.load !== 'function') && retries < 10) {
+                await new Promise(res => setTimeout(res, 100));
+                retries++;
+            }
+            if (window.dashboardModule && typeof window.dashboardModule.load === 'function') {
+                await window.dashboardModule.load();
+                if (window.viewManager && typeof window.viewManager.showView === 'function') {
+                    await window.viewManager.showView('dashboard');
+                }
+            } else {
+                console.error('❌ No se pudo inicializar dashboardModule tras login');
+            }
+        })();
+
+        // Inicializar app principal SOLO depois de login exitoso
+        if (!window.app) {
+            if (typeof window.initApp === 'function') {
+                window.initApp();
+                console.log('✅ SistemaAlugueisApp inicializado após login');
+            } else {
+                window.app = new SistemaAlugueisApp();
+                window.app.init();
+                console.log('✅ SistemaAlugueisApp instanciado após login');
+            }
+        }
+
+        // ...existing code...
+        
+            // Limpiar instancia de dashboard al cerrar sesión
+            window.addEventListener('logout', () => {
+                if (window.dashboardModule) {
+                    window.dashboardModule = null;
+                    console.log('🧹 DashboardModule eliminado tras logout');
+                }
+            });
 
         // Permitir inicialização da aplicação
         this.enableApplication();
@@ -185,10 +232,6 @@ class LoginManager {
             window.uiManager.updateImportTabVisibility();
             window.uiManager.updateActionButtonsVisibility();
         }
-
-        // Mostrar mensagem de bienvenida
-        const userData = window.authService.getUserData();
-        // ...existing code...
     }
 
     /**
@@ -260,10 +303,10 @@ class LoginManager {
      * Mostrar erro no formulário
      */
     showError(message) {
-        const errorDiv = document.getElementById('loginError');
+        const errorDiv = document.getElementById('login-alert');
         if (errorDiv) {
             errorDiv.textContent = message;
-            errorDiv.classList.remove('d-none');
+            errorDiv.style.display = '';
         }
     }
 
@@ -271,9 +314,9 @@ class LoginManager {
      * Esconder erro do formulário
      */
     hideError() {
-        const errorDiv = document.getElementById('loginError');
+        const errorDiv = document.getElementById('login-alert');
         if (errorDiv) {
-            errorDiv.classList.add('d-none');
+            errorDiv.style.display = 'none';
         }
     }
 
@@ -281,17 +324,24 @@ class LoginManager {
      * Configurar estado de loading
      */
     setLoading(loading) {
-        const submitBtn = this.loginForm.querySelector('button[type="submit"]');
-        const inputs = this.loginForm.querySelectorAll('input');
+        const submitBtn = document.getElementById('login-submit');
+        const usuarioField = document.getElementById('login-usuario');
+        const senhaField = document.getElementById('login-senha');
 
         if (loading) {
-            submitBtn.disabled = true;
-            SecurityUtils.setSafeHTML(submitBtn, '<i class="fas fa-spinner fa-spin me-2"></i>Entrando...');
-            inputs.forEach(input => input.disabled = true);
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Entrando...';
+            }
+            if (usuarioField) usuarioField.disabled = true;
+            if (senhaField) senhaField.disabled = true;
         } else {
-            submitBtn.disabled = false;
-            SecurityUtils.setSafeHTML(submitBtn, '<i class="fas fa-sign-in-alt me-2"></i>Entrar');
-            inputs.forEach(input => input.disabled = false);
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Entrar';
+            }
+            if (usuarioField) usuarioField.disabled = false;
+            if (senhaField) senhaField.disabled = false;
         }
     }
 }

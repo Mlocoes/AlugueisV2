@@ -1143,20 +1143,3 @@ class ExtrasManager {
 }
 
 // Inicializar quando o DOM estiver pronto
-document.addEventListener('DOMContentLoaded', function() {
-    // Forzar modo nova transferência en Importar
-    document.addEventListener('click', function(e) {
-        if (e.target && e.target.id === 'btn-novas-transferencias') {
-            if (window.extrasModule) {
-                window.extrasModule.currentTransferencia = null;
-            }
-        }
-    });
-    // Eliminada inicialización global. Instanciar desde UnifiedApp/initializeModules.
-        window.extrasManager = new ExtrasManager();
-        window.extrasManager.apiService = window.apiService;
-        window.extrasModule = window.extrasManager;
-        window.extrasManager.setupEvents();
-        window.extrasManager.load();
-        console.log('✅ ExtrasManager inicializado y datos cargados');
-});

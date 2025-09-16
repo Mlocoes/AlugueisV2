@@ -586,11 +586,7 @@ class RelatoriosManager {
 }
 
 // Inicializar quando o DOM estiver pronto
-document.addEventListener('DOMContentLoaded', function() {
-    window.relatoriosManager = new RelatoriosManager();
-    // Disponibilizar também como relatoriosModule para o UI manager
-    window.relatoriosModule = window.relatoriosManager;
-});
+
 
 // Função para mostrar tab (compatibilidade com sistema existente)
 function showRelatorios() {

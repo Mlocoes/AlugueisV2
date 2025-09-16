@@ -125,7 +125,4 @@ class ImportacaoModule {
 }
 
 // Registrar módulo globalmente
-document.addEventListener('DOMContentLoaded', function() {
-    window.importacaoModule = new ImportacaoModule();
-    console.log('✅ ImportacaoModule registrado globalmente');
-});
+

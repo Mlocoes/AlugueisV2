@@ -135,10 +135,12 @@ class ViewManager {
             return;
         }
 
+        // Eliminado bloqueo a dashboard: permitir acceso siempre que se solicite
+
         // Verificar permisos
         if (!this.checkViewPermission(view)) {
             console.warn(`⚠️ Sin permisos para vista: ${viewId}`);
-            this.showView('dashboard');
+            // No navegar automáticamente a dashboard, solo mostrar advertencia
             return;
         }
 
@@ -345,13 +347,15 @@ class ViewManager {
      * Verificar permisos de vista
      */
     checkViewPermission(view) {
-        if (!view.permission) return true;
-        
-        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-        const userType = userData.tipo || 'usuario';
-        
-        return view.permission === 'all' || 
-               (view.permission === 'admin' && userType === 'administrador');
+     if (!view.permission) return true;
+     // Usar solo memoria: authService
+     let userType = 'usuario';
+     if (window.authService && typeof window.authService.getUserData === 'function') {
+         const userData = window.authService.getUserData();
+         if (userData && userData.tipo) userType = userData.tipo;
+     }
+     return view.permission === 'all' || 
+         (view.permission === 'admin' && userType === 'administrador');
     }
 
     /**
@@ -366,15 +370,19 @@ class ViewManager {
         }
         
         for (const moduleName of view.requiredModules) {
+            let retries = 0;
+            let moduleInstance = window[`${moduleName}Module`];
+            while (!moduleInstance && retries < 5) {
+                // Esperar 100ms y reintentar
+                await new Promise(res => setTimeout(res, 100));
+                moduleInstance = window[`${moduleName}Module`];
+                retries++;
+            }
             try {
                 console.log(`🔧 Tentando inicializar módulo: ${moduleName}`);
-                
-                const moduleInstance = window[`${moduleName}Module`];
                 console.log(`� Instância do módulo encontrada:`, !!moduleInstance);
-                
                 if (moduleInstance) {
                     console.log(`🔧 Métodos disponíveis no módulo:`, Object.getOwnPropertyNames(Object.getPrototypeOf(moduleInstance)));
-                    
                     if (typeof moduleInstance.load === 'function') {
                         console.log(`🔧 Chamando load() do módulo ${moduleName}...`);
                         await moduleInstance.load();
@@ -383,7 +391,7 @@ class ViewManager {
                         console.warn(`⚠️ Módulo ${moduleName} não tem método load()`);
                     }
                 } else {
-                    console.error(`❌ Módulo ${moduleName} não encontrado em window.${moduleName}Module`);
+                    console.error(`❌ Módulo ${moduleName} não encontrado em window.${moduleName}Module após ${retries} tentativas.`);
                 }
             } catch (error) {
                 console.error(`❌ Erro inicializando módulo ${moduleName}:`, error);

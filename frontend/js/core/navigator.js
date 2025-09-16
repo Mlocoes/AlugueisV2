@@ -5,7 +5,7 @@
 
 class UnifiedNavigator {
     constructor() {
-        this.currentView = 'dashboard';
+    this.currentView = null; // No navegar automáticamente a dashboard
         this.isInitialized = false;
         this.navigationConfig = null;
         this.sidebarVisible = false;
@@ -257,24 +257,20 @@ class UnifiedNavigator {
      * Navegar a una vista
      */
     navigateTo(view) {
+        // Eliminado bloqueo a dashboard: permitir acceso siempre que se solicite
         console.log(`📱 Navegando a: ${view}`);
-        
         // Actualizar estado actual
         this.currentView = view;
-        
         // Actualizar elementos activos
         this.updateActiveStates(view);
-        
         // Ocultar sidebar en móvil después de navegar
         if (window.deviceManager.deviceType === 'mobile') {
             this.hideSidebar();
         }
-        
         // Disparar evento de navegación
         window.dispatchEvent(new CustomEvent('navigate', {
             detail: { view, previousView: this.currentView }
         }));
-        
         // Actualizar URL sin recargar página
         this.updateURL(view);
     }

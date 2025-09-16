@@ -12,7 +12,7 @@ class UIManager {
         this.showSuccess(info ? `${message}: ${info}` : message);
     }
     constructor() {
-        this.currentTab = window.AppConfig?.ui?.defaultTab || 'dashboard';
+    this.currentTab = null; // No cargar dashboard automáticamente
         this.alertContainer = null;
         this.lastFocusedElement = null; // Para manejar el foco del modal
         this.init();
@@ -166,7 +166,8 @@ class UIManager {
                     }
                     break;
                 case 'extras':
-                    if (window.extrasModule && typeof window.extrasModule.init === 'function') {
+                    // Inicializar extrasModule solo cuando se cambie a la pestaña 'extras'
+                    if (tabName === 'extras' && window.extrasModule && typeof window.extrasModule.init === 'function') {
                         window.extrasModule.init();
                     }
                     break;
@@ -310,18 +311,31 @@ class UIManager {
                     }
                     break;
                 case 'relatorios':
+                    // Instanciar relatoriosManager y relatoriosModule solo al cambiar a la pestaña 'relatorios'
+                    if (!window.relatoriosManager) {
+                        window.relatoriosManager = new window.RelatoriosManager();
+                        window.relatoriosModule = window.relatoriosManager;
+                    }
                     if (window.relatoriosModule && typeof window.relatoriosModule.load === 'function') {
                         await window.relatoriosModule.load();
                     }
                     break;
                 case 'importar':
+                    // Instanciar importacaoModule solo al cambiar a la pestaña 'importar'
+                    if (!window.importacaoModule) {
+                        window.importacaoModule = new window.ImportacaoModule();
+                        console.log('✅ ImportacaoModule registrado globalmente');
+                    }
                     if (window.importacaoModule && typeof window.importacaoModule.load === 'function') {
                         await window.importacaoModule.load();
-                    } else {
-                        console.log('📤 Módulo de importação pronto');
                     }
                     break;
                 case 'extras':
+                    // Instanciar extrasModule solo al cambiar a la pestaña 'extras'
+                    if (!window.extrasModule && window.ExtrasManager) {
+                        window.extrasModule = new window.ExtrasManager();
+                        console.log('✅ ExtrasModule registrado globalmente');
+                    }
                     if (window.extrasModule && typeof window.extrasModule.load === 'function') {
                         await window.extrasModule.load();
                     }
