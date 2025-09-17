@@ -1,3 +1,14 @@
+// Utilidad para guardar logs en localStorage
+function logToLocalStorage(message, data) {
+    try {
+        const logs = JSON.parse(localStorage.getItem('debugLogs') || '[]');
+        const entry = { timestamp: new Date().toISOString(), message, data };
+        logs.push(entry);
+        localStorage.setItem('debugLogs', JSON.stringify(logs));
+    } catch (e) {
+        // Si localStorage falla, ignorar
+    }
+}
 
 /**
  * Módulo Proprietarios - Gestão completa de proprietários
@@ -24,29 +35,42 @@ class ProprietariosModule {
     }
 
     async load() {
-        if (!this.initialized) {
-            this.init();
-        }
+        // Siempre inicializar eventos y referencias tras cada renderizado
+        this.init();
+        this.bindEvents();
         await this.loadProprietarios();
     }
 
     bindEvents() {
         const btnNovo = document.getElementById('btn-novo-proprietario');
         if (btnNovo) {
-            btnNovo.addEventListener('click', () => this.showNewModal());
+                btnNovo.addEventListener('click', () => {
+                    const msg = '[Proprietarios] btn-novo-proprietario click';
+                    console.log(msg);
+                    logToLocalStorage(msg);
+                    this.showNewModal();
+                });
         }
         const formNovo = document.getElementById('form-novo-proprietario');
         if (formNovo) {
-            formNovo.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const formData = new FormData(formNovo);
-                const data = Object.fromEntries(formData.entries());
-                this.handleCreateData(data, formNovo);
-            });
+                formNovo.addEventListener('submit', (e) => {
+                    const msg = '[Proprietarios] form-novo-proprietario submit';
+                    console.log(msg);
+                    logToLocalStorage(msg);
+                    e.preventDefault();
+                    const formData = new FormData(formNovo);
+                    const data = Object.fromEntries(formData.entries());
+                    this.handleCreateData(data, formNovo);
+                });
         }
         const formEditar = document.getElementById('form-editar-proprietario');
         if (formEditar) {
-            formEditar.addEventListener('submit', (e) => this.handleUpdate(e));
+                formEditar.addEventListener('submit', (e) => {
+                    const msg = '[Proprietarios] form-editar-proprietario submit';
+                    console.log(msg);
+                    logToLocalStorage(msg);
+                    this.handleUpdate(e);
+                });
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -174,6 +198,8 @@ class ProprietariosModule {
     }
 
     async handleCreateData(data, formElement) {
+        logToLocalStorage('[Proprietarios] handleCreateData called', data);
+        console.log('[Proprietarios] handleCreateData called', data);
         const nullableFields = ['sobrenome', 'documento', 'tipo_documento', 'endereco', 'telefone', 'email', 'banco', 'agencia', 'conta', 'tipo_conta', 'observacoes'];
         const payload = { ...data };
 
@@ -185,15 +211,25 @@ class ProprietariosModule {
 
         try {
             this.uiManager.showLoading('Criando proprietário...');
+            logToLocalStorage('[Proprietarios] Enviando payload para createProprietario', payload);
+            console.log('[Proprietarios] Enviando payload para createProprietario', payload);
             const response = await this.apiService.createProprietario(payload);
+            logToLocalStorage('[Proprietarios] Resposta de createProprietario', response);
+            console.log('[Proprietarios] Resposta de createProprietario', response);
             if (response && (response.success || response.mensagem)) {
+                logToLocalStorage('[Proprietarios] Cadastro realizado com sucesso, fechando modal e recarregando lista');
+                console.log('[Proprietarios] Cadastro realizado com sucesso, fechando modal e recarregando lista');
                 this.modalManager.fecharModalCadastro();
                 formElement.reset();
                 await this.loadProprietarios();
             } else {
+                logToLocalStorage('[Proprietarios] Erro ao criar proprietário', response);
+                console.error('[Proprietarios] Erro ao criar proprietário', response);
                 throw new Error(response?.error || 'Erro ao criar proprietário');
             }
         } catch (error) {
+            logToLocalStorage('[Proprietarios] Exception em handleCreateData', error);
+            console.error('[Proprietarios] Exception em handleCreateData', error);
             this.uiManager.showError('Erro ao criar proprietário: ' + error.message);
         } finally {
             this.uiManager.hideLoading();

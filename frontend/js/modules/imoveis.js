@@ -3,6 +3,16 @@
  * Inclui CRUD, importação, exportação e validações
  */
 
+// Utilidad para guardar logs en localStorage
+function logToLocalStorage(message, data) {
+    try {
+        const logs = JSON.parse(localStorage.getItem('debugLogs') || '[]');
+        const entry = { timestamp: new Date().toISOString(), message, data };
+        logs.push(entry);
+        localStorage.setItem('debugLogs', JSON.stringify(logs));
+    } catch (e) {}
+}
+
 class ImoveisModule {
     constructor() {
         this.apiService = window.apiService;
@@ -40,6 +50,8 @@ class ImoveisModule {
         const formNovoImovel = document.getElementById('form-novo-imovel');
         if (formNovoImovel) {
             formNovoImovel.addEventListener('submit', (e) => {
+                logToLocalStorage('[Imoveis] form-novo-imovel submit');
+                console.log('[Imoveis] form-novo-imovel submit');
                 e.preventDefault();
                 const formData = new FormData(formNovoImovel);
                 const data = Object.fromEntries(formData.entries());
@@ -51,6 +63,8 @@ class ImoveisModule {
         const formNovoImportar = document.getElementById('form-novo-imovel-importar');
         if (formNovoImportar) {
             formNovoImportar.addEventListener('submit', (e) => {
+                logToLocalStorage('[Imoveis] form-novo-imovel-importar submit');
+                console.log('[Imoveis] form-novo-imovel-importar submit');
                 e.preventDefault();
                 const formData = new FormData(formNovoImportar);
                 const data = Object.fromEntries(formData.entries());
@@ -60,7 +74,11 @@ class ImoveisModule {
 
         const formEditar = document.getElementById('edit-imovel-form');
         if (formEditar) {
-            formEditar.addEventListener('submit', (e) => this.handleUpdate(e));
+            formEditar.addEventListener('submit', (e) => {
+                logToLocalStorage('[Imoveis] edit-imovel-form submit');
+                console.log('[Imoveis] edit-imovel-form submit');
+                this.handleUpdate(e);
+            });
         }
 
         // Botão de confirmação de exclusão
@@ -102,6 +120,8 @@ class ImoveisModule {
     }
 
     async handleCreateData(data, formElement, source = 'main') {
+        logToLocalStorage('[Imoveis] handleCreateData called', data);
+        console.log('[Imoveis] handleCreateData called', data);
         // Adaptar campos según modelo Imovel actualizado
         const nullableFields = ['tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem', 'alugado'];
         const payload = { ...data };
@@ -188,10 +208,6 @@ class ImoveisModule {
                 </td>
                 <td>
                     <span>${safeImovel.endereco || '<span class="text-muted fst-italic">Sem endereço</span>'}</span>
-                </td>
-                <td>
-                    <span>${safeImovel.area_total || '—'} m²</span><br>
-                    <span>${safeImovel.area_construida || '—'} m²</span>
                 </td>
                 <td>
                     <span>R$ ${safeImovel.valor_cadastral || '—'}</span><br>

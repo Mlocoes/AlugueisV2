@@ -196,10 +196,7 @@ class SistemaAlugueisApp {
             console.log('✅ Módulo Alugueis criado');
         }
 
-        if (typeof window.usuarioManager !== 'undefined') {
-            window.usuarioManager.init();
-            console.log('✅ Gerenciador de usuário inicializado');
-        }
+        
 
         if (typeof ExtrasManager !== 'undefined') {
             // Inicializar ExtrasManager apenas ao acessar a tela extras
@@ -220,6 +217,15 @@ class SistemaAlugueisApp {
 
         // Event listener para erros globais
         window.addEventListener('error', (event) => {
+            if (typeof logToLocalStorage === 'function') {
+                logToLocalStorage('[GLOBAL ERROR]', {
+                    message: event.message,
+                    filename: event.filename,
+                    lineno: event.lineno,
+                    colno: event.colno,
+                    error: event.error ? event.error.stack : null
+                });
+            }
             let errorMsg = 'Erro desconhecido';
             if (event.error && event.error.message) {
                 errorMsg = event.error.message;
@@ -234,6 +240,12 @@ class SistemaAlugueisApp {
 
         // Event listener para promessas rejeitadas
         window.addEventListener('unhandledrejection', (event) => {
+            if (typeof logToLocalStorage === 'function') {
+                logToLocalStorage('[GLOBAL UNHANDLEDREJECTION]', {
+                    reason: event.reason,
+                    promise: event.promise
+                });
+            }
             console.error('❌ Promessa rejeitada:', event.reason);
             this.showError('Erro de promessa não tratada', event.reason);
         });

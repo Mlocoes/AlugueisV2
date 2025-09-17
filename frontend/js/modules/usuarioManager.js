@@ -3,6 +3,16 @@
  * Gerencia cadastro, edição e listagem de usuários
  */
 
+// Utilidad para guardar logs en localStorage
+function logToLocalStorage(message, data) {
+    try {
+        const logs = JSON.parse(localStorage.getItem('debugLogs') || '[]');
+        const entry = { timestamp: new Date().toISOString(), message, data };
+        logs.push(entry);
+        localStorage.setItem('debugLogs', JSON.stringify(logs));
+    } catch (e) {}
+}
+
 class UsuarioManager {
     constructor() {
         this.modal = null;
@@ -18,167 +28,224 @@ class UsuarioManager {
      * Inicializar o gerenciador de usuários
      */
     init() {
+        console.log('[UsuarioManager] init() called');
         if (this.initialized) return;
 
-        // Solo inicializar los modales si la pantalla activa es 'importar'
-        if (window.uiManager?.currentTab === 'importar') {
-            // Obter elementos do DOM
-            const modalEl = document.getElementById('modal-cadastrar-usuario');
-            if (modalEl) {
-                this.modal = new bootstrap.Modal(modalEl);
+        // Centralizar obtención de elementos
+        this.modal = this.getBootstrapModal('modal-cadastrar-usuario');
+        this.modalAlterar = this.getBootstrapModal('modal-alterar-usuario');
+        this.form = this.getFormWithId('form-cadastrar-usuario', 'modal-cadastrar-usuario');
+        this.formAlterar = this.getFormWithId('form-alterar-usuario', 'modal-alterar-usuario');
+
+        console.log('[UsuarioManager] form (cadastrar):', this.form);
+        console.log('[UsuarioManager] formAlterar (alterar):', this.formAlterar);
+
+        // Verificación y logueo explícito
+        if (!this.form) {
+            console.error('[UsuarioManager] Formulario form-cadastrar-usuario NO encontrado en el DOM');
+        } else {
+            console.log('[UsuarioManager] Formulario form-cadastrar-usuario encontrado:', this.form);
+            const salvarBtn = this.form.querySelector('button[type="submit"], .btn-success');
+            if (!salvarBtn) {
+                console.error('[UsuarioManager] Botón Salvar NO encontrado dentro del formulario');
+            } else {
+                console.log('[UsuarioManager] Botón Salvar encontrado:', salvarBtn);
+                if (salvarBtn.type !== 'submit') {
+                    console.warn('[UsuarioManager] Botón Salvar no es de tipo submit, se fuerza a submit');
+                    salvarBtn.type = 'submit';
+                }
             }
-
-            const modalAlterarEl = document.getElementById('modal-alterar-usuario');
-            if (modalAlterarEl) {
-                this.modalAlterar = new bootstrap.Modal(modalAlterarEl);
-            }
-
-            this.form = document.getElementById('form-cadastrar-usuario');
-            this.formAlterar = document.getElementById('form-alterar-usuario');
-
-            // Configurar eventos
-            this.setupEvents();
         }
 
+        // Forzar el botón 'Salvar' a type='submit'
+        this.forceSubmitButtonType(this.form, 'btn-salvar-usuario');
+        this.forceSubmitButtonType(this.formAlterar, 'btn-alterar-usuario');
+
+        // Configurar eventos
+        this.setupEvents();
         this.initialized = true;
+    }
+
+    getBootstrapModal(modalId) {
+        const el = document.getElementById(modalId);
+        return el ? new bootstrap.Modal(el) : null;
+    }
+
+    getFormWithId(formId, modalId) {
+        let form = document.getElementById(formId);
+        if (!form) {
+            const modalEl = document.getElementById(modalId);
+            if (modalEl) {
+                form = modalEl.querySelector('form');
+                if (form) form.id = formId;
+            }
+        }
+        return form;
+    }
+
+    forceSubmitButtonType(form, btnId) {
+        if (!form) return;
+        let btn = form.querySelector('button[type="submit"], .btn-success');
+        if (!btn && btnId) btn = document.getElementById(btnId);
+        if (btn) btn.type = 'submit';
     }
 
     /**
      * Método para carregar dados quando a vista é ativada (chamado pelo view-manager)
      */
-    async load() {
-        console.log('🔄 Carregando UsuarioManager...');
-        try {
-            // Inicializar se ainda não foi inicializado
-            if (!this.initialized) {
-                this.init();
-            }
-            console.log('✅ UsuarioManager carregado com sucesso');
-        } catch (error) {
-            console.error('❌ Erro ao carregar UsuarioManager:', error);
+    setupEvents() {
+        logToLocalStorage('[UsuarioManager] setupEvents chamado');
+        console.log('[UsuarioManager] setupEvents chamado');
+
+        // --- FIX: Listener de submissão robusto ---
+        // O handler é definido uma vez e anexado permanentemente.
+        // A proteção contra submissões múltiplas é feita desabilitando o botão no handler.
+        if (this.form && !this.form.dataset.submitListenerAttached) {
+            this.form.dataset.submitListenerAttached = 'true'; // Flag para evitar re-anexar
+            this.form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                // Pega o botão de submit a partir do evento ou do form
+                const submitButton = e.submitter || this.form.querySelector('button[type="submit"]');
+
+                // Proteção contra cliques múltiplos
+                if (submitButton && submitButton.disabled) {
+                    console.log('[UsuarioManager] Submissão ignorada, formulário já em processamento.');
+                    return;
+                }
+
+                logToLocalStorage('[Usuario] form-cadastrar-usuario submit');
+                console.log('[Usuario] form-cadastrar-usuario submit');
+                
+                const formData = new FormData(this.form);
+                const userData = {
+                    usuario: formData.get('usuario')?.trim() || '',
+                    senha: formData.get('senha'),
+                    tipo_de_usuario: formData.get('tipo_de_usuario')
+                };
+                this.handleCadastroUsuario(userData, this.form);
+            });
+        }
+
+        if (this.formAlterar && !this.formAlterar.dataset.submitListenerAttached) {
+            this.formAlterar.dataset.submitListenerAttached = 'true';
+            this.formAlterar.addEventListener('submit', (e) => {
+                e.preventDefault();
+                logToLocalStorage('[Usuario] form-alterar-usuario submit');
+                console.log('[Usuario] form-alterar-usuario submit');
+                const formData = new FormData(this.formAlterar);
+                const userData = {
+                    usuario: formData.get('usuario')?.trim() || '',
+                    senha: formData.get('senha'),
+                    tipo_de_usuario: formData.get('tipo_de_usuario')
+                };
+                this.handleAlterarUsuario(userData, this.formAlterar);
+            });
+        }
+
+        // Selección y exclusión de usuario
+        this.registerChange('selecionar-usuario', this.selecionarUsuarioParaAlterar.bind(this));
+        this.registerClick('btn-excluir-usuario-selecionado', this.confirmarExclusaoUsuario.bind(this));
+
+        // Mostrar/ocultar senha
+        this.registerClick('toggle-senha', this.toggleSenhaVisibility);
+        this.registerClick('toggle-alterar-senha', this.toggleAlterarSenhaVisibility);
+
+        // Validación en tiempo real
+        this.registerInput('confirmar-senha', this.validarSenhas);
+        this.registerInput('alterar-confirmar-senha', this.validarAlterarSenhas);
+
+        // Eventos de modal
+        this.registerModalEvents('modal-cadastrar-usuario', this.limparFormulario.bind(this), '#btn-cadastrar-usuario');
+        
+        // --- FIX: Removida a lógica de "reforço" que causava listeners duplicados ---
+
+        // Botones de cerrar
+        this.registerCloseButtons();
+    }
+
+    registerFormSubmit(form, handler, logMsg) {
+        if (!form) return;
+        // Eliminar listeners previos
+        form.onsubmit = null;
+        form.addEventListener('submit', (e) => {
+            if (logMsg) logToLocalStorage(logMsg);
+            if (logMsg) console.log(logMsg);
+            e.preventDefault();
+            handler(e);
+        });
+    }
+
+    registerChange(elementId, handler) {
+        const el = document.getElementById(elementId);
+        if (el) {
+            el.onchange = null;
+            el.addEventListener('change', (e) => handler(e.target.value));
         }
     }
 
-    /**
-     * Configurar eventos
-     */
-    setupEvents() {
-        // Eventos para modal de cadastro
-        if (this.form) {
-            this.form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handleCadastroUsuario();
-            });
+    registerClick(elementId, handler) {
+        const el = document.getElementById(elementId);
+        if (el) {
+            el.onclick = null;
+            el.addEventListener('click', handler);
         }
+    }
 
-        // Eventos para modal de alterar
-        if (this.formAlterar) {
-            this.formAlterar.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handleAlterarUsuario();
-            });
+    registerInput(elementId, handler) {
+        const el = document.getElementById(elementId);
+        if (el) {
+            el.oninput = null;
+            el.addEventListener('input', handler);
         }
+    }
 
-        // Seleção de usuário para alterar
-        const selecionarUsuario = document.getElementById('selecionar-usuario');
-        if (selecionarUsuario) {
-            selecionarUsuario.addEventListener('change', (e) => {
-                this.selecionarUsuarioParaAlterar(e.target.value);
-            });
+    registerModalEvents(modalId, limparFn, focusSelector, showFn) {
+        const modalEl = document.getElementById(modalId);
+        if (!modalEl) return;
+        modalEl.addEventListener('hide.bs.modal', () => {
+            if (document.activeElement) document.activeElement.blur();
+            document.body.focus();
+            console.log(`🔧 Focus transferido antes del cierre del modal ${modalId}`);
+        });
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            // Obtener el formulario directamente del modal
+            const form = modalEl.querySelector('form');
+            if (modalId === 'modal-cadastrar-usuario' && form) {
+                form.reset();
+                // Limpiar validaciones visuales
+                const inputs = form.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    input.classList.remove('is-valid', 'is-invalid');
+                });
+                // Esconder alerts
+                const errorDiv = document.getElementById('erro-cadastro-usuario');
+                const sucessoDiv = document.getElementById('sucesso-cadastro-usuario');
+                if (errorDiv) errorDiv.classList.add('d-none');
+                if (sucessoDiv) sucessoDiv.classList.add('d-none');
+                console.log('🧹 Formulário de usuário limpo (directo desde modal)');
+            } else if (limparFn) {
+                limparFn();
+            }
+            const focusTarget = document.querySelector(focusSelector + ', input[type="search"], .btn-primary');
+            if (focusTarget && focusTarget.offsetParent !== null) {
+                setTimeout(() => focusTarget.focus(), 50);
+            } else {
+                setTimeout(() => document.body.focus(), 50);
+            }
+        });
+        if (showFn) {
+            modalEl.addEventListener('show.bs.modal', showFn);
         }
+    }
 
-        // Botão excluir usuário
-        const btnExcluir = document.getElementById('btn-excluir-usuario-selecionado');
-        if (btnExcluir) {
-            btnExcluir.addEventListener('click', () => {
-                this.confirmarExclusaoUsuario();
-            });
-        }
-
-        // Evento para mostrar/ocultar senha - cadastro
-        const toggleSenha = document.getElementById('toggle-senha');
-        if (toggleSenha) {
-            toggleSenha.addEventListener('click', this.toggleSenhaVisibility);
-        }
-
-        // Evento para mostrar/ocultar senha - alterar
-        const toggleAlterarSenha = document.getElementById('toggle-alterar-senha');
-        if (toggleAlterarSenha) {
-            toggleAlterarSenha.addEventListener('click', this.toggleAlterarSenhaVisibility);
-        }
-
-        // Validação em tempo real - cadastro
-        const senhaField = document.getElementById('nova-senha');
-        const confirmarSenhaField = document.getElementById('confirmar-senha');
-
-        if (confirmarSenhaField) {
-            confirmarSenhaField.addEventListener('input', this.validarSenhas);
-        }
-
-        // Validação em tempo real - alterar
-        const alterarSenhaField = document.getElementById('alterar-nova-senha');
-        const alterarConfirmarSenhaField = document.getElementById('alterar-confirmar-senha');
-
-        if (alterarConfirmarSenhaField) {
-            alterarConfirmarSenhaField.addEventListener('input', this.validarAlterarSenhas);
-        }
-
-        // Limpar formulário quando modal fecha - cadastro
-        const modalElement = document.getElementById('modal-cadastrar-usuario');
-        if (modalElement) {
-            // INTERCEPTAR ANTES del cierre para evitar problema de foco
-            modalElement.addEventListener('hide.bs.modal', () => {
-                // Desenfocar ANTES de que Bootstrap aplique aria-hidden
-                if (document.activeElement) document.activeElement.blur();
-                document.body.focus();
-                console.log('🔧 Focus transferido antes del cierre del modal cadastrar');
-            });
-            
-            modalElement.addEventListener('hidden.bs.modal', () => {
-                this.limparFormulario();
-                // Enfoque adicional por seguridad
-                const focusTarget = document.querySelector('#btn-cadastrar-usuario, input[type="search"], .btn-primary');
-                if (focusTarget && focusTarget.offsetParent !== null) {
-                    setTimeout(() => focusTarget.focus(), 50);
-                } else {
-                    setTimeout(() => document.body.focus(), 50);
-                }
-            });
-        }
-
-        // Limpar formulário quando modal fecha - alterar
-        const modalAlterarElement = document.getElementById('modal-alterar-usuario');
-        if (modalAlterarElement) {
-            // INTERCEPTAR ANTES del cierre para evitar problema de foco
-            modalAlterarElement.addEventListener('hide.bs.modal', () => {
-                // Desenfocar ANTES de que Bootstrap aplique aria-hidden
-                if (document.activeElement) document.activeElement.blur();
-                document.body.focus();
-                console.log('🔧 Focus transferido antes del cierre del modal alterar');
-            });
-            
-            modalAlterarElement.addEventListener('hidden.bs.modal', () => {
-                this.limparFormularioAlterar();
-                // Enfoque adicional por seguridad
-                const focusTarget = document.querySelector('#btn-alterar-usuario, input[type="search"], .btn-primary');
-                if (focusTarget && focusTarget.offsetParent !== null) {
-                    setTimeout(() => focusTarget.focus(), 50);
-                } else {
-                    setTimeout(() => document.body.focus(), 50);
-                }
-            });
-            modalAlterarElement.addEventListener('show.bs.modal', () => {
-                this.carregarUsuarios();
-            });
-        }
-
-        // INTERCEPTAR CLICS EN BOTONES DE CERRAR ANTES DE QUE BOOTSTRAP PROCESE
+    registerCloseButtons() {
         const closeButtons = document.querySelectorAll('[data-bs-dismiss="modal"]');
         closeButtons.forEach(button => {
             const modalId = button.closest('.modal')?.id;
             if (modalId && (modalId.includes('usuario') || modalId.includes('imovel') || modalId.includes('proprietario'))) {
-                button.addEventListener('click', (e) => {
-                    // Desenfocar inmediatamente ANTES de que Bootstrap inicie el proceso
+                button.onclick = null;
+                button.addEventListener('click', () => {
                     if (document.activeElement) document.activeElement.blur();
                     document.body.focus();
                     console.log(`🔧 PREEMPTIVE: Focus transferido antes del cierre por botón X en ${modalId}`);
@@ -190,28 +257,31 @@ class UsuarioManager {
     /**
      * Processar cadastro de usuário
      */
-    async handleCadastroUsuario() {
-        const formData = new FormData(this.form);
-        const userData = {
-            usuario: formData.get('usuario').trim(),
-            senha: formData.get('senha'),
-            tipo_de_usuario: formData.get('tipo_de_usuario')
-        };
+    async handleCadastroUsuario(userData, form) {
+        logToLocalStorage('[Usuario] handleCadastroUsuario called');
+        console.log('[Usuario] handleCadastroUsuario called', userData, form);
+        
+        if (!form) {
+            console.error("[UsuarioManager] Tentativa de submeter um formulário nulo.");
+            this.mostrarErro('Erro interno: formulário não encontrado.');
+            return;
+        }
 
-        // Validações frontend
+        // Validaciones frontend
         if (!this.validarDados(userData)) {
+            // A função validarDados já mostra o erro específico.
             return;
         }
 
         // Verificar se senhas coincidem
-        const confirmarSenha = formData.get('confirmar_senha');
-        if (userData.senha !== confirmarSenha) {
+        const confirmarSenhaEl = form.querySelector('[name="confirmar_senha"]');
+        if (!confirmarSenhaEl || userData.senha !== confirmarSenhaEl.value) {
             this.mostrarErro('As senhas não coincidem');
             return;
         }
 
-        // Mostrar loading
-        this.setLoading(true);
+        // Mostrar loading e desabilitar form
+        this.setLoading(true, form);
         this.esconderAlerts();
 
         try {
@@ -220,21 +290,21 @@ class UsuarioManager {
                 console.log('⏳ AppConfig no inicializado, inicializando...');
                 await window.AppConfig?.initNetwork();
             }
-            
+
             const baseUrl = window.AppConfig?.api?.baseUrl || '';
             console.log('🔗 Usando baseUrl:', baseUrl);
-            
-            const authHeader = window.authService?.getAuthHeader();
 
-            if (!authHeader || !authHeader.Authorization) {
-                throw new Error('Token de autenticação não encontrado');
+            const authHeaderObj = window.authService?.getAuthHeaderObject();
+
+            if (!authHeaderObj || !authHeaderObj['Authorization']) {
+                throw new Error('Token de autenticação não encontrado. Faça o login novamente.');
             }
 
             const response = await fetch(`${baseUrl}/api/auth/cadastrar-usuario`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': authHeader.Authorization
+                    ...authHeaderObj
                 },
                 body: JSON.stringify(userData)
             });
@@ -243,27 +313,45 @@ class UsuarioManager {
                 const result = await response.json();
                 this.mostrarSucesso(`Usuário '${result.usuario}' cadastrado com sucesso!`);
 
-                // Limpar formulário após sucesso
+                // --- FIX: Reduzido o tempo de espera para fechar o modal ---
                 setTimeout(() => {
-                    // Aplicar la misma solución que proprietarios
                     if (document.activeElement) document.activeElement.blur();
                     document.body.focus();
-                    this.modal.hide();
-                    // Limpieza manual de cualquier backdrop residual
+                    
+                    const modalEl = document.getElementById('modal-cadastrar-usuario');
+                    if (modalEl) {
+                        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                        if (modalInstance) {
+                            modalInstance.hide();
+                        }
+                    } else {
+                        console.warn('[UsuarioManager] modal-cadastrar-usuario no encontrado en el DOM para fechar.');
+                    }
+                    
                     const backdrops = document.querySelectorAll('.modal-backdrop');
                     backdrops.forEach(bd => bd.remove());
-                }, 2000);
+                }, 1000); // Reduzido de 2000ms para 1000ms
 
             } else {
-                const error = await response.json();
-                this.mostrarErro(error.detail || 'Erro ao cadastrar usuário');
+                let errorMsg = 'Erro desconhecido';
+                try {
+                    const errorJson = await response.json();
+                    // Prioriza a mensagem de erro mais específica do backend
+                    errorMsg = errorJson.detail || errorJson.message || JSON.stringify(errorJson);
+                } catch (e) {
+                    // Fallback se a resposta de erro não for JSON
+                    errorMsg = await response.text() || `Erro ${response.status}`;
+                }
+                console.error('Erro no cadastro:', errorMsg);
+                this.mostrarErro('Erro ao cadastrar usuário: ' + errorMsg);
             }
 
         } catch (error) {
-            console.error('Erro no cadastro:', error);
-            this.mostrarErro('Erro de conexão com o servidor');
+            console.error('Erro de conexão ou de autenticação:', error);
+            this.mostrarErro(error.message || 'Erro de conexão com o servidor');
         } finally {
-            this.setLoading(false);
+            // Re-habilita o form independentemente do resultado
+            this.setLoading(false, form);
         }
     }
 
@@ -368,15 +456,19 @@ class UsuarioManager {
      */
     setLoading(loading) {
         const submitBtn = document.getElementById('btn-salvar-usuario');
-        const inputs = this.form.querySelectorAll('input, select');
+        const inputs = (arguments.length > 1 && arguments[1]) ? arguments[1].querySelectorAll('input, select') : [];
 
         if (loading) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Cadastrando...';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Cadastrando...';
+            }
             inputs.forEach(input => input.disabled = true);
         } else {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-save me-1"></i> Cadastrar Usuário';
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save me-1"></i> Cadastrar Usuário';
+            }
             inputs.forEach(input => input.disabled = false);
         }
     }
@@ -387,17 +479,16 @@ class UsuarioManager {
     limparFormulario() {
         if (this.form) {
             this.form.reset();
+            this.esconderAlerts();
+            // Limpar validações visuais
+            const inputs = this.form.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.classList.remove('is-valid', 'is-invalid');
+            });
+            console.log('🧹 Formulário de usuário limpo');
+        } else {
+            console.warn('[UsuarioManager] limparFormulario: this.form é null, nada a limpar');
         }
-
-        this.esconderAlerts();
-
-        // Limpar validações visuais
-        const inputs = this.form.querySelectorAll('input, select');
-        inputs.forEach(input => {
-            input.classList.remove('is-valid', 'is-invalid');
-        });
-
-        console.log('🧹 Formulário de usuário limpo');
     }
 
     /**
@@ -452,11 +543,18 @@ class UsuarioManager {
     selecionarUsuarioParaAlterar(usuarioId) {
         this.usuarioSelecionado = this.usuarios.find(u => u.id == usuarioId);
 
-        if (this.usuarioSelecionado) {
-            this.formAlterar.style.display = 'block';
-            this.preencherDadosUsuario();
+        // Siempre obtener el form del DOM por si fue reconstruido
+        const formAlterar = document.getElementById('form-alterar-usuario');
+        if (formAlterar) {
+            if (this.usuarioSelecionado) {
+                formAlterar.style.display = 'block';
+                this.formAlterar = formAlterar;
+                this.preencherDadosUsuario();
+            } else {
+                formAlterar.style.display = 'none';
+            }
         } else {
-            this.formAlterar.style.display = 'none';
+            console.warn('[UsuarioManager] form-alterar-usuario no encontrado en el DOM');
         }
     }
 
@@ -517,14 +615,20 @@ class UsuarioManager {
                 this.mostrarSucessoAlterar(`Usuário '${this.usuarioSelecionado.usuario}' alterado com sucesso!`);
 
                 setTimeout(() => {
-                    // Aplicar la misma solución que proprietarios
                     if (document.activeElement) document.activeElement.blur();
                     document.body.focus();
-                    this.modalAlterar.hide();
-                    // Limpieza manual de cualquier backdrop residual
+
+                    const modalEl = document.getElementById('modal-alterar-usuario');
+                    if (modalEl) {
+                        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                        if (modalInstance) {
+                            modalInstance.hide();
+                        }
+                    }
+
                     const backdrops = document.querySelectorAll('.modal-backdrop');
                     backdrops.forEach(bd => bd.remove());
-                }, 2000);
+                }, 1000);
 
             } else {
                 this.mostrarErroAlterar(response?.message || 'Erro ao alterar usuário');
@@ -567,14 +671,20 @@ class UsuarioManager {
                 this.mostrarSucessoAlterar(`Usuário '${this.usuarioSelecionado.usuario}' excluído com sucesso!`);
 
                 setTimeout(() => {
-                    // Aplicar la misma solución que proprietarios
                     if (document.activeElement) document.activeElement.blur();
                     document.body.focus();
-                    this.modalAlterar.hide();
-                    // Limpieza manual de cualquier backdrop residual
+
+                    const modalEl = document.getElementById('modal-alterar-usuario');
+                    if (modalEl) {
+                        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                        if (modalInstance) {
+                            modalInstance.hide();
+                        }
+                    }
+
                     const backdrops = document.querySelectorAll('.modal-backdrop');
                     backdrops.forEach(bd => bd.remove());
-                }, 2000);
+                }, 500);
 
             } else {
                 this.mostrarErroAlterar(response?.message || 'Erro ao excluir usuário');
@@ -684,22 +794,38 @@ class UsuarioManager {
         if (this.formAlterar) {
             this.formAlterar.reset();
             this.formAlterar.style.display = 'none';
+            this.esconderAlertsAlterar();
+            this.usuarioSelecionado = null;
+            // Resetar select
+            const select = document.getElementById('selecionar-usuario');
+            if (select) {
+                select.value = '';
+            }
+            // Limpar validações visuais
+            const inputs = this.formAlterar.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.classList.remove('is-valid', 'is-invalid');
+            });
+        } else {
+            console.warn('[UsuarioManager] limparFormularioAlterar: this.formAlterar é null, nada a limpar');
         }
+    }
 
-        this.esconderAlertsAlterar();
-        this.usuarioSelecionado = null;
-
-        // Resetar select
-        const select = document.getElementById('selecionar-usuario');
-        if (select) {
-            select.value = '';
+    async load() {
+        logToLocalStorage('[UsuarioManager] load() chamado');
+        console.log('🔄 Carregando UsuarioManager...');
+        try {
+            // Siempre reinicializar eventos y referencias tras cada renderizado
+            this.initialized = false;
+            this.init();
+            // Cargar datos si es necesario (ejemplo: lista de usuarios)
+            if (typeof this.carregarUsuarios === 'function') {
+                await this.carregarUsuarios();
+            }
+            console.log('✅ UsuarioManager carregado com sucesso');
+        } catch (error) {
+            console.error('❌ Erro ao carregar UsuarioManager:', error);
         }
-
-        // Limpar validações visuais
-        const inputs = this.formAlterar.querySelectorAll('input, select');
-        inputs.forEach(input => {
-            input.classList.remove('is-valid', 'is-invalid');
-        });
     }
 }
 

@@ -1,5 +1,3 @@
-
-
 class ImportacaoModule {
     constructor() {
         this.apiService = window.apiService;
@@ -125,4 +123,5 @@ class ImportacaoModule {
 }
 
 // Registrar módulo globalmente
+window.importacaoModule = new ImportacaoModule();
 
