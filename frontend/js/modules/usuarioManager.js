@@ -157,6 +157,7 @@ class UsuarioManager {
 
         // Eventos de modal
         this.registerModalEvents('modal-cadastrar-usuario', this.limparFormulario.bind(this), '#btn-cadastrar-usuario');
+        this.registerModalEvents('modal-alterar-usuario', this.limparFormularioAlterar.bind(this), '#btn-alterar-usuario', this.limparFormularioAlterar.bind(this));
         
         // --- FIX: Removida a lógica de "reforço" que causava listeners duplicados ---
 
@@ -312,6 +313,9 @@ class UsuarioManager {
             if (response.ok) {
                 const result = await response.json();
                 this.mostrarSucesso(`Usuário '${result.usuario}' cadastrado com sucesso!`);
+
+                // Atualizar a lista de usuários no modal "Alterar Usuário"
+                this.carregarUsuarios();
 
                 // --- FIX: Reduzido o tempo de espera para fechar o modal ---
                 setTimeout(() => {
@@ -818,7 +822,7 @@ class UsuarioManager {
             // Siempre reinicializar eventos y referencias tras cada renderizado
             this.initialized = false;
             this.init();
-            // Cargar datos si es necesario (ejemplo: lista de usuarios)
+            // Cargar datos si es necesario (ejemplo: lista de usuários)
             if (typeof this.carregarUsuarios === 'function') {
                 await this.carregarUsuarios();
             }

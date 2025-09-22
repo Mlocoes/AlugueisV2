@@ -94,54 +94,63 @@ class Imovel(Base):
 # PROPRIETÁRIOS
 # ============================================
 
+from sqlalchemy.ext.hybrid import hybrid_property
+
 class Proprietario(Base):
     """Tabela de Proprietários"""
     __tablename__ = 'proprietarios'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     uuid = Column(UUID(as_uuid=True), default=func.uuid_generate_v4(), unique=True, nullable=False)
-    nome = Column(String(150), nullable=False)  # Ajustado para coincidir con la BD
-    sobrenome = Column(String(150), nullable=True)  # Ajustado para coincidir con la BD
+    nome = Column(String(150), nullable=False)
+    sobrenome = Column(String(150), nullable=True)
     documento = Column(String(50), nullable=True, unique=True)
-    tipo_documento = Column(String(20), nullable=True)  # CPF, CNPJ, RG, etc.
+    tipo_documento = Column(String(20), nullable=True)
     endereco = Column(Text, nullable=True)
     telefone = Column(String(20), nullable=True)
     email = Column(String(100), nullable=True)
     banco = Column(String(100), nullable=True)
     agencia = Column(String(20), nullable=True)
     conta = Column(String(30), nullable=True)
-    tipo_conta = Column(String(20), nullable=True)  # Corrente, Poupança
+    tipo_conta = Column(String(20), nullable=True)
     observacoes = Column(Text, nullable=True)
+    ativo = Column(Boolean, default=True)
     data_cadastro = Column(DateTime, default=func.current_timestamp())
     
-    # Relacionamentos
     alugueis = relationship('AluguelSimples', back_populates='proprietario')
     participacoes = relationship('Participacao', back_populates='proprietario')
 
+    @hybrid_property
+    def nome_completo(self):
+        """Retorna o nome completo do proprietário."""
+        if self.sobrenome:
+            return f"{self.nome} {self.sobrenome}"
+        return self.nome
+
     def __repr__(self):
-        return f"<Proprietario(nome='{self.nome} {self.sobrenome}', documento='{self.documento}')>"
+        return f"<Proprietario(nome='{self.nome_completo}', documento='{self.documento}')>"
 
     def to_dict(self):
+        """Converte o objeto para um dicionário, incluindo o nome completo."""
         try:
-            return {
-                'id': self.id,
-                'uuid': str(self.uuid) if self.uuid else None,
-                'nome': self.nome if hasattr(self, 'nome') else None,
-                'sobrenome': self.sobrenome if hasattr(self, 'sobrenome') else None,
-                'documento': self.documento if hasattr(self, 'documento') else None,
-                'tipo_documento': self.tipo_documento if hasattr(self, 'tipo_documento') else None,
-                'endereco': self.endereco if hasattr(self, 'endereco') else None,
-                'telefone': self.telefone if hasattr(self, 'telefone') else None,
-                'email': self.email if hasattr(self, 'email') else None,
-                'banco': self.banco if hasattr(self, 'banco') else None,
-                'agencia': self.agencia if hasattr(self, 'agencia') else None,
-                'conta': self.conta if hasattr(self, 'conta') else None,
-                'tipo_conta': self.tipo_conta if hasattr(self, 'tipo_conta') else None,
-                'observacoes': self.observacoes if hasattr(self, 'observacoes') else None,
-                'data_cadastro': self.data_cadastro.isoformat() if hasattr(self, 'data_cadastro') and self.data_cadastro else None
-            }
+            data = {c.key: getattr(self, c.key) for c in self.__table__.columns}
+            # Converte tipos especiais para formatos serializáveis
+            if data.get('uuid'):
+                data['uuid'] = str(data['uuid'])
+            
+            if data.get('data_cadastro') and hasattr(data['data_cadastro'], 'isoformat'):
+                data['data_cadastro'] = data['data_cadastro'].isoformat()
+            elif 'data_cadastro' in data:
+                data['data_cadastro'] = None
+
+            if data.get('ativo') is not None:
+                data['ativo'] = data['ativo']
+            
+            # Adiciona a propriedade híbrida
+            data['nome_completo'] = self.nome_completo
+            return data
         except Exception as e:
-            return {'id': self.id, 'erro': str(e)}
+            return {'id': self.id if hasattr(self, 'id') else -1, 'erro': f'Falha ao serializar dados do Proprietário: {str(e)}'}
 
 # ============================================
 # ALUGUÉIS SIMPLES
@@ -160,7 +169,7 @@ class AluguelSimples(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     uuid = Column(UUID(as_uuid=True), default=func.uuid_generate_v4(), unique=True, nullable=False)
     imovel_id = Column(Integer, ForeignKey('imoveis.id'), nullable=False)
-    proprietario_id = Column(Integer, ForeignKey('proprietarios.id'), nullable=False)
+    proprietario_id = Column(Integer, ForeignKey('proprietarios.id', ondelete="RESTRICT"), nullable=False)
     mes = Column(Integer, nullable=False)
     ano = Column(Integer, nullable=False)
     taxa_administracao_total = Column(Numeric(12,2), nullable=False, default=0)
@@ -216,7 +225,7 @@ class Participacao(Base):
     
     # Chaves estrangeiras
     imovel_id = Column(Integer, ForeignKey('imoveis.id'), nullable=False)
-    proprietario_id = Column(Integer, ForeignKey('proprietarios.id'), nullable=False)
+    proprietario_id = Column(Integer, ForeignKey('proprietarios.id', ondelete="CASCADE"), nullable=False)
     
     # Relacionamentos
     imovel = relationship('Imovel', back_populates='participacoes')
@@ -387,8 +396,8 @@ class Transferencia(Base):
     nome_transferencia = Column(String(300), nullable=False)
     valor_total = Column(Numeric(10, 2), nullable=False, default=0.0)
     id_proprietarios = Column(Text, nullable=True)  # JSON: [{"id": 1, "valor": 100.50}]
-    origem_id_proprietario = Column(Integer, ForeignKey('proprietarios.id'), nullable=True)
-    destino_id_proprietario = Column(Integer, ForeignKey('proprietarios.id'), nullable=True)
+    origem_id_proprietario = Column(Integer, ForeignKey('proprietarios.id', ondelete="SET NULL"), nullable=True)
+    destino_id_proprietario = Column(Integer, ForeignKey('proprietarios.id', ondelete="SET NULL"), nullable=True)
     data_criacao = Column(DateTime, default=func.current_timestamp())
     data_fim = Column(DateTime, nullable=True)
     
@@ -500,22 +509,72 @@ class ResumenCalculator:
             'liquido_total': liquido_total
         }
 
-class ProprietarioUpdateSchema(BaseModel):
-    nome: Optional[str] = None
-    sobrenome: Optional[str] = None
-    documento: Optional[str] = None
-    tipo_documento: Optional[str] = None
+import re
+
+class ProprietarioCreateSchema(BaseModel):
+    nome: str = Field(..., min_length=2, max_length=150)
+    sobrenome: Optional[str] = Field(None, max_length=150)
+    documento: Optional[str] = Field(None, max_length=50)
+    tipo_documento: Optional[str] = Field(None, max_length=20)
     endereco: Optional[str] = None
-    telefone: Optional[str] = None
-    email: Optional[str] = None
-    banco: Optional[str] = None
-    agencia: Optional[str] = None
-    conta: Optional[str] = None
-    tipo_conta: Optional[str] = None
+    telefone: Optional[str] = Field(None, max_length=20)
+    email: Optional[str] = Field(None, max_length=100, pattern=r"^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$")
+    banco: Optional[str] = Field(None, max_length=100)
+    agencia: Optional[str] = Field(None, max_length=20)
+    conta: Optional[str] = Field(None, max_length=30)
+    tipo_conta: Optional[str] = Field(None, max_length=20)
     observacoes: Optional[str] = None
 
     @validator('documento', pre=True, always=True)
     def clean_documento(cls, v):
+        if not v or (isinstance(v, str) and not v.strip()):
+            return None
+        # Remove non-numeric characters
+        return re.sub(r'\D', '', v)
+
+    @validator('telefone', pre=True, always=True)
+    def clean_telefone(cls, v):
+        if not v or (isinstance(v, str) and not v.strip()):
+            return None
+        # Remove non-numeric characters
+        return re.sub(r'\D', '', v)
+
+    @validator('email', pre=True, always=True)
+    def clean_email(cls, v):
+        if isinstance(v, str) and v.strip() == '':
+            return None
+        return v
+
+class ProprietarioUpdateSchema(BaseModel):
+    nome: Optional[str] = Field(None, min_length=2, max_length=150)
+    sobrenome: Optional[str] = Field(None, max_length=150)
+    documento: Optional[str] = Field(None, max_length=50)
+    tipo_documento: Optional[str] = Field(None, max_length=20)
+    endereco: Optional[str] = None
+    telefone: Optional[str] = Field(None, max_length=20)
+    email: Optional[str] = Field(None, max_length=100, pattern=r"^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$")
+    banco: Optional[str] = Field(None, max_length=100)
+    agencia: Optional[str] = Field(None, max_length=20)
+    conta: Optional[str] = Field(None, max_length=30)
+    tipo_conta: Optional[str] = Field(None, max_length=20)
+    observacoes: Optional[str] = None
+
+    @validator('documento', pre=True, always=True)
+    def clean_documento(cls, v):
+        if not v or (isinstance(v, str) and not v.strip()):
+            return None
+        # Remove non-numeric characters
+        return re.sub(r'\D', '', v)
+
+    @validator('telefone', pre=True, always=True)
+    def clean_telefone(cls, v):
+        if not v or (isinstance(v, str) and not v.strip()):
+            return None
+        # Remove non-numeric characters
+        return re.sub(r'\D', '', v)
+
+    @validator('email', pre=True, always=True)
+    def clean_email(cls, v):
         if isinstance(v, str) and v.strip() == '':
             return None
         return v

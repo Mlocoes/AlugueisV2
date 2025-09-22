@@ -2,21 +2,15 @@
 window.apiService = {
     // Función auxiliar para obtener la URL base
     getBaseUrl() {
-        if (window.AppConfig && window.AppConfig.api && window.AppConfig.api.baseUrl) {
-            return window.AppConfig.api.baseUrl;
+        // La configuración de AppConfig es la única fuente de verdad.
+        // initNetwork() en config.js se encarga de la detección y el fallback.
+        if (window.AppConfig && typeof window.AppConfig.getBaseURL === 'function') {
+            return window.AppConfig.getBaseURL();
         }
+        // Fallback muy simple si AppConfig no está listo, para evitar errores.
+        return ''; 
         
-        // Si AppConfig no está disponible, detectar el entorno manualmente
-        const hostname = window.location.hostname;
-        const protocol = window.location.protocol;
         
-        if (hostname === 'zeus.kronos.cloudns.ph') {
-            return 'http://zeus.kronos.cloudns.ph:8000';
-        } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
-            return 'http://localhost:8000';
-        } else {
-            return `http://${hostname}:8000`;
-        }
     },
 
     // Función auxiliar para obtener headers con autenticación
@@ -393,9 +387,13 @@ window.apiService = {
     },
 
     // === MÉTODOS DE SISTEMA ===
+    async getDashboardSummary() {
+        const response = await this.get('/api/dashboard/summary');
+        return response.success ? response.data : null;
+    },
     async getHealth() {
         try {
-            const response = await this.get('/health');
+            const response = await this.get('/api/health');
             return response.success ? response.data : null;
         } catch (error) {
             console.warn('Health check failed:', error);

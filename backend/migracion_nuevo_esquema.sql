@@ -55,3 +55,6 @@ CREATE INDEX IF NOT EXISTS idx_alquileres_simple_propietario ON alquileres_simpl
 -- (Requiere script adicional si hay datos previos)
 
 -- 8. Listo para usar el nuevo modelo relacional
+
+-- 9. Adicionar coluna ATIVO em PROPRIETARIOS
+ALTER TABLE proprietarios ADD COLUMN IF NOT EXISTS ativo BOOLEAN DEFAULT TRUE;

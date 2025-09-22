@@ -53,71 +53,128 @@ class ImportacaoModule {
         event.preventDefault();
         const form = event.target;
         const fileInput = form.querySelector('input[type="file"]');
-        if (!fileInput || !fileInput.files.length) {
-            this.uiManager?.showError('Selecione um arquivo Excel para importar.');
+        const file = fileInput?.files[0];
+
+        if (!file) {
+            this.uiManager.showError('Por favor, selecione um arquivo para importar.');
             return;
         }
-        const file = fileInput.files[0];
+
         const formData = new FormData();
         formData.append('file', file);
-        // ...resto da função handleImport...
 
-        let endpoint = '';
-        let loadingMsg = '';
-        let successMsg = '';
-        let errorMsg = '';
-        switch (tipo) {
-            case 'proprietarios':
-                endpoint = '/api/proprietarios/importar/';
-                loadingMsg = 'Importando proprietários...';
-                successMsg = 'Proprietários importados com sucesso.';
-                errorMsg = 'Erro ao importar proprietários';
-                break;
-            case 'imoveis':
-                endpoint = '/api/imoveis/importar/';
-                loadingMsg = 'Importando imóveis...';
-                successMsg = 'Imóveis importados com sucesso.';
-                errorMsg = 'Erro ao importar imóveis';
-                break;
-            case 'participacoes':
-                endpoint = '/api/participacoes/importar/';
-                loadingMsg = 'Importando participações...';
-                successMsg = 'Participações importadas com sucesso.';
-                errorMsg = 'Erro ao importar participações';
-                break;
-            case 'alugueis':
-                endpoint = '/api/alugueis/importar/';
-                loadingMsg = 'Importando aluguéis...';
-                successMsg = 'Aluguéis importados com sucesso.';
-                errorMsg = 'Erro ao importar aluguéis';
-                break;
+        this.uiManager.showLoading('Enviando arquivo...');
+
+        try {
+            // 1. Upload do arquivo
+            const uploadResponse = await this.apiService.upload('/api/upload/', formData);
+            if (!uploadResponse.success || !uploadResponse.data.file_id) {
+                throw new Error(uploadResponse.error || 'Falha no upload do arquivo.');
+            }
+            const fileId = uploadResponse.data.file_id;
+            this.uiManager.showLoading('Arquivo enviado. Processando dados...');
+
+            // 2. Processamento e validação do arquivo
+            const processResponse = await this.apiService.post(`/api/upload/process/${fileId}`);
+            if (!processResponse.success) {
+                throw new Error(processResponse.error || 'Falha ao processar o arquivo.');
+            }
+
+            const validationResult = processResponse.data;
+            this._displayValidationResults(validationResult);
+
+            if (validationResult.status === 'error') {
+                this.uiManager.showError('A importação foi bloqueada devido a erros de validação. Verifique os detalhes abaixo.');
+                return; // Interrompe o processo
+            }
+
+            let proceedWithImport = true;
+            if (validationResult.status === 'warning') {
+                proceedWithImport = await this.uiManager.showConfirmation('O arquivo contém avisos. Deseja continuar com a importação?');
+            }
+
+            if (!proceedWithImport) {
+                this.uiManager.showInfo('Importação cancelada pelo usuário.');
+                fileInput.value = ''; // Limpa o input
+                return;
+            }
+            
+            this.uiManager.showLoading('Validação concluída. Importando dados para o sistema...');
+
+            // 3. Importação final dos dados
+            const importResponse = await this.apiService.post(`/api/upload/import/${fileId}`);
+            if (!importResponse.success) {
+                throw new Error(importResponse.error || 'Erro na importação final.');
+            }
+
+            this.uiManager.showSuccess(importResponse.data.message || 'Dados importados com sucesso!');
+            
+            // Limpa o resultado da validação e o input do arquivo
+            this._clearValidationResults();
+            fileInput.value = '';
+
+            // Atualiza os módulos relevantes
+            this._refreshModules(validationResult.detected_types);
+
+        } catch (error) {
+            this.uiManager.showError(`Erro no processo de importação: ${error.message}`);
+        } finally {
+            this.uiManager.hideLoading();
+        }
+    }
+
+    _displayValidationResults(validationResult) {
+        const container = document.getElementById('validation-results-container');
+        if (!container) return;
+
+        let html = '<h4>Resultados da Validação</h4>';
+
+        if (validationResult.errors && validationResult.errors.length > 0) {
+            html += '<div class="alert alert-danger"><h5>Erros Encontrados:</h5><ul>';
+            validationResult.errors.forEach(err => {
+                html += `<li><strong>${err.sheet}:</strong> ${err.error} (Linha: ${err.row_index})</li>`;
+            });
+            html += '</ul></div>';
         }
 
-        this.uiManager?.showLoading(loadingMsg);
-        try {
-            const response = await this.apiService.upload(endpoint, formData);
-            this.uiManager?.hideLoading();
-            if (response.success) {
-                this.uiManager?.showSuccess(response.data?.mensagem || successMsg);
-                // Atualiza listas se os módulos estiverem disponíveis
-                // Eliminado: recarga de proprietários na tela de importar
-                if (window.imoveisModule && tipo === 'imoveis' && typeof window.imoveisModule.loadImoveis === 'function') {
-                    window.imoveisModule.loadImoveis();
-                }
-                if (window.participacoesModule && tipo === 'participacoes' && typeof window.participacoesModule.loadParticipacoes === 'function') {
-                    window.participacoesModule.loadParticipacoes();
-                }
-                if (window.alugueisModule && tipo === 'alugueis' && typeof window.alugueisModule.loadAlugueis === 'function') {
-                    window.alugueisModule.loadAlugueis();
-                }
-                // Limpa o input
-                fileInput.value = '';
-            } else {
-                this.uiManager?.showError(errorMsg + (response.error ? (': ' + response.error) : ''));
-            }
-        } catch (error) {
-            this.uiManager?.hideLoading();
-            this.uiManager?.showError(errorMsg + (error?.message ? (': ' + error.message) : ''));
+        if (validationResult.warnings && validationResult.warnings.length > 0) {
+            html += '<div class="alert alert-warning"><h5>Avisos:</h5><ul>';
+            validationResult.warnings.forEach(warn => {
+                html += `<li><strong>${warn.sheet}:</strong> ${warn.warning} (Linha: ${warn.row_index})</li>`;
+            });
+            html += '</ul></div>';
+        }
+
+        if (validationResult.detected_types && validationResult.detected_types.length > 0) {
+            html += `<p><strong>Tipos de dados detectados:</strong> ${validationResult.detected_types.join(', ')}</p>`;
+        }
+
+        container.innerHTML = html;
+        container.style.display = 'block';
+    }
+
+    _clearValidationResults() {
+        const container = document.getElementById('validation-results-container');
+        if (container) {
+            container.innerHTML = '';
+            container.style.display = 'none';
+        }
+    }
+
+    _refreshModules(detectedTypes) {
+        if (!detectedTypes) return;
+
+        if (detectedTypes.includes('proprietarios') && window.proprietariosModule?.loadProprietarios) {
+            window.proprietariosModule.loadProprietarios();
+        }
+        if (detectedTypes.includes('imoveis') && window.imoveisModule?.loadImoveis) {
+            window.imoveisModule.loadImoveis();
+        }
+        if (detectedTypes.includes('participacoes') && window.participacoesModule?.loadParticipacoes) {
+            window.participacoesModule.loadParticipacoes();
+        }
+        if (detectedTypes.includes('alugueis') && window.alugueisModule?.loadAlugueis) {
+            window.alugueisModule.loadAlugueis();
         }
     }
 }

@@ -202,7 +202,7 @@ class ViewManager {
         const template = this.getResponsiveTemplate(view);
         
         // Actualizar contenido de forma segura
-        SecurityUtils.setSafeHTML(this.contentContainer, template);
+        window.SecurityUtils.setSafeHTML(this.contentContainer, template);
         
         // Aplicar configuraciones específicas del dispositivo
         this.applyDeviceSpecificConfig(view);
@@ -380,7 +380,7 @@ class ViewManager {
             }
             try {
                 console.log(`🔧 Tentando inicializar módulo: ${moduleName}`);
-                console.log(`� Instância do módulo encontrada:`, !!moduleInstance);
+                console.log(` Instância do módulo encontrada:`, !!moduleInstance);
                 if (moduleInstance) {
                     console.log(`🔧 Métodos disponíveis no módulo:`, Object.getOwnPropertyNames(Object.getPrototypeOf(moduleInstance)));
                     if (typeof moduleInstance.load === 'function') {
@@ -415,7 +415,7 @@ class ViewManager {
         
         const headerTitle = document.getElementById('page-title');
         if (headerTitle) {
-            SecurityUtils.setSafeHTML(headerTitle, title);
+            window.SecurityUtils.setSafeHTML(headerTitle, title);
         }
     }
 
@@ -435,7 +435,7 @@ class ViewManager {
         `;
         
         if (this.contentContainer) {
-            SecurityUtils.setSafeHTML(this.contentContainer, loadingHTML);
+            window.SecurityUtils.setSafeHTML(this.contentContainer, loadingHTML);
         }
     }
 
@@ -453,12 +453,12 @@ class ViewManager {
         const errorHTML = `
             <div class="alert alert-danger text-center" role="alert">
                 <i class="fas fa-exclamation-triangle me-2"></i>
-                ${SecurityUtils.escapeHtml(message)}
+                ${window.SecurityUtils.escapeHtml(message)}
             </div>
         `;
         
         if (this.contentContainer) {
-            SecurityUtils.setSafeHTML(this.contentContainer, errorHTML);
+            window.SecurityUtils.setSafeHTML(this.contentContainer, errorHTML);
         }
     }
 
@@ -544,64 +544,107 @@ class ViewManager {
 
     getProprietariosTemplate() {
         return `
-            <div class="proprietarios-container">
-                <!-- Encabezado eliminado -->
-                <!-- Pesquisa de proprietários eliminada -->
-                <div class="card-responsive">
-                    <!-- Header de lista de proprietários eliminado -->
-                    <div class="card-body-responsive">
-                        <div class="table-responsive-custom" style="max-height: 70vh; min-height: 50vh; overflow-y: auto;">
-                            <table class="table table-striped table-hover table-custom" style="font-size: 0.8rem;">
-                                <thead class="table-dark">
+            <div class="container-fluid proprietarios-container">
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Gestão de Proprietários</h5>
+                        <button class="btn btn-primary" id="btn-novo-proprietario"><i class="fas fa-plus me-2"></i>Novo Proprietário</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped">
+                                <thead class="table-light">
                                     <tr>
-                                        <th>Proprietário</th>
-                                        <th>Contato</th>
-                                        <th>Endereço</th>
-                                        <th>Dados Bancários</th>
-                                        <th>Data</th>
-                                        <th width="120">Ações</th>
+                                        <th>ID</th>
+                                        <th>Nome Completo</th>
+                                        <th>Documento</th>
+                                        <th>Telefone</th>
+                                        <th>Email</th>
+                                        <th class="text-center">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody id="proprietarios-table-body">
-                                    <tr>
-                                        <td colspan="6" class="text-center text-muted py-4">
-                                            <div class="spinner-border" role="status">
-                                                <span class="visually-hidden">Carregando...</span>
-                                            </div>
-                                            <br>Carregando proprietários...
-                                        </td>
-                                    </tr>
+                                    <!-- Rows serão inseridas aqui -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Modal Editar Proprietário -->
-                <div class="modal fade" id="editar-proprietario-modal" tabindex="-1" aria-labelledby="editarProprietarioModalLabel">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header bg-primary text-white">
-                                <h5 class="modal-title" id="editarProprietarioModalLabel"><i class="fas fa-user-edit me-2"></i>Editar Proprietário</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <form id="form-editar-proprietario">
-                                <div class="modal-body p-1" style="font-size: 0.80rem; max-height: 70vh; overflow-y: auto;">
-                                    <div class="mb-1"><label class="form-label">Nome</label><input type="text" class="form-control" name="nome" required style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Sobrenome</label><input type="text" class="form-control" name="sobrenome" style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Documento</label><input type="text" class="form-control" name="documento" style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Tipo de Documento</label><input type="text" class="form-control" name="tipo_documento" style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Endereço</label><input type="text" class="form-control" name="endereco" style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Telefone</label><input type="text" class="form-control" name="telefone" style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Email</label><input type="email" class="form-control" name="email" style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Banco</label><input type="text" class="form-control" name="banco" style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Agência</label><input type="text" class="form-control" name="agencia" style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Conta</label><input type="text" class="form-control" name="conta" style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Tipo de Conta</label><input type="text" class="form-control" name="tipo_conta" style="font-size:0.85em;"></div>
+            <!-- Modal Genérico para Proprietário -->
+            <div class="modal fade" id="proprietario-modal" tabindex="-1" aria-labelledby="proprietarioModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="proprietario-modal-title"></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="form-proprietario">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="proprietario-nome" class="form-label">Nome *</label>
+                                        <input type="text" class="form-control" id="proprietario-nome" name="nome" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="proprietario-sobrenome" class="form-label">Sobrenome</label>
+                                        <input type="text" class="form-control" id="proprietario-sobrenome" name="sobrenome">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="proprietario-tipo_documento" class="form-label">Tipo de Documento</label>
+                                        <input type="text" class="form-control" id="proprietario-tipo_documento" name="tipo_documento">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="proprietario-documento" class="form-label">Documento</label>
+                                        <input type="text" class="form-control" id="proprietario-documento" name="documento">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="proprietario-endereco" class="form-label">Endereço</label>
+                                    <input type="text" class="form-control" id="proprietario-endereco" name="endereco">
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="proprietario-telefone" class="form-label">Telefone</label>
+                                        <input type="text" class="form-control" id="proprietario-telefone" name="telefone">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="proprietario-email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="proprietario-email" name="email">
+                                    </div>
+                                </div>
+                                <hr>
+                                <h5>Dados Bancários</h5>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="proprietario-banco" class="form-label">Banco</label>
+                                        <input type="text" class="form-control" id="proprietario-banco" name="banco">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="proprietario-agencia" class="form-label">Agência</label>
+                                        <input type="text" class="form-control" id="proprietario-agencia" name="agencia">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="proprietario-conta" class="form-label">Conta</label>
+                                        <input type="text" class="form-control" id="proprietario-conta" name="conta">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="proprietario-tipo_conta" class="form-label">Tipo de Conta</label>
+                                        <input type="text" class="form-control" id="proprietario-tipo_conta" name="tipo_conta">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="proprietario-observacoes" class="form-label">Observações</label>
+                                    <textarea class="form-control" id="proprietario-observacoes" name="observacoes" rows="3"></textarea>
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                    <button type="submit" class="btn btn-primary">Salvar</button>
+                                    <button type="submit" class="btn btn-primary" id="btn-salvar-proprietario">Salvar</button>
                                 </div>
                             </form>
                         </div>
@@ -949,7 +992,7 @@ class ViewManager {
                             <div class="card-body-responsive">
                                 <div class="mb-4 text-end">
                                     <div class="d-flex flex-wrap justify-content-center gap-2">
-                                        <button class="btn btn-primary" style="width:150px" id="btn-novo-proprietario" data-bs-toggle="modal" data-bs-target="#novo-proprietario-modal"><i class="fas fa-user-plus me-2"></i> Novo Proprietário</button>
+                                        <button class="btn btn-primary" style="width:150px" id="btn-novo-proprietario" data-bs-toggle="modal" data-bs-target="#proprietario-modal"><i class="fas fa-user-plus me-2"></i> Novo Proprietário</button>
                                         <button class="btn btn-primary" style="width:150px" id="btn-novo-imovel-importar" data-bs-toggle="modal" data-bs-target="#novo-imovel-importar-modal"><i class="fas fa-building me-2"></i> Novo Imóvel</button>
                                         <button class="btn btn-primary" style="width:150px" id="btn-alterar-usuario" data-bs-toggle="modal" data-bs-target="#modal-alterar-usuario"><i class="fas fa-user-edit me-2"></i> Alterar Usuário</button>
                                         <button class="btn btn-primary" style="width:150px" id="btn-cadastrar-usuario" data-bs-toggle="modal" data-bs-target="#modal-cadastrar-usuario"><i class="fas fa-user-plus me-2"></i> Cadastrar Novo Usuário</button>
@@ -1008,37 +1051,6 @@ class ViewManager {
                                     <div class="mb-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="alugado" id="alugado-novo" value="true"><label class="form-check-label" for="alugado-novo">Alugado</label></div></div>
                                     <div class="mb-3"><label class="form-label">Data Cadastro</label><input type="date" class="form-control" name="data_cadastro" style="font-size:0.85em;"></div>
                                     <div class="mb-3"><label class="form-label">Observações</label><textarea class="form-control" name="observacoes" style="font-size:0.85em;"></textarea></div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                    <button type="submit" class="btn btn-primary">Salvar</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Modal Novo Proprietário -->
-                <div class="modal fade" id="novo-proprietario-modal" tabindex="-1" aria-labelledby="novoProprietarioModalLabel">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header bg-primary text-white">
-                                <h5 class="modal-title" id="novoProprietarioModalLabel"><i class="fas fa-user-plus me-2"></i> Novo Proprietário</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <form id="form-novo-proprietario">
-                                <div class="modal-body p-1" style="font-size: 0.80rem; max-height: 70vh; overflow-y: auto;">
-                                    <div class="mb-1"><label class="form-label">Nome</label><input type="text" class="form-control" name="nome" required style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Sobrenome</label><input type="text" class="form-control" name="sobrenome" style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Documento</label><input type="text" class="form-control" name="documento" style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Tipo de Documento</label><input type="text" class="form-control" name="tipo_documento" style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Endereço</label><input type="text" class="form-control" name="endereco" style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Telefone</label><input type="text" class="form-control" name="telefone" style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Email</label><input type="email" class="form-control" name="email" style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Banco</label><input type="text" class="form-control" name="banco" style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Agência</label><input type="text" class="form-control" name="agencia" style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Conta</label><input type="text" class="form-control" name="conta" style="font-size:0.85em;"></div>
-                                    <div class="mb-3"><label class="form-label">Tipo de Conta</label><input type="text" class="form-control" name="tipo_conta" style="font-size:0.85em;"></div>
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>

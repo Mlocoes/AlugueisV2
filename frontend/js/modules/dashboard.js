@@ -1,107 +1,64 @@
-console.log('📦 dashboard.js cargado');
 /**
- * Módulo Dashboard - Gestão do dashboard principal
- * Exibe estatísticas, gráficos e resumo do sistema
+ * Módulo Dashboard - Gestão do dashboard principal com dados agregados do backend.
  */
-
 class DashboardModule {
-    // Log de definición de clase
-    static logDefinition() {
-        console.log('✅ DashboardModule definido en window');
-    }
     constructor() {
         this.charts = {};
-        this.data = {};
+        this.summaryData = {};
+        this.initialized = false;
+        // Adicionar referência ao uiManager e apiService
+        this.uiManager = window.uiManager;
+        this.apiService = window.apiService;
     }
 
-    /**
-     * Carregar dados do dashboard
-     */
-    async load() {
-        // Timeout de segurança para evitar carregamento infinito
-        const loadingTimeout = setTimeout(() => {
-            window.uiManager?.hideLoading();
-        }, 10000); // 10 segundos no máximo
+    init() {
+        if (this.initialized) return;
+        this.load();
+        this.initialized = true;
+    }
 
+    async handleApiCall(apiCall, loadingMessage, errorMessagePrefix) {
         try {
-            window.uiManager?.showLoading('Carregando dashboard...');
-
-            // Carregar dados em paralelo
-            const [propietarios, imoveis, alugueis] = await Promise.all([
-                window.apiService.getProprietarios(),
-                window.apiService.getImoveis(),
-                window.apiService.getAlugueis()
-            ]);
-
-            // Los métodos del apiService ya devuelven los datos directamente
-            this.data = { 
-                propietarios: propietarios || [], 
-                imoveis: imoveis || [], 
-                alugueis: alugueis || [] 
-            };
-
-            console.log('📊 Dados carregados no dashboard:', {
-                propietarios: this.data.propietarios.length,
-                imoveis: this.data.imoveis.length,
-                alugueis: this.data.alugueis.length
-            });
-
-            // Atualizar estatísticas primeiro
-            this.updateStats();
-
-            // Esperar um pouco para garantir que o DOM esteja pronto
-            await new Promise(resolve => setTimeout(resolve, 100));
-
-            // Criar gráficos depois que os dados estiverem prontos
-            await this.createCharts();
-
+            this.uiManager.showLoading(loadingMessage);
+            return await apiCall();
         } catch (error) {
-            // ...código existente...
-            window.uiManager?.showAlert('Erro ao carregar dados do dashboard: ' + error.message, 'error');
+            this.uiManager.showError(`${errorMessagePrefix}: ${error.message}`);
+            console.error(errorMessagePrefix, error);
+            return null;
         } finally {
-            clearTimeout(loadingTimeout);
-            window.uiManager?.hideLoading();
+            this.uiManager.hideLoading();
         }
     }
 
-    /**
-     * Atualizar estatísticas do dashboard
-     */
+    async load() {
+        const summary = await this.handleApiCall(
+            () => this.apiService.getDashboardSummary(),
+            'Carregando dashboard...',
+            'Erro ao carregar dados do dashboard'
+        );
+
+        if (summary) {
+            this.summaryData = summary;
+            console.log('📊 Dados agregados do dashboard carregados:', this.summaryData);
+            this.updateStats();
+            this.createCharts();
+        }
+    }
+
     updateStats() {
-        const { propietarios = [], imoveis = [], alugueis = [] } = this.data;
+        const { 
+            total_proprietarios,
+            total_imoveis,
+            total_alugueis_ano_corrente,
+            receitas_ultimo_mes
+        } = this.summaryData;
 
-        // ...código existente...
-
-        // Atualizar contadores
-        this.updateCounter('dashboard-total-proprietarios', propietarios.length);
-        this.updateCounter('dashboard-total-inmuebles', imoveis.length);
-
-        // Novo: valor financeiro total dos aluguéis do ano corrente
-        const totalAlugueisAno = this.valorFinanceiroAlugueisAnoCorrente(alugueis);
-        this.updateCounter('dashboard-alugueis-ano-corrente', `R$ ${totalAlugueisAno.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`);
-
-        // Calcular receitas mensais
-        const receitas = this.calculateMonthlyIncome(alugueis);
-        this.updateCounter('dashboard-ingresos-mensuales', `R$ ${receitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`);
-
-        // ...código existente...
+        this.updateCounter('dashboard-total-proprietarios', total_proprietarios);
+        this.updateCounter('dashboard-total-inmuebles', total_imoveis);
+        this.updateCounter('dashboard-alugueis-ano-corrente', `R$ ${total_alugueis_ano_corrente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`);
+        this.updateCounter('dashboard-ingresos-mensuales', `R$ ${receitas_ultimo_mes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`);
     }
 
-    /**
-     * Soma o valor financeiro total dos aluguéis do maior ano disponível nos dados
-     */
-    valorFinanceiroAlugueisAnoCorrente(alugueis) {
-        if (!alugueis || alugueis.length === 0) return 0;
-        // Encontrar o maior ano disponível
-        let maxAno = Math.max(...alugueis.map(a => a.ano || 0));
-        return alugueis
-            .filter(a => a.ano === maxAno)
-            .reduce((total, a) => total + (a.valor_liquido_proprietario || 0), 0);
-    }
-
-    /**
-     * Atualizar contador individual
-     */
     updateCounter(elementId, value) {
         const element = document.getElementById(elementId);
         if (element) {
@@ -109,209 +66,95 @@ class DashboardModule {
         }
     }
 
-    /**
-     * Calcular receitas do último mês disponível nos dados
-     */
-    calculateMonthlyIncome(alugueis) {
-        if (!alugueis || alugueis.length === 0) return 0;
-        // Encontrar o maior ano e mês disponível
-        let maxAno = Math.max(...alugueis.map(a => a.ano || 0));
-        let mesesDoAno = alugueis.filter(a => a.ano === maxAno).map(a => a.mes || 0);
-        let maxMes = Math.max(...mesesDoAno);
-        // Somar todos os valores desse mês/ano
-        return alugueis.reduce((total, aluguel) => {
-            if (aluguel.ano === maxAno && aluguel.mes === maxMes) {
-                return total + (aluguel.valor_liquido_proprietario || 0);
-            }
-            return total;
-        }, 0);
+    createCharts() {
+        this.destroyAllCharts();
+        this.createIncomeChart();
     }
 
-    /**
-     * Criar gráficos do dashboard
-     */
-    async createCharts() {
-        try {
-            // Verificar se os canvas existem antes de criar os gráficos
-            const incomeCanvas = document.getElementById('ingresosChart');
-            if (!incomeCanvas) {
-                // ...código existente...
-                return;
-            }
-            // ...código existente...
-            // Primeiro destruímos todos os gráficos existentes
-            this.destroyAllCharts();
-            // Depois criamos os novos
-            this.createIncomeChart();
-            //this.createDistributionChart();
-            // ...código existente...
-        } catch (error) {
-            // ...código existente...
-            // Não lançar o erro para não bloquear o resto do dashboard
-        }
-    }
-
-    /**
-     * Destruir todos os gráficos existentes
-     */
     destroyAllCharts() {
-        try {
-            if (this.charts.income) {
-                this.charts.income.destroy();
-                this.charts.income = null;
+        for (const chartKey in this.charts) {
+            if (this.charts[chartKey]) {
+                this.charts[chartKey].destroy();
+                this.charts[chartKey] = null;
             }
-
-            // ...código existente...
-        } catch (error) {
-            // ...código existente...
         }
-    }    /**
-     * Criar gráfico de receitas
-     */
+    }
+
     createIncomeChart() {
-        let canvas = document.getElementById('ingresosChart');
+        const canvas = document.getElementById('ingresosChart');
         if (!canvas) {
-            // ...código existente...
+            console.error("Elemento canvas 'ingresosChart' não encontrado.");
             return;
         }
 
-        try {
-            // Destruir gráfico anterior se existir
-            if (this.charts.income) {
-                this.charts.income.destroy();
-                this.charts.income = null;
-            }
-            // Remover e recriar o canvas para garantir que Chart.js não reutilize instâncias antigas
-            const parent = canvas.parentNode;
-            parent.removeChild(canvas);
-            canvas = document.createElement('canvas');
-            canvas.id = 'ingresosChart';
-            parent.appendChild(canvas);
+        const { income_chart_data } = this.summaryData;
+        if (!income_chart_data || !income_chart_data.labels || !income_chart_data.values) {
+            console.error("Dados para o gráfico de receitas estão incompletos.");
+            return;
+        }
 
-            const chartData = this.processIncomeData();
-            if (!chartData || !chartData.labels || !chartData.values) {
-                // ...código existente...
-                return;
-            }
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            console.error("Não foi possível obter o contexto 2D do canvas.");
+            return;
+        }
 
-            const ctx = canvas.getContext('2d');
-            if (!ctx) {
-                // ...código existente...
-                return;
-            }
-
-            // ...código existente...
-
-            this.charts.income = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: chartData.labels,
-                    datasets: [{
-                        label: 'Receitas (R$)',
-                        data: chartData.values,
+        this.charts.income = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: income_chart_data.labels,
+                datasets: [{
+                    label: 'Receitas (R$)',
+                    data: income_chart_data.values,
+                    borderColor: '#36A2EB',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#36A2EB',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: 'white',
+                        bodyColor: 'white',
                         borderColor: '#36A2EB',
-                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#36A2EB',
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 6,
-                        pointHoverRadius: 8
-                    }]
+                        borderWidth: 1
+                    }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: 'white',
-                            bodyColor: 'white',
-                            borderColor: '#36A2EB',
-                            borderWidth: 1
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                borderDash: [5, 5]
-                            },
-                            ticks: {
-                                callback: function (value) {
-                                    return 'R$' + value.toLocaleString();
-                                }
-                            }
+                scales: {
+                    x: { grid: { display: false } },
+                    y: {
+                        beginAtZero: true,
+                        grid: { borderDash: [5, 5] },
+                        ticks: {
+                            callback: value => `R$ ${value.toLocaleString('pt-BR')}`
                         }
                     }
                 }
-            });
-
-        } catch (error) {
-            // ...código existente...
-            // ...código existente...
-        }
-    }
-
-    /**
-     * Criar gráfico de distribuição
-     */
-
-    /**
-     * Processar dados para gráfico de receitas
-     */
-    processIncomeData() {
-        const { alugueis = [] } = this.data;
-        if (!alugueis.length) {
-            return { labels: [], values: [] };
-        }
-        // Agrupar receitas por ano-mês
-        const monthlyIncome = {};
-        alugueis.forEach(aluguel => {
-            if (aluguel.valor_liquido_proprietario && aluguel.mes && aluguel.ano) {
-                const monthKey = `${aluguel.ano}-${aluguel.mes.toString().padStart(2, '0')}`;
-                if (!monthlyIncome[monthKey]) monthlyIncome[monthKey] = 0;
-                monthlyIncome[monthKey] += aluguel.valor_liquido_proprietario;
             }
         });
-        // Ordenar as chaves ano-mês
-        const sortedKeys = Object.keys(monthlyIncome).sort((a, b) => {
-            const [aAno, aMes] = a.split('-').map(Number);
-            const [bAno, bMes] = b.split('-').map(Number);
-            return aAno !== bAno ? aAno - bAno : aMes - bMes;
-        });
-        return {
-            labels: sortedKeys.map(key => {
-                const [year, month] = key.split('-');
-                const date = new Date(year, month - 1);
-                return date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
-            }),
-            values: sortedKeys.map(key => monthlyIncome[key])
-        };
     }
 
-
-    /**
-     * Atualizar o dashboard
-     */
     async refresh() {
         await this.load();
     }
 }
 
-// Expor globalmente
-window.DashboardModule = DashboardModule;
-DashboardModule.logDefinition();
-
-// Criar instância global apenas se não existir
-// window.dashboardModule solo se inicializa tras login exitoso
+// Inicialização do módulo quando o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', () => {
+    // Garante que o módulo só seja inicializado na página do dashboard
+    if (document.getElementById('dashboard-total-proprietarios')) {
+        window.dashboardModule = new DashboardModule();
+        window.dashboardModule.init();
+    }
+});

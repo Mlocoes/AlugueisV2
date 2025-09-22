@@ -14,8 +14,8 @@ from fastapi_utils.tasks import repeat_every
 
 from config import APP_CONFIG, CORS_CONFIG, get_db, UPLOAD_DIR
 from models_final import AluguelSimples, Imovel
-from routers import alugueis, estadisticas, importacao, upload, auth
-from routers import proprietarios, imoveis, participacoes, reportes, extras, transferencias
+from routers import alugueis, estadisticas, upload, auth
+from routers import proprietarios, imoveis, participacoes, reportes, extras, transferencias, dashboard
 from routers.auth import verify_token
 
 # Configuração da aplicação
@@ -44,9 +44,9 @@ def cleanup_old_uploads():
 
 # Incluir routers
 app.include_router(auth.router)
+app.include_router(dashboard.router)
 app.include_router(alugueis.router)
 app.include_router(estadisticas.router)
-app.include_router(importacao.router)
 app.include_router(upload.router)
 app.include_router(proprietarios.router)
 app.include_router(imoveis.router)

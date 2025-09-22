@@ -261,13 +261,18 @@ class LoginManager {
         // Atualizar header com info do usuário (se existir)
         const userInfo = document.querySelector('.user-info');
         if (userInfo) {
-            SecurityUtils.setSafeHTML(userInfo, `
+            const template = `
                 <i class="fas fa-user me-2"></i>
-                ${SecurityUtils.escapeHtml(userData.usuario)} (${SecurityUtils.escapeHtml(userData.tipo)})
+                \${usuario} (\${tipo})
                 <button class="btn btn-sm btn-outline-light ms-2" onclick="loginManager.logout()">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
-            `);
+            `;
+            const data = {
+                usuario: userData.usuario,
+                tipo: userData.tipo
+            };
+            window.SecurityUtils.setSafeHTML(userInfo, template, data);
         }
     }
 

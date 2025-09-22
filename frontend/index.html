@@ -115,6 +115,23 @@
                     </div>
                 </div>
 
+                <!-- Dashboard Section -->
+                <section id="dashboard-section" class="container-fluid mt-4" style="display: none;">
+                    <div class="row">
+                        <div class="col-lg-12 mb-4">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">Receitas dos Últimos 12 Meses</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div style="height: 300px;">
+                                        <canvas id="ingresosChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
                 <!-- Fin Dashboard Section -->
             </main>
         </div>
@@ -272,106 +289,7 @@
                 </div>
                 <!-- Fin Modal Transferencias -->
 
-                <!-- Modal Editar Proprietario -->
-                <div class="modal fade" id="editar-proprietario-modal" tabindex="-1" aria-labelledby="modalEditarProprietarioLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header bg-warning text-dark">
-                                <h5 class="modal-title" id="modalEditarProprietarioLabel"><i class="fas fa-edit me-2"></i>Editar Proprietário</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <form id="form-editar-proprietario">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="editar-proprietario-nome" class="form-label">Nome *</label>
-                                                <input type="text" class="form-control" id="editar-proprietario-nome" name="nome" required>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="editar-proprietario-sobrenome" class="form-label">Sobrenome</label>
-                                                <input type="text" class="form-control" id="editar-proprietario-sobrenome" name="sobrenome">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="editar-proprietario-tipo_documento" class="form-label">Tipo de Documento</label>
-                                                <input type="text" class="form-control" id="editar-proprietario-tipo_documento" name="tipo_documento">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="editar-proprietario-documento" class="form-label">Documento</label>
-                                                <input type="text" class="form-control" id="editar-proprietario-documento" name="documento">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="editar-proprietario-endereco" class="form-label">Endereço</label>
-                                        <input type="text" class="form-control" id="editar-proprietario-endereco" name="endereco">
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="editar-proprietario-telefone" class="form-label">Telefone</label>
-                                                <input type="text" class="form-control" id="editar-proprietario-telefone" name="telefone">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="editar-proprietario-email" class="form-label">Email</label>
-                                                <input type="email" class="form-control" id="editar-proprietario-email" name="email">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <hr>
-                                    <h5>Dados Bancários</h5>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="editar-proprietario-banco" class="form-label">Banco</label>
-                                                <input type="text" class="form-control" id="editar-proprietario-banco" name="banco">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="editar-proprietario-agencia" class="form-label">Agência</label>
-                                                <input type="text" class="form-control" id="editar-proprietario-agencia" name="agencia">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="editar-proprietario-conta" class="form-label">Conta</label>
-                                                <input type="text" class="form-control" id="editar-proprietario-conta" name="conta">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="editar-proprietario-tipo_conta" class="form-label">Tipo de Conta</label>
-                                                <input type="text" class="form-control" id="editar-proprietario-tipo_conta" name="tipo_conta">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="editar-proprietario-observacoes" class="form-label">Observações</label>
-                                        <textarea class="form-control" id="editar-proprietario-observacoes" name="observacoes" rows="3"></textarea>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Fin Modal Editar Proprietario -->
+                
 
                                 <!-- Modal Confirmar Exclusão Extras -->
                                 <div class="modal fade" id="modal-confirmar-exclusao-extras" tabindex="-1" aria-labelledby="modalConfirmarExclusaoExtrasLabel" aria-hidden="true">

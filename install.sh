@@ -57,13 +57,13 @@ else
 fi
 echo ""
 
-read -p "Nome do banco [alugueisv1_db]: " POSTGRES_DB
-POSTGRES_DB=${POSTGRES_DB:-alugueisv1_db}
-read -p "Usuário do banco [alugueisv1_usuario]: " POSTGRES_USER
-POSTGRES_USER=${POSTGRES_USER:-alugueisv1_usuario}
-read -s -p "Senha do banco [alugueisv1_senha]: " POSTGRES_PASSWORD
+read -p "Nome do banco [alugueisv2_db]: " POSTGRES_DB
+POSTGRES_DB=${POSTGRES_DB:-alugueisv2_db}
+read -p "Usuário do banco [alugueisv2_usuario]: " POSTGRES_USER
+POSTGRES_USER=${POSTGRES_USER:-alugueisv2_usuario}
+read -s -p "Senha do banco [alugueisv2_senha]: " POSTGRES_PASSWORD
 echo
-POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-alugueisv1_senha}
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-alugueisv2_senha}
 
 # Gerar SECRET_KEY aleatória
 if check_cmd openssl; then
@@ -82,17 +82,11 @@ cat > .env <<ENVEOF
 POSTGRES_DB=${POSTGRES_DB}
 POSTGRES_USER=${POSTGRES_USER}
 POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_v1:5432/${POSTGRES_DB}
+DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_v2:5432/${POSTGRES_DB}
 SECRET_KEY=${SECRET_KEY}
 DEBUG=true
 ADMIN_USER=${ADMIN_USER}
 ADMIN_PASS=${ADMIN_PASS}
-
-# Traefik Configuration
-USE_TRAEFIK=${USE_TRAEFIK}
-FRONTEND_DOMAIN=${FRONTEND_DOMAIN}
-BACKEND_DOMAIN=${BACKEND_DOMAIN}
-ENVEOF
 
 
 # Configurar CORS según el tipo de instalación
@@ -115,7 +109,7 @@ ENV=development
 SECRET_KEY=${SECRET_KEY}
 DEBUG=true
 CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS}
-DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_v1:5432/${POSTGRES_DB}
+DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_v2:5432/${POSTGRES_DB}
 BENVEOF
 
 # Opción de limpeza total
@@ -131,8 +125,8 @@ echo "[4/5] Subindo containers..."
 docker compose build --no-cache && docker compose up -d
 
 echo "Aguardando PostgreSQL saudável..."
-PG_CID=$(docker compose ps -q postgres_v1)
-if [ -z "$PG_CID" ]; then echo "Falha ao localizar container postgres_v1"; exit 1; fi
+PG_CID=$(docker compose ps -q postgres_v2)
+if [ -z "$PG_CID" ]; then echo "Falha ao localizar container postgres_v2"; exit 1; fi
 until [ "$(docker inspect -f '{{.State.Health.Status}}' "$PG_CID" 2>/dev/null || echo starting)" = "healthy" ]; do
   sleep 2; echo "... aguardando banco ...";
 done
@@ -176,9 +170,9 @@ else
     echo "Backend:   http://192.168.0.7:8000/docs"
 fi
 
-echo "Adminer:   http://192.168.0.7:8080 (Servidor: postgres_v1, DB: ${POSTGRES_DB}, User: ${POSTGRES_USER})"
+echo "Adminer:   http://192.168.0.7:8080 (Servidor: postgres_v2, DB: ${POSTGRES_DB}, User: ${POSTGRES_USER})"
 echo
 echo "Usuário admin: ${ADMIN_USER}"
 echo "Senha admin:  ${ADMIN_PASS}"
 echo
-echo "Para ajustar CORS no backend edite backend/.env e reinicie: docker compose restart backend_v1"
+echo "Para ajustar CORS no backend edite backend/.env e reinicie: docker compose restart backend_v2"

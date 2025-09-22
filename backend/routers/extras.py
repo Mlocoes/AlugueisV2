@@ -10,7 +10,7 @@ import json
 from datetime import datetime
 
 from config import get_db
-from models_final import Alias, AliasCreate, AliasUpdate, AliasResponse, Proprietario
+from models_final import Alias, AliasCreate, AliasUpdate, AliasResponse, Proprietario, Usuario
 from routers.auth import verify_token, is_admin
 
 router = APIRouter(
@@ -42,7 +42,7 @@ async def listar_aliases_para_relatorios(db: Session = Depends(get_db)):
 @router.get("/proprietarios/disponiveis")
 async def listar_proprietarios_disponiveis(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(verify_admin_access)
+    current_user: Usuario = Depends(verify_admin_access)
 ):
     """Listar proprietários disponíveis para seleção em alias"""
     try:
@@ -56,7 +56,7 @@ async def listar_proprietarios_disponiveis(
 @router.get("/estatisticas")
 async def obter_estatisticas_alias(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(verify_admin_access)
+    current_user: Usuario = Depends(verify_admin_access)
 ):
     """Obter estatísticas dos alias"""
     try:
@@ -107,7 +107,7 @@ async def listar_extras(
     skip: int = Query(0, ge=0, description="Número de registros para pular"),
     limit: int = Query(100, ge=1, le=1000, description="Limite de registros"),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(verify_admin_access)
+    current_user: Usuario = Depends(verify_admin_access)
 ):
     """Listar todos os alias (apenas administradores)"""
     try:
@@ -122,7 +122,7 @@ async def listar_extras(
 async def obter_extra(
     alias_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(is_admin)
+    current_user: Usuario = Depends(is_admin)
 ):
     """Obter um alias específico por ID"""
     alias_obj = db.query(Alias).filter(Alias.id == alias_id).first()
@@ -131,45 +131,51 @@ async def obter_extra(
     
     return alias_obj.to_dict()
 
+async def validar_e_obter_proprietarios(db: Session, id_proprietarios_json: Optional[str]):
+    """
+    Valida o JSON de IDs de proprietários e verifica se todos existem no banco.
+    Retorna a lista de IDs validados. Evita ataques N+1.
+    """
+    if not id_proprietarios_json:
+        return None
+    try:
+        proprietario_ids = json.loads(id_proprietarios_json)
+        if not isinstance(proprietario_ids, list):
+            raise HTTPException(status_code=400, detail="id_proprietarios deve ser um JSON array de IDs.")
+
+        if not proprietario_ids:
+            return []
+
+        # Validação em lote para evitar N+1 queries
+        proprietarios_encontrados = db.query(Proprietario.id).filter(Proprietario.id.in_(proprietario_ids)).all()
+        ids_encontrados = {p_id for p_id, in proprietarios_encontrados}
+        
+        ids_nao_encontrados = set(proprietario_ids) - ids_encontrados
+        if ids_nao_encontrados:
+            raise HTTPException(status_code=404, detail=f"Proprietários com IDs {list(ids_nao_encontrados)} não encontrados.")
+            
+        return proprietario_ids
+    except (json.JSONDecodeError, TypeError):
+        raise HTTPException(status_code=400, detail="Formato JSON inválido para id_proprietarios.")
+
 @router.post("/", response_model=AliasResponse)
 async def criar_extra(
     alias_data: AliasCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(verify_admin_access)
+    current_user: Usuario = Depends(verify_admin_access)
 ):
     """Criar um novo alias"""
+    if db.query(Alias).filter(Alias.alias == alias_data.alias).first():
+        raise HTTPException(status_code=400, detail="Já existe um alias com este nome")
+
+    await validar_e_obter_proprietarios(db, alias_data.id_proprietarios)
+
     try:
-        # Verificar se já existe um alias com o mesmo nome
-        existing_alias = db.query(Alias).filter(Alias.alias == alias_data.alias).first()
-        if existing_alias:
-            raise HTTPException(status_code=400, detail="Já existe um alias com este nome")
-        
-        # Verificar se os proprietários existem
-        if alias_data.id_proprietarios:
-            try:
-                proprietario_ids = json.loads(alias_data.id_proprietarios)
-                if isinstance(proprietario_ids, list):
-                    for prop_id in proprietario_ids:
-                        proprietario = db.query(Proprietario).filter(Proprietario.id == prop_id).first()
-                        if not proprietario:
-                            raise HTTPException(status_code=400, detail=f"Proprietário com ID {prop_id} não encontrado")
-            except json.JSONDecodeError:
-                raise HTTPException(status_code=400, detail="id_proprietarios deve ser um JSON array válido")
-        
-        # Criar o novo alias
-        new_alias = Alias(
-            alias=alias_data.alias,
-            id_proprietarios=alias_data.id_proprietarios
-        )
-        
+        new_alias = Alias(**alias_data.dict())
         db.add(new_alias)
         db.commit()
         db.refresh(new_alias)
-        
         return new_alias.to_dict()
-    
-    except HTTPException:
-        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro ao criar alias: {str(e)}")
@@ -179,45 +185,28 @@ async def atualizar_extra(
     alias_id: int,
     alias_data: AliasUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(verify_admin_access)
+    current_user: Usuario = Depends(verify_admin_access)
 ):
     """Atualizar um alias existente"""
+    alias_obj = db.query(Alias).filter(Alias.id == alias_id).first()
+    if not alias_obj:
+        raise HTTPException(status_code=404, detail="Alias não encontrado")
+
+    if alias_data.alias and alias_data.alias != alias_obj.alias:
+        if db.query(Alias).filter(Alias.alias == alias_data.alias).first():
+            raise HTTPException(status_code=400, detail="Já existe um alias com este nome")
+
+    if alias_data.id_proprietarios is not None:
+        await validar_e_obter_proprietarios(db, alias_data.id_proprietarios)
+
     try:
-        alias_obj = db.query(Alias).filter(Alias.id == alias_id).first()
-        if not alias_obj:
-            raise HTTPException(status_code=404, detail="Alias não encontrado")
-        
-        # Verificar se o novo nome já existe (se foi fornecido)
-        if alias_data.alias and alias_data.alias != alias_obj.alias:
-            existing_alias = db.query(Alias).filter(Alias.alias == alias_data.alias).first()
-            if existing_alias:
-                raise HTTPException(status_code=400, detail="Já existe um alias com este nome")
-        
-        # Verificar proprietários se fornecidos
-        if alias_data.id_proprietarios:
-            try:
-                proprietario_ids = json.loads(alias_data.id_proprietarios)
-                if isinstance(proprietario_ids, list):
-                    for prop_id in proprietario_ids:
-                        proprietario = db.query(Proprietario).filter(Proprietario.id == prop_id).first()
-                        if not proprietario:
-                            raise HTTPException(status_code=400, detail=f"Proprietário com ID {prop_id} não encontrado")
-            except json.JSONDecodeError:
-                raise HTTPException(status_code=400, detail="id_proprietarios deve ser um JSON array válido")
-        
-        # Atualizar campos
-        if alias_data.alias:
-            alias_obj.alias = alias_data.alias
-        if alias_data.id_proprietarios is not None:
-            alias_obj.id_proprietarios = alias_data.id_proprietarios
+        update_data = alias_data.dict(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(alias_obj, key, value)
         
         db.commit()
         db.refresh(alias_obj)
-        
         return alias_obj.to_dict()
-    
-    except HTTPException:
-        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro ao atualizar alias: {str(e)}")
@@ -226,7 +215,7 @@ async def atualizar_extra(
 async def deletar_extra(
     alias_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(verify_admin_access)
+    current_user: Usuario = Depends(verify_admin_access)
 ):
     """Deletar um alias"""
     try:
@@ -249,44 +238,27 @@ async def deletar_extra(
 async def obter_proprietarios_do_alias(
     alias_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(is_admin)
+    current_user: Usuario = Depends(is_admin)
 ):
     """Obter a lista detalhada de proprietários de um alias"""
-    try:
-        alias_obj = db.query(Alias).filter(Alias.id == alias_id).first()
-        if not alias_obj:
-            raise HTTPException(status_code=404, detail="Alias não encontrado")
-        
-        if not alias_obj.id_proprietarios:
-            return {
-                "alias": alias_obj.alias,
-                "proprietarios": []
-            }
-        
+    alias_obj = db.query(Alias).filter(Alias.id == alias_id).first()
+    if not alias_obj:
+        raise HTTPException(status_code=404, detail="Alias não encontrado")
+
+    proprietarios_list = []
+    if alias_obj.id_proprietarios:
         try:
             proprietario_ids = json.loads(alias_obj.id_proprietarios)
-            proprietarios = []
-            
-            for prop_id in proprietario_ids:
-                proprietario = db.query(Proprietario).filter(Proprietario.id == prop_id).first()
-                if proprietario:
-                    proprietarios.append({
-                        "id": proprietario.id,
-                        "nome": proprietario.nome,
-                        "sobrenome": proprietario.sobrenome
-                    })
-            
-            return {
-                "alias": alias_obj.alias,
-                "proprietarios": proprietarios
-            }
-        
-        except json.JSONDecodeError:
-            return {
-                "alias": alias_obj.alias,
-                "proprietarios": [],
-                "erro": "Dados de proprietários inválidos"
-            }
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao obter proprietários do alias: {str(e)}")
+            if proprietario_ids:
+                proprietarios = db.query(Proprietario).filter(Proprietario.id.in_(proprietario_ids)).all()
+                proprietarios_list = [
+                    {"id": p.id, "nome": p.nome, "sobrenome": p.sobrenome} for p in proprietarios
+                ]
+        except (json.JSONDecodeError, TypeError):
+            # Se o JSON for inválido, simplesmente retorna a lista vazia mas loga o erro.
+            print(f"[ERROR] JSON inválido para alias ID: {alias_id}")
+
+    return {
+        "alias": alias_obj.alias,
+        "proprietarios": proprietarios_list
+    }

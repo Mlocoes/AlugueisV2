@@ -6,12 +6,13 @@ import uuid
 import pandas as pd
 import json
 import tempfile
+import re
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 from fastapi import APIRouter, HTTPException, UploadFile, File, Query, Depends, Response
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, text, desc
+from sqlalchemy import and_, text, desc, tuple_
 
 from config import get_db, UPLOAD_DIR
 from models_final import AluguelSimples, Proprietario as Propietario, Imovel as Inmueble, Participacao as Participacion, Usuario, LogImportacao as LogImportacaoSimple
@@ -178,10 +179,15 @@ class FileProcessor:
         if missing_columns:
             errors.append(f"Colunas faltantes: {missing_columns}")
         
+        # Regex simples para validação de e-mail
+        email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+
         # Validar dados
         for idx, row in df.iterrows():
             nome_col = next((col for col in df.columns if col.lower() in ['nome', 'nombre']), None)
             sobrenome_col = next((col for col in df.columns if col.lower() in ['sobrenome', 'apellido']), None)
+            email_col = next((col for col in df.columns if col.lower() in ['email', 'e-mail', 'correo']), None)
+            documento_col = next((col for col in df.columns if col.lower() in ['documento']), None)
             
             # Erros críticos (impedem importação)
             if nome_col and (pd.isna(row.get(nome_col, '')) or str(row.get(nome_col, '')).strip() == ''):
@@ -190,8 +196,11 @@ class FileProcessor:
             if sobrenome_col and (pd.isna(row.get(sobrenome_col, '')) or str(row.get(sobrenome_col, '')).strip() == ''):
                 errors.append(f"Linha {idx + 2}: Sobrenome vazio")
             
+            if email_col and pd.notna(row.get(email_col, '')) and not re.match(email_regex, str(row.get(email_col, '')).strip()):
+                errors.append(f"Linha {idx + 2}: E-mail inválido")
+
             # Advertências (não impedem importação)
-            if pd.isna(row.get('documento', '')) or str(row.get('documento', '')).strip() == '':
+            if documento_col and (pd.isna(row.get(documento_col, '')) or str(row.get(documento_col, '')).strip() == ''):
                 warnings.append(f"Linha {idx + 2}: Documento vazio")
         
         return {
@@ -226,19 +235,62 @@ class FileProcessor:
         }
     
     def validate_participaciones(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Validar datos de participaciones"""
+        """Validar dados de participações com busca em lote."""
         errors = []
-        required_columns = ['inmueble_id', 'propietario_id', 'porcentaje']
+        required_columns = ['imovel_id', 'proprietario_id', 'porcentagem']
         
         df_columns_lower = [col.lower() for col in df.columns]
         missing_columns = [col for col in required_columns if col not in df_columns_lower]
         
         if missing_columns:
-            errors.append(f"Columnas faltantes: {missing_columns}")
-        
+            errors.append(f"Colunas faltantes: {missing_columns}")
+            return { "valid": False, "errors": errors, "total_rows": len(df) }
+
+        # Coletar todos os IDs para validação em lote
+        imovel_ids = pd.to_numeric(df['imovel_id'], errors='coerce').dropna().unique().tolist()
+        proprietario_ids = pd.to_numeric(df['proprietario_id'], errors='coerce').dropna().unique().tolist()
+
+        # Buscar IDs existentes no banco de dados
+        existing_imovel_ids = {id[0] for id in self.db.query(Inmueble.id).filter(Inmueble.id.in_(imovel_ids)).all()}
+        existing_proprietario_ids = {id[0] for id in self.db.query(Propietario.id).filter(Propietario.id.in_(proprietario_ids)).all()}
+
         for idx, row in df.iterrows():
-            if pd.isna(row.get('porcentaje', 0)) or row.get('porcentaje', 0) <= 0:
-                errors.append(f"Fila {idx + 2}: Porcentaje inválido")
+            imovel_id = row.get('imovel_id')
+            proprietario_id = row.get('proprietario_id')
+            porcentagem = row.get('porcentagem')
+
+            # Validar imovel_id
+            if pd.isna(imovel_id):
+                errors.append(f"Linha {idx + 2}: imovel_id vazio")
+            else:
+                try:
+                    imovel_id = int(imovel_id)
+                    if imovel_id not in existing_imovel_ids:
+                        errors.append(f"Linha {idx + 2}: Imóvel com ID {imovel_id} não encontrado")
+                except (ValueError, TypeError):
+                    errors.append(f"Linha {idx + 2}: imovel_id deve ser um número inteiro")
+            
+            # Validar proprietario_id
+            if pd.isna(proprietario_id):
+                errors.append(f"Linha {idx + 2}: proprietario_id vazio")
+            else:
+                try:
+                    proprietario_id = int(proprietario_id)
+                    if proprietario_id not in existing_proprietario_ids:
+                        errors.append(f"Linha {idx + 2}: Proprietário com ID {proprietario_id} não encontrado")
+                except (ValueError, TypeError):
+                    errors.append(f"Linha {idx + 2}: proprietario_id deve ser um número inteiro")
+
+            # Validar porcentagem
+            if pd.isna(porcentagem):
+                errors.append(f"Linha {idx + 2}: porcentagem vazia")
+            else:
+                try:
+                    porcentagem = float(porcentagem)
+                    if not (0 <= porcentagem <= 100):
+                        errors.append(f"Linha {idx + 2}: porcentagem deve estar entre 0 e 100")
+                except (ValueError, TypeError):
+                    errors.append(f"Linha {idx + 2}: porcentagem deve ser um número")
         
         return {
             "valid": len(errors) == 0,
@@ -249,7 +301,7 @@ class FileProcessor:
     def validate_alquileres(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Validar datos de alquileres"""
         errors = []
-        required_columns = ['mes', 'ano', 'valor_alquiler_propietario', 'inmueble_id', 'propietario_id']
+        required_columns = ['mes', 'ano', 'valor_alquiler_propietario', 'inmueble_id', 'proprietario_id']
         
         df_columns_lower = [col.lower() for col in df.columns]
         missing_columns = [col for col in required_columns if col not in df_columns_lower]
@@ -323,7 +375,7 @@ async def upload_file(file: UploadFile = File(...), admin_user: Usuario = Depend
         raise HTTPException(status_code=500, detail=f"Error al subir archivo: {str(e)}")
 
 @router.post("/process/{file_id}")
-async def process_file(file_id: str, admin_user: Usuario = Depends(is_admin)):
+async def process_file(file_id: str, db: Session = Depends(get_db), admin_user: Usuario = Depends(is_admin)):
     """Procesar archivo subido"""
     try:
         # Verificar que el archivo existe
@@ -378,7 +430,7 @@ async def process_file(file_id: str, admin_user: Usuario = Depends(is_admin)):
         raise HTTPException(status_code=500, detail=f"Error al procesar archivo: {str(e)}")
 
 @router.post("/import/{file_id}")
-async def import_data(file_id: str, admin_user: Usuario = Depends(is_admin)):
+async def import_data(file_id: str, db: Session = Depends(get_db), admin_user: Usuario = Depends(is_admin)):
     """Importar datos procesados a la base de datos"""
     try:
         # Verificar que el archivo existe y está procesado
@@ -455,8 +507,9 @@ async def import_data(file_id: str, admin_user: Usuario = Depends(is_admin)):
 
 async def import_propietarios(df: pd.DataFrame, db: Session) -> int:
     """Importar proprietários desde DataFrame"""
+    new_proprietarios = []
     count = 0
-    
+
     # Mapeamento de colunas para maior flexibilidade
     column_mapping = {
         'nome': ['nome', 'Nome', 'NOME', 'nombre', 'Nombre', 'NOMBRE'],
@@ -480,172 +533,218 @@ async def import_propietarios(df: pd.DataFrame, db: Session) -> int:
             if name in row.index:
                 return row.get(name)
         return None
+
+    # Bulk Fetching: Coletar todos os documentos e nomes+sobrenomes para verificar existência
+    documentos_to_check = df.apply(lambda row: str(get_column_value(row, 'documento') or '').strip(), axis=1).tolist()
+    nomes_sobrenomes_to_check = df.apply(lambda row: (str(get_column_value(row, 'nome') or '').strip(), str(get_column_value(row, 'sobrenome') or '').strip()), axis=1).tolist()
+
+    existing_proprietarios_by_doc = {p.documento: p for p in db.query(Propietario).filter(Propietario.documento.in_(documentos_to_check)).all() if p.documento}
+    existing_proprietarios_by_nome_sobrenome = {
+        (p.nome, p.sobrenome): p for p in db.query(Propietario).filter(
+            tuple_(Propietario.nome, Propietario.sobrenome).in_(nomes_sobrenomes_to_check)
+        ).all()
+    }
     
     for index, row in df.iterrows():
         try:
             nome = str(get_column_value(row, 'nome') or '').strip()
             sobrenome = str(get_column_value(row, 'sobrenome') or '').strip()
-            documento = str(get_column_value(row, 'documento') or '').strip()
             
-            # Validar dados mínimos requeridos (agora documento é opcional)
+            doc_val = get_column_value(row, 'documento')
+            documento = str(doc_val).strip() if pd.notna(doc_val) else ""
+            if documento.lower() == 'nan':
+                documento = ""
+
             if not nome or not sobrenome:
                 print(f"Pulando linha {index}: dados faltantes - Nome: '{nome}', Sobrenome: '{sobrenome}'")
                 continue
             
-            # Verificar se já existe (usar nome+sobrenome se documento estiver vazio)
-            if documento:
-                existing = db.query(Propietario).filter(
-                    Propietario.documento == documento
-                ).first()
-            else:
-                existing = db.query(Propietario).filter(
-                    and_(
-                        Propietario.nome == nome,
-                        Propietario.sobrenome == sobrenome
-                    )
-                ).first()
+            # Verificar duplicidade usando os dados pré-carregados
+            is_duplicate = False
+            if documento and documento in existing_proprietarios_by_doc:
+                is_duplicate = True
+            elif (nome, sobrenome) in existing_proprietarios_by_nome_sobrenome:
+                is_duplicate = True
             
-            if existing:
+            if is_duplicate:
                 continue  # Pular duplicados
             
-            # Criar novo proprietário
-            propietario = Propietario(
-                nome=nome,
-                sobrenome=sobrenome,
-                nombre_completo=f"{nome} {sobrenome}".strip(),
-                tipo_documento=str(get_column_value(row, 'tipo_documento') or 'CPF'),
-                documento=documento if documento else None,
-                email=str(get_column_value(row, 'email') or '').strip() if pd.notna(get_column_value(row, 'email')) else None,
-                telefono=str(get_column_value(row, 'telefone') or '').strip() if pd.notna(get_column_value(row, 'telefone')) else None,
-                endereco=str(get_column_value(row, 'endereco') or '').strip() if pd.notna(get_column_value(row, 'endereco')) else None,
-                banco=str(get_column_value(row, 'banco') or '').strip() if pd.notna(get_column_value(row, 'banco')) else None,
-                agencia=str(get_column_value(row, 'agencia') or '').strip() if pd.notna(get_column_value(row, 'agencia')) else None,
-                cuenta=str(get_column_value(row, 'conta') or '').strip() if pd.notna(get_column_value(row, 'conta')) else None,
-                tipo_cuenta=str(get_column_value(row, 'tipo_conta') or '').strip() if pd.notna(get_column_value(row, 'tipo_conta')) else None,
-                activo=bool(get_column_value(row, 'ativo') or True)
-            )
-            
-            db.add(propietario)
-            count += 1
+            propietario_data = {
+                "nome": nome,
+                "sobrenome": sobrenome,
+                "nombre_completo": f"{nome} {sobrenome}".strip(),
+                "tipo_documento": str(get_column_value(row, 'tipo_documento') or 'CPF'),
+                "documento": documento if documento else None,
+                "email": str(get_column_value(row, 'email') or '').strip() if pd.notna(get_column_value(row, 'email')) else None,
+                "telefono": str(get_column_value(row, 'telefone') or '').strip() if pd.notna(get_column_value(row, 'telefone')) else None,
+                "endereco": str(get_column_value(row, 'endereco') or '').strip() if pd.notna(get_column_value(row, 'endereco')) else None,
+                "banco": str(get_column_value(row, 'banco') or '').strip() if pd.notna(get_column_value(row, 'banco')) else None,
+                "agencia": str(get_column_value(row, 'agencia') or '').strip() if pd.notna(get_column_value(row, 'agencia')) else None,
+                "cuenta": str(get_column_value(row, 'conta') or '').strip() if pd.notna(get_column_value(row, 'conta')) else None,
+                "tipo_cuenta": str(get_column_value(row, 'tipo_conta') or '').strip() if pd.notna(get_column_value(row, 'tipo_conta')) else None,
+                "ativo": bool(get_column_value(row, 'ativo') or True)
+            }
+            new_proprietarios.append(propietario_data)
             
         except Exception as e:
-            print(f"Erro importando proprietário na linha {index}: {e}")
+            print(f"Erro processando proprietário na linha {index}: {e}")
             continue
+    
+    if new_proprietarios:
+        db.bulk_insert_mappings(Propietario, new_proprietarios)
+        count = len(new_proprietarios)
     
     return count
 
 async def import_inmuebles(df: pd.DataFrame, db: Session) -> int:
     """Importar inmuebles desde DataFrame"""
+    new_inmuebles_data = []
     count = 0
+
+    # Bulk Fetching: Coletar todos os nomes de imóveis para verificar existência
+    nomes_to_check = df.apply(lambda row: str(row.get('nome', '')).strip(), axis=1).tolist()
+    existing_inmuebles_by_nome = {i.nome: i for i in db.query(Inmueble).filter(Inmueble.nome.in_(nomes_to_check)).all()}
     
     for _, row in df.iterrows():
         try:
-            # Verificar si ya existe
-            existing = db.query(Inmueble).filter(
-                Inmueble.nome == str(row.get('nome', ''))
-            ).first()
+            nome = str(row.get('nome', '')).strip()
             
-            if existing:
-                continue  # Skip duplicados
+            if not nome:
+                continue # Pular linhas sem nome
+
+            # Verificar duplicidade usando os dados pré-carregados
+            if nome in existing_inmuebles_by_nome:
+                continue  # Pular duplicados
             
-            # Crear nuevo inmueble
-            inmueble = Inmueble(
-                nome=str(row.get('nome', '')).strip(),
-                tipo=str(row.get('tipo', '')).strip() if pd.notna(row.get('tipo')) else None,
-                endereco_completo=str(row.get('endereco_completo', '')).strip(),
-                rua=str(row.get('rua', '')).strip() if pd.notna(row.get('rua')) else None,
-                numero=str(row.get('numero', '')).strip() if pd.notna(row.get('numero')) else None,
-                apartamento=str(row.get('apartamento', '')).strip() if pd.notna(row.get('apartamento')) else None,
-                bairro=str(row.get('bairro', '')).strip() if pd.notna(row.get('bairro')) else None,
-                ciudad=str(row.get('ciudad', '')).strip() if pd.notna(row.get('ciudad')) else None,
-                estado=str(row.get('estado', '')).strip() if pd.notna(row.get('estado')) else None,
-                cep=str(row.get('cep', '')).strip() if pd.notna(row.get('cep')) else None,
-                quartos=int(row.get('quartos', 0)) if pd.notna(row.get('quartos')) else None,
-                banheiros=int(row.get('banheiros', 0)) if pd.notna(row.get('banheiros')) else None,
-                garagens=int(row.get('garagens', 0)) if pd.notna(row.get('garagens')) else None,
-                area_total=float(row.get('area_total', 0)) if pd.notna(row.get('area_total')) else None,
-                area_construida=float(row.get('area_construida', 0)) if pd.notna(row.get('area_construida')) else None,
-                valor_cadastral=float(row.get('valor_cadastral', 0)) if pd.notna(row.get('valor_cadastral')) else None,
-                valor_mercado=float(row.get('valor_mercado', 0)) if pd.notna(row.get('valor_mercado')) else None,
-                iptu_anual=float(row.get('iptu_anual', 0)) if pd.notna(row.get('iptu_anual')) else None,
-                condominio_mensal=float(row.get('condominio_mensal', 0)) if pd.notna(row.get('condominio_mensal')) else None,
-                observacoes=str(row.get('observacoes', '')).strip() if pd.notna(row.get('observacoes')) else None,
-                activo=bool(row.get('activo', True))
-            )
-            
-            db.add(inmueble)
-            count += 1
+            # Criar novo inmueble
+            inmueble_data = {
+                "nome": nome,
+                "tipo": str(row.get('tipo', '')).strip() if pd.notna(row.get('tipo')) else None,
+                "endereco_completo": str(row.get('endereco_completo', '')).strip(),
+                "rua": str(row.get('rua', '')).strip() if pd.notna(row.get('rua')) else None,
+                "numero": str(row.get('numero', '')).strip() if pd.notna(row.get('numero')) else None,
+                "apartamento": str(row.get('apartamento', '')).strip() if pd.notna(row.get('apartamento')) else None,
+                "bairro": str(row.get('bairro', '')).strip() if pd.notna(row.get('bairro')) else None,
+                "ciudad": str(row.get('ciudad', '')).strip() if pd.notna(row.get('ciudad')) else None,
+                "estado": str(row.get('estado', '')).strip() if pd.notna(row.get('estado')) else None,
+                "cep": str(row.get('cep', '')).strip() if pd.notna(row.get('cep')) else None,
+                "quartos": int(row.get('quartos', 0)) if pd.notna(row.get('quartos')) else None,
+                "banheiros": int(row.get('banheiros', 0)) if pd.notna(row.get('banheiros')) else None,
+                "garagens": int(row.get('garagens', 0)) if pd.notna(row.get('garagens')) else None,
+                "area_total": float(row.get('area_total', 0)) if pd.notna(row.get('area_total')) else None,
+                "area_construida": float(row.get('area_construida', 0)) if pd.notna(row.get('area_construida')) else None,
+                "valor_cadastral": float(row.get('valor_cadastral', 0)) if pd.notna(row.get('valor_cadastral')) else None,
+                "valor_mercado": float(row.get('valor_mercado', 0)) if pd.notna(row.get('valor_mercado')) else None,
+                "iptu_anual": float(row.get('iptu_anual', 0)) if pd.notna(row.get('iptu_anual')) else None,
+                "condominio_mensal": float(row.get('condominio_mensal', 0)) if pd.notna(row.get('condominio_mensal')) else None,
+                "observacoes": str(row.get('observacoes', '')).strip() if pd.notna(row.get('observacoes')) else None,
+                "activo": bool(row.get('activo', True))
+            }
+            new_inmuebles_data.append(inmueble_data)
             
         except Exception as e:
-            print(f"Error importando inmueble: {e}")
+            print(f"Error processando inmueble: {e}")
             continue
+    
+    if new_inmuebles_data:
+        db.bulk_insert_mappings(Inmueble, new_inmuebles_data)
+        count = len(new_inmuebles_data)
     
     return count
 
 async def import_participaciones(df: pd.DataFrame, db: Session) -> int:
     """Importar participaciones desde DataFrame"""
+    new_participaciones = []
+    updated_participaciones = []
     count = 0
+
+    # Bulk Fetching: Coletar todos os pares (imovel_id, proprietario_id) para verificar existência
+    participacao_pairs_to_check = df.apply(lambda row: (
+        int(row.get('imovel_id', 0)) if pd.notna(row.get('imovel_id')) else None,
+        int(row.get('proprietario_id', 0)) if pd.notna(row.get('proprietario_id')) else None
+    ), axis=1).tolist()
+
+    # Filtrar pares inválidos (onde imovel_id ou proprietario_id é None)
+    valid_participacao_pairs = [p for p in participacao_pairs_to_check if p[0] is not None and p[1] is not None]
+
+    existing_participaciones = {
+        (p.imovel_id, p.proprietario_id): p
+        for p in db.query(Participacion).filter(
+            tuple_(Participacion.imovel_id, Participacion.proprietario_id).in_(valid_participacao_pairs)
+        ).all()
+    }
     
     for _, row in df.iterrows():
         try:
-            imovel_id = int(row.get('imovel_id', 0))
-            proprietario_id = int(row.get('proprietario_id', 0))
-            porcentagem = float(row.get('porcentagem', 0))
+            imovel_id = int(row.get('imovel_id', 0)) if pd.notna(row.get('imovel_id')) else None
+            proprietario_id = int(row.get('proprietario_id', 0)) if pd.notna(row.get('proprietario_id')) else None
+            porcentagem = float(row.get('porcentagem', 0)) if pd.notna(row.get('porcentagem')) else 0.0
+            ativo = bool(row.get('ativo', True))
+
+            if imovel_id is None or proprietario_id is None:
+                print(f"Pulando linha: imovel_id ou proprietario_id inválido - Imovel: {imovel_id}, Proprietario: {proprietario_id}")
+                continue
             
-            # Verificar si ya existe
-            existing = db.query(Participacion).filter(
-                and_(
-                    Participacion.imovel_id == imovel_id,
-                    Participacion.proprietario_id == proprietario_id
-                )
-            ).first()
+            participacion_key = (imovel_id, proprietario_id)
+            existing_participacion = existing_participaciones.get(participacion_key)
             
-            if existing:
+            if existing_participacion:
                 # Actualizar porcentaje existente
-                existing.porcentagem = porcentagem
+                updated_participaciones.append({
+                    "id": existing_participacion.id,
+                    "porcentagem": porcentagem,
+                    "ativo": ativo
+                })
             else:
                 # Crear nueva participación
-                participacion = Participacion(
-                    imovel_id=imovel_id,
-                    proprietario_id=proprietario_id,
-                    porcentagem=porcentagem,
-                    ativo=bool(row.get('activo', True))
-                )
-                db.add(participacion)
-                count += 1
+                new_participaciones.append({
+                    "imovel_id": imovel_id,
+                    "proprietario_id": proprietario_id,
+                    "porcentagem": porcentagem,
+                    "ativo": ativo
+                })
             
         except Exception as e:
             print(f"Error importando participación: {e}")
             continue
     
+    if new_participaciones:
+        db.bulk_insert_mappings(Participacion, new_participaciones)
+        count += len(new_participaciones)
+    
+    if updated_participaciones:
+        db.bulk_update_mappings(Participacion, updated_participaciones)
+        count += len(updated_participaciones)
+
     return count
 
 async def import_alquileres(df: pd.DataFrame, db: Session) -> int:
     """Importar alquileres desde DataFrame"""
-    count = 0
+    new_alquileres_data = []
     
     for _, row in df.iterrows():
         try:
-            # Crear nuevo alquiler
-            alquiler = AluguelSimples(
-                imovel_id=int(row.get('imovel_id', 0)) if pd.notna(row.get('imovel_id')) else None,
-                proprietario_id=int(row.get('proprietario_id', 0)) if pd.notna(row.get('proprietario_id')) else None,
-                mes=int(row.get('mes', 1)),
-                ano=int(row.get('ano', datetime.now().year)),
-                valor_aluguel_proprietario=float(row.get('valor_aluguel_proprietario', 0)),
-                taxa_administracao_total=float(row.get('taxa_administracao_total', 0)),
-                taxa_administracao_proprietario=float(row.get('taxa_administracao_proprietario', 0)),
-                valor_liquido_proprietario=float(row.get('valor_liquido_proprietario', 0))
-            )
-            
-            db.add(alquiler)
-            count += 1
+            alquiler_data = {
+                "imovel_id": int(row.get('imovel_id', 0)) if pd.notna(row.get('imovel_id')) else None,
+                "proprietario_id": int(row.get('proprietario_id', 0)) if pd.notna(row.get('proprietario_id')) else None,
+                "mes": int(row.get('mes', 1)),
+                "ano": int(row.get('ano', datetime.now().year)),
+                "valor_aluguel_proprietario": float(row.get('valor_aluguel_propietario', 0)),
+                "taxa_administracao_total": float(row.get('taxa_administracao_total', 0)),
+                "taxa_administracao_proprietario": float(row.get('taxa_administracao_proprietario', 0)),
+                "valor_liquido_proprietario": float(row.get('valor_liquido_proprietario', 0))
+            }
+            new_alquileres_data.append(alquiler_data)
             
         except Exception as e:
-            print(f"Error importando alquiler: {e}")
+            print(f"Error processando alquiler en la fila: {e}")
             continue
     
-    return count
+    if new_alquileres_data:
+        db.bulk_insert_mappings(AluguelSimples, new_alquileres_data)
+        return len(new_alquileres_data)
+    
+    return 0
 
 @router.get("/files")
 async def list_uploaded_files(current_user: Usuario = Depends(verify_token)):

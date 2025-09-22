@@ -24,47 +24,22 @@ const AppConfig = {
 
         // Método para detectar entorno y configurar URL base
     async initNetwork() {
-        const hostname = window.location.hostname;
-        const protocol = window.location.protocol;
-        const isHttps = protocol === 'https:';
-        
-        console.log('🌐 Detectando entorno de ejecução...');
-        console.log(`   Hostname: ${hostname}`);
-        console.log(`   Protocol: ${protocol}`);
-        
-        // Forzar la configuración para zeus.kronos.cloudns.ph
-        if (hostname === 'zeus.kronos.cloudns.ph') {
-            this.api.baseUrl = 'http://zeus.kronos.cloudns.ph:8000';
-            console.log('🏛️ Modo producción Zeus detectado - FORZADO');
-        } else if (isHttps) {
-            // Estamos usando Traefik con SSL - usar el mismo dominio
-            this.api.baseUrl = `${protocol}//${hostname}`;
-            console.log('🔒 Modo Traefik detectado (HTTPS) - mismo dominio');
-        } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
-            // Estamos en desarrollo local
-            this.api.baseUrl = 'http://localhost:8000';
-            console.log('🏠 Modo desarrollo local detectado');
-        } else {
-            // Estamos en red local sin Traefik
-            this.api.baseUrl = `http://${hostname}:8000`;
-            console.log('🌐 Modo red local detectado');
-        }
-        
-        console.log(`✅ URL base configurada: ${this.api.baseUrl}`);
-        
-        // Probar conectividad con el backend
+        // Para el entorno Docker con proxy NGINX, siempre usamos una URL base relativa.
+        // NGINX se encarga de redirigir las llamadas /api/ al backend.
+        this.api.baseUrl = '';
+        console.log('✅ Configuración de red unificada para modo proxy.');
+
+        // Probar conectividad con el backend a través del proxy.
         try {
-            const response = await fetch(`${this.api.baseUrl}/api/health`);
+            // Usamos la URL relativa que el proxy NGINX interceptará.
+            const response = await fetch('/api/health');
             if (response.ok) {
-                console.log('✅ Conectividad con backend confirmada');
+                console.log('✅ Conectividad con backend confirmada vía proxy.');
             } else {
                 console.warn('⚠️ Backend responde pero con error:', response.status);
             }
         } catch (error) {
-            console.error('❌ Error conectando con backend:', error.message);
-            // Fallback a modo proxy nginx relativo
-            this.api.baseUrl = '';
-            console.log('🔄 Fallback a modo proxy relativo');
+            console.error('❌ Error conectando con backend vía proxy:', error.message);
         }
     },
 

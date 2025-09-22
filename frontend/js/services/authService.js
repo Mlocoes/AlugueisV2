@@ -98,8 +98,8 @@ class AuthService {
      */
     restoreFromLocalStorage() {
         try {
-            const token = localStorage.getItem('token');
-            const userDataString = localStorage.getItem('userData');
+            const token = localStorage.getItem(this.tokenKey);
+            const userDataString = localStorage.getItem(this.userKey);
             
             if (token && userDataString && userDataString !== 'undefined' && userDataString !== 'null') {
                 const userData = JSON.parse(userDataString);
