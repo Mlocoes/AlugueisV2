@@ -18,7 +18,6 @@ class ImoveisModule {
         this.apiService = window.apiService;
         this.uiManager = window.uiManager;
         this.modalManager = null; // Será inicializado no init
-        this.modalManagerImportar = null; // Manager para o modal de importação
         this.imoveis = [];
         this.currentEditId = null;
         this.initialized = false;
@@ -30,7 +29,6 @@ class ImoveisModule {
 
         // Inicializar ModalManagers
         this.modalManager = new ModalManager('novo-imovel-modal', 'edit-imovel-modal');
-        this.modalManagerImportar = new ModalManager('novo-imovel-importar-modal');
         
         const confirmarExclusaoModalEl = document.getElementById('modal-confirmar-exclusao-imovel');
         if (confirmarExclusaoModalEl) {
@@ -59,19 +57,6 @@ class ImoveisModule {
             });
         }
 
-        // Interceptar submit do formulário de Importar (Novo Imóvel Importar)
-        const formNovoImportar = document.getElementById('form-novo-imovel-importar');
-        if (formNovoImportar) {
-            formNovoImportar.addEventListener('submit', (e) => {
-                logToLocalStorage('[Imoveis] form-novo-imovel-importar submit');
-                console.log('[Imoveis] form-novo-imovel-importar submit');
-                e.preventDefault();
-                const formData = new FormData(formNovoImportar);
-                const data = Object.fromEntries(formData.entries());
-                this.handleCreateData(data, formNovoImportar, 'import');
-            });
-        }
-
         const formEditar = document.getElementById('edit-imovel-form');
         if (formEditar) {
             formEditar.addEventListener('submit', (e) => {
@@ -92,7 +77,7 @@ class ImoveisModule {
         }
 
         // Aplicar el patrón de focus management
-        const modals = ['novo-imovel-modal', 'novo-imovel-importar-modal', 'editar-imovel-modal'];
+        const modals = ['novo-imovel-modal', 'editar-imovel-modal'];
         modals.forEach(modalId => {
             const modalEl = document.getElementById(modalId);
             if (modalEl) {
@@ -150,11 +135,7 @@ class ImoveisModule {
             this.uiManager.showLoading('Criando imóvel...');
             const response = await this.apiService.createImovel(payload);
             if (response && response.success) {
-                if (source === 'import') {
-                    this.modalManagerImportar.fecharModalCadastro();
-                } else {
-                    this.modalManager.fecharModalCadastro();
-                }
+                this.modalManager.fecharModalCadastro();
                 formElement.reset();
                 await this.loadImoveis();
             } else {

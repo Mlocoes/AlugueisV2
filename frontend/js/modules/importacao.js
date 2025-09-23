@@ -4,6 +4,88 @@ class ImportacaoModule {
         this.uiManager = window.uiManager;
     }
 
+    // Função para validar arquivo antes do envio
+    validateFile(file) {
+        const allowedTypes = [
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-excel',
+            'text/csv',
+            'text/tab-separated-values'
+        ];
+        const maxSize = 5 * 1024 * 1024; // 5MB
+
+        if (!allowedTypes.includes(file.type)) {
+            throw new Error('Tipo de arquivo não permitido. Use Excel (.xlsx, .xls), CSV ou TSV.');
+        }
+        if (file.size > maxSize) {
+            throw new Error(`Arquivo muito grande. Máximo permitido: ${maxSize / (1024 * 1024)}MB`);
+        }
+
+        // Verificar conteúdo suspeito em CSV/TSV
+        if (file.type === 'text/csv' || file.type === 'text/tab-separated-values') {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const content = e.target.result;
+                    if (/<script/i.test(content) || /javascript:/i.test(content)) {
+                        reject(new Error('Arquivo contém conteúdo suspeito e foi rejeitado.'));
+                    } else {
+                        resolve(true);
+                    }
+                };
+                reader.onerror = () => reject(new Error('Erro ao ler o arquivo.'));
+                reader.readAsText(file);
+            });
+        }
+        return Promise.resolve(true);
+    }
+
+    // Função para sanitizar dados
+    sanitizeData(data) {
+        if (typeof data === 'string') {
+            return data.replace(/[<>&"']/g, c => ({
+                '<': '&lt;',
+                '>': '&gt;',
+                '&': '&amp;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[c]);
+        }
+        if (Array.isArray(data)) {
+            return data.map(item => this.sanitizeData(item));
+        }
+        if (typeof data === 'object' && data !== null) {
+            const sanitized = {};
+            for (const key in data) {
+                sanitized[this.sanitizeData(key)] = this.sanitizeData(data[key]);
+            }
+            return sanitized;
+        }
+        return data;
+    }
+
+    // Função para tratar mensagens de erro do backend
+    handleBackendError(error) {
+        // Mensagens genéricas para o usuário
+        const userFriendlyMessages = {
+            'Arquivo no encontrado': 'Arquivo não encontrado. Tente fazer upload novamente.',
+            'Archivo físico no encontrado': 'Arquivo corrompido. Faça upload de um novo arquivo.',
+            'Error al procesar archivo': 'Erro ao processar o arquivo. Verifique se o formato está correto.',
+            'Error al subir archivo': 'Erro no upload. Tente novamente.',
+            'Tipo de contenido no permitido': 'Tipo de arquivo não permitido.',
+            'Archivo demasiado grande': 'Arquivo muito grande.',
+            'default': 'Ocorreu um erro inesperado. Tente novamente ou contate o suporte.'
+        };
+
+        const errorMessage = error.message || error.error || error.detail || error;
+        for (const [key, message] of Object.entries(userFriendlyMessages)) {
+            if (errorMessage.includes(key)) {
+                return message;
+            }
+        }
+        return userFriendlyMessages.default;
+    }
+
     init() {
         if (this.initialized) return;
         // Proprietários
@@ -60,6 +142,14 @@ class ImportacaoModule {
             return;
         }
 
+        try {
+            // Validação do arquivo antes do envio
+            await this.validateFile(file);
+        } catch (error) {
+            this.uiManager.showError(`Erro na validação do arquivo: ${error.message}`);
+            return;
+        }
+
         const formData = new FormData();
         formData.append('file', file);
 
@@ -69,7 +159,7 @@ class ImportacaoModule {
             // 1. Upload do arquivo
             const uploadResponse = await this.apiService.upload('/api/upload/', formData);
             if (!uploadResponse.success || !uploadResponse.data.file_id) {
-                throw new Error(uploadResponse.error || 'Falha no upload do arquivo.');
+                throw new Error(this.handleBackendError(uploadResponse));
             }
             const fileId = uploadResponse.data.file_id;
             this.uiManager.showLoading('Arquivo enviado. Processando dados...');
@@ -77,10 +167,10 @@ class ImportacaoModule {
             // 2. Processamento e validação do arquivo
             const processResponse = await this.apiService.post(`/api/upload/process/${fileId}`);
             if (!processResponse.success) {
-                throw new Error(processResponse.error || 'Falha ao processar o arquivo.');
+                throw new Error(this.handleBackendError(processResponse));
             }
 
-            const validationResult = processResponse.data;
+            const validationResult = this.sanitizeData(processResponse.data);
             this._displayValidationResults(validationResult);
 
             if (validationResult.status === 'error') {
@@ -98,13 +188,13 @@ class ImportacaoModule {
                 fileInput.value = ''; // Limpa o input
                 return;
             }
-            
+
             this.uiManager.showLoading('Validação concluída. Importando dados para o sistema...');
 
             // 3. Importação final dos dados
             const importResponse = await this.apiService.post(`/api/upload/import/${fileId}`);
             if (!importResponse.success) {
-                throw new Error(importResponse.error || 'Erro na importação final.');
+                throw new Error(this.handleBackendError(importResponse));
             }
 
             this.uiManager.showSuccess(importResponse.data.message || 'Dados importados com sucesso!');
@@ -117,7 +207,7 @@ class ImportacaoModule {
             this._refreshModules(validationResult.detected_types);
 
         } catch (error) {
-            this.uiManager.showError(`Erro no processo de importação: ${error.message}`);
+            this.uiManager.showError(`Erro no processo de importação: ${this.handleBackendError(error)}`);
         } finally {
             this.uiManager.hideLoading();
         }

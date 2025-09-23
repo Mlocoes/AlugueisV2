@@ -76,8 +76,8 @@ if not SECRET_KEY:
 DEBUG = (os.getenv("DEBUG").lower() == "true") if os.getenv("DEBUG") else (ENV != "production")
 
 # Configurações de upload
-UPLOAD_DIR = os.getenv("UPLOAD_DIR", "backend/uploads")
-STORAGE_DIR = os.getenv("STORAGE_DIR", "backend/storage")
+UPLOAD_DIR = "/tmp/uploads"
+STORAGE_DIR = "/tmp/storage"
 
 # Criar diretórios se não existirem
 os.makedirs(UPLOAD_DIR, exist_ok=True)

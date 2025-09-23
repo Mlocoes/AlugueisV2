@@ -3,7 +3,7 @@ Modelos SQLAlchemy para a Estrutura Final Simplificada
 Sistema de Aluguéis V2 - Migrado para Português
 """
 from datetime import datetime, date
-from sqlalchemy import Column, Integer, String, Text, DateTime, Date, Numeric, Boolean, ForeignKey, func, UniqueConstraint, Interval, CheckConstraint
+from sqlalchemy import Column, Integer, String, Text, DateTime, Date, Numeric, Boolean, ForeignKey, func, UniqueConstraint, Interval, CheckConstraint, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -66,23 +66,25 @@ class Imovel(Base):
     # Relacionamentos
     alugueis = relationship('AluguelSimples', back_populates='imovel')
     participacoes = relationship('Participacao', back_populates='imovel')
+    historico_participacoes = relationship('HistoricoParticipacao', back_populates='imovel')
 
     def __repr__(self):
         return f"<Imovel(nome='{self.nome}')>"
 
     def to_dict(self):
+        import math
         return {
             'id': self.id,
             'uuid': str(self.uuid) if self.uuid else None,
             'nome': self.nome,
             'endereco': self.endereco,
             'tipo_imovel': self.tipo_imovel,
-            'area_total': float(self.area_total) if self.area_total else None,
-            'area_construida': float(self.area_construida) if self.area_construida else None,
-            'valor_cadastral': float(self.valor_cadastral) if self.valor_cadastral else None,
-            'valor_mercado': float(self.valor_mercado) if self.valor_mercado else None,
-            'iptu_mensal': float(self.iptu_mensal) if self.iptu_mensal else None,
-            'condominio_mensal': float(self.condominio_mensal) if self.condominio_mensal else None,
+            'area_total': float(self.area_total) if self.area_total is not None and not math.isnan(self.area_total) else None,
+            'area_construida': float(self.area_construida) if self.area_construida is not None and not math.isnan(self.area_construida) else None,
+            'valor_cadastral': float(self.valor_cadastral) if self.valor_cadastral is not None and not math.isnan(self.valor_cadastral) else None,
+            'valor_mercado': float(self.valor_mercado) if self.valor_mercado is not None and not math.isnan(self.valor_mercado) else None,
+            'iptu_mensal': float(self.iptu_mensal) if self.iptu_mensal is not None and not math.isnan(self.iptu_mensal) else None,
+            'condominio_mensal': float(self.condominio_mensal) if self.condominio_mensal is not None and not math.isnan(self.condominio_mensal) else None,
             'data_cadastro': self.data_cadastro.isoformat() if self.data_cadastro else None,
             'numero_quartos': self.numero_quartos,
             'numero_banheiros': self.numero_banheiros,
@@ -119,6 +121,7 @@ class Proprietario(Base):
     
     alugueis = relationship('AluguelSimples', back_populates='proprietario')
     participacoes = relationship('Participacao', back_populates='proprietario')
+    historico_participacoes = relationship('HistoricoParticipacao', back_populates='proprietario')
 
     @hybrid_property
     def nome_completo(self):
@@ -213,9 +216,10 @@ class Participacao(Base):
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     uuid = Column(UUID(as_uuid=True), default=func.uuid_generate_v4(), unique=True, nullable=False)
-    porcentagem = Column(Numeric(5,2), nullable=False, default=0.00)  # 0.00 a 100.00
+    porcentagem = Column(Numeric(10,8), nullable=False, default=0.00000000)  # 0.00000000 a 100.00000000
     data_registro = Column(DateTime, nullable=False, default=func.current_timestamp())
-    
+    ativo = Column(Boolean, nullable=False, default=True)
+
     __table_args__ = (
         # Constraint única para mesmo imóvel, proprietário e data_registro
         UniqueConstraint('proprietario_id', 'imovel_id', 'data_registro', name='uniq_participacao_data'),
@@ -240,6 +244,52 @@ class Participacao(Base):
             'uuid': str(self.uuid) if self.uuid else None,
             'porcentagem': float(self.porcentagem) if self.porcentagem else 0.00,
             'data_registro': self.data_registro.isoformat() if self.data_registro else None,
+            'imovel_id': self.imovel_id,
+            'proprietario_id': self.proprietario_id
+        }
+
+# ============================================
+# HISTÓRICO DE PARTICIPAÇÕES
+# ============================================
+
+class HistoricoParticipacao(Base):
+    """Tabela de histórico de participações - mantém versões das alterações"""
+    __tablename__ = 'historico_participacoes'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    uuid = Column(UUID(as_uuid=True), default=func.uuid_generate_v4(), unique=True, nullable=False)
+    versao_id = Column(String(50), nullable=False, index=True)  # ID da versão (timestamp ou UUID)
+    data_versao = Column(DateTime, nullable=False, default=func.current_timestamp())
+    porcentagem = Column(Numeric(10,8), nullable=False, default=0.00000000)
+    data_registro_original = Column(DateTime, nullable=False)  # Data da participação original
+    ativo = Column(Boolean, nullable=False, default=True)
+
+    # Chaves estrangeiras
+    imovel_id = Column(Integer, ForeignKey('imoveis.id'), nullable=False)
+    proprietario_id = Column(Integer, ForeignKey('proprietarios.id'), nullable=False)
+
+    # Relacionamentos
+    imovel = relationship('Imovel', back_populates='historico_participacoes')
+    proprietario = relationship('Proprietario', back_populates='historico_participacoes')
+
+    __table_args__ = (
+        # Índice composto para consultas eficientes
+        Index('idx_historico_participacoes_versao_imovel', 'versao_id', 'imovel_id'),
+        Index('idx_historico_participacoes_data', 'data_versao'),
+    )
+
+    def __repr__(self):
+        return f"<HistoricoParticipacao(versao_id={self.versao_id}, imovel_id={self.imovel_id}, proprietario_id={self.proprietario_id}, porcentagem={self.porcentagem}%)>"
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'uuid': str(self.uuid) if self.uuid else None,
+            'versao_id': self.versao_id,
+            'data_versao': self.data_versao.isoformat() if self.data_versao else None,
+            'porcentagem': float(self.porcentagem) if self.porcentagem else 0.00,
+            'data_registro_original': self.data_registro_original.isoformat() if self.data_registro_original else None,
+            'ativo': self.ativo,
             'imovel_id': self.imovel_id,
             'proprietario_id': self.proprietario_id
         }

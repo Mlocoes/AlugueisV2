@@ -1,5 +1,5 @@
 """
-Router para manejo de archivos y sistema de importación completo
+Router para manejo de arquivos y sistema de importação completo
 """
 import os
 import uuid
@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, text, desc, tuple_
 
 from config import get_db, UPLOAD_DIR
-from models_final import AluguelSimples, Proprietario as Propietario, Imovel as Inmueble, Participacao as Participacion, Usuario, LogImportacao as LogImportacaoSimple
+from models_final import AluguelSimples, Proprietario as Propietario, Imovel as Inmueble, Participacao as Participacion, Usuario, LogImportacao as LogImportacaoSimple, HistoricoParticipacao
 from routers.auth import is_admin, verify_token
 
 router = APIRouter(prefix="/api/upload", tags=["upload"])
@@ -36,6 +36,105 @@ async def get_upload_info():
             "GET /api/upload/templates/{template_type} - Descargar plantillas"
         ]
     }
+
+def is_cpf_valid(cpf: str) -> bool:
+    """
+    Validates a CPF number, including check digits.
+    Accepts formatted (XXX.XXX.XXX-XX) or unformatted (XXXXXXXXXXX) strings.
+    """
+    # 1. Remove non-digit characters
+    cpf = re.sub(r'[^\d]', '', cpf)
+
+    # 2. Check for basic invalid cases
+    if len(cpf) != 11 or len(set(cpf)) == 1:
+        return False
+
+    # 3. Calculate the first check digit
+    sum_ = sum(int(cpf[i]) * (10 - i) for i in range(9))
+    remainder = sum_ % 11
+    digit1 = 0 if remainder < 2 else 11 - remainder
+
+    # 4. Validate the first check digit
+    if digit1 != int(cpf[9]):
+        return False
+
+    # 5. Calculate the second check digit
+    sum_ = sum(int(cpf[i]) * (11 - i) for i in range(10))
+    remainder = sum_ % 11
+    digit2 = 0 if remainder < 2 else 11 - remainder
+
+    # 6. Validate the second check digit
+    return digit2 == int(cpf[10])
+
+def is_cnpj_valid(cnpj: str) -> bool:
+    """
+    Validates a CNPJ number, including check digits.
+    Accepts formatted (XX.XXX.XXX/XXXX-XX) or unformatted (XXXXXXXXXXXXXX) strings.
+    """
+    # 1. Remove non-digit characters
+    cnpj = re.sub(r'[^\d]', '', cnpj)
+
+    # 2. Check for basic invalid cases
+    if len(cnpj) != 14 or len(set(cnpj)) == 1:
+        return False
+
+    # 3. Calculate the first check digit
+    weights1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+    sum_ = sum(int(cnpj[i]) * weights1[i] for i in range(12))
+    remainder = sum_ % 11
+    digit1 = 0 if remainder < 2 else 11 - remainder
+
+    # 4. Validate the first check digit
+    if digit1 != int(cnpj[12]):
+        return False
+
+    # 5. Calculate the second check digit
+    weights2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+    sum_ = sum(int(cnpj[i]) * weights2[i] for i in range(13))
+    remainder = sum_ % 11
+    digit2 = 0 if remainder < 2 else 11 - remainder
+
+    # 6. Validate the second check digit
+    return digit2 == int(cnpj[13])
+
+def sanitize_string(value: str) -> str:
+    """Sanitiza uma string removendo tags HTML e caracteres de controle."""
+    if not isinstance(value, str):
+        return str(value) if value is not None else ""
+    
+    # Escapar HTML
+    from html import escape
+    value = escape(value)
+    
+    # Remover caracteres de controle
+    value = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', value)
+    
+    # Limitar tamanho para prevenir ataques
+    return value[:1000] if len(value) > 1000 else value
+
+def validate_email(email: str) -> bool:
+    """Valida formato de e-mail."""
+    if not isinstance(email, str):
+        return False
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email.strip()) is not None
+
+def validate_phone(phone: str) -> bool:
+    """Valida formato de telefone brasileiro."""
+    if not isinstance(phone, str):
+        return False
+    # Remove non-digits
+    phone = re.sub(r'[^\d]', '', phone)
+    # Deve ter 10 ou 11 dígitos (DDD + número)
+    return len(phone) in [10, 11] and phone.startswith(('1', '2', '3', '4', '5', '6', '7', '8', '9'))
+
+def sanitize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """Sanitiza todas as strings em um DataFrame."""
+    df_copy = df.copy()
+    for col in df_copy.columns:
+        if df_copy[col].dtype == 'object':
+            df_copy[col] = df_copy[col].apply(lambda x: sanitize_string(x) if pd.notna(x) else x)
+    return df_copy
 
 class FileProcessor:
     """Procesador de archivos Excel para diferentes tipos de datos"""
@@ -114,6 +213,21 @@ class FileProcessor:
         columns = [col.lower() for col in df.columns]
         columns_text = ' '.join(columns)
         
+        # Detectar participações matriciais (formato especial: Nome, Endereço, VALOR, Nnnn1, Nnnn2, ... ou nomes reais)
+        nnnn_columns = [col for col in df.columns if col.startswith('Nnnn')]
+        # Verificar se tem nomes de proprietários conhecidos
+        proprietario_nomes_conhecidos = ['Jandira', 'Manoel', 'Fabio', 'Carla', 'Armando', 'Suely', 'Felipe', 'Adriana', 'Regina', 'Mario']
+        proprietario_columns_reais = [col for col in df.columns if any(nome in col for nome in proprietario_nomes_conhecidos)]
+        
+        has_matricial_participacoes = (
+            'nome' in columns and 
+            'endereço' in columns and 
+            (len(nnnn_columns) > 0 or len(proprietario_columns_reais) > 0)
+        )
+        
+        if has_matricial_participacoes:
+            return "participacoes_matricial"
+        
         # Detectar imóveis (mais específico primeiro)
         imovel_keywords = ['endereco_completo', 'area_total', 'quartos', 'dormitorios', 'valor_mercado', 'tipo', 'direccion_completa']
         imovel_score = sum(1 for keyword in imovel_keywords if keyword in columns_text)
@@ -155,8 +269,10 @@ class FileProcessor:
                 validation_results[sheet_name] = self.validate_propietarios(df)
             elif data_type == "imoveis":
                 validation_results[sheet_name] = self.validate_inmuebles(df)
+            elif data_type == "participacoes_matricial":
+                validation_results[sheet_name] = self.validate_participacoes_matricial(df)
             elif data_type == "participacoes":
-                validation_results[sheet_name] = self.validate_participaciones(df)
+                validation_results[sheet_name] = self.validate_participacoes(df)
             elif data_type == "alugueis":
                 validation_results[sheet_name] = self.validate_alquileres(df)
             else:
@@ -168,7 +284,7 @@ class FileProcessor:
         return validation_results
     
     def validate_propietarios(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Validar datos de propietarios"""
+        """Validar datos de propietarios con sanitización e validações extras"""
         errors = []
         warnings = []
         required_columns = ['nome', 'sobrenome']
@@ -178,31 +294,45 @@ class FileProcessor:
         
         if missing_columns:
             errors.append(f"Colunas faltantes: {missing_columns}")
-        
-        # Regex simples para validação de e-mail
+            return {"valid": False, "errors": errors, "total_rows": len(df)}
+
         email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
-        # Validar dados
         for idx, row in df.iterrows():
             nome_col = next((col for col in df.columns if col.lower() in ['nome', 'nombre']), None)
             sobrenome_col = next((col for col in df.columns if col.lower() in ['sobrenome', 'apellido']), None)
             email_col = next((col for col in df.columns if col.lower() in ['email', 'e-mail', 'correo']), None)
             documento_col = next((col for col in df.columns if col.lower() in ['documento']), None)
-            
-            # Erros críticos (impedem importação)
+            tipo_documento_col = next((col for col in df.columns if col.lower() in ['tipo_documento']), None)
+            telefone_col = next((col for col in df.columns if col.lower() in ['telefone', 'telefono']), None)
+
             if nome_col and (pd.isna(row.get(nome_col, '')) or str(row.get(nome_col, '')).strip() == ''):
                 errors.append(f"Linha {idx + 2}: Nome vazio")
             
             if sobrenome_col and (pd.isna(row.get(sobrenome_col, '')) or str(row.get(sobrenome_col, '')).strip() == ''):
                 errors.append(f"Linha {idx + 2}: Sobrenome vazio")
             
-            if email_col and pd.notna(row.get(email_col, '')) and not re.match(email_regex, str(row.get(email_col, '')).strip()):
-                errors.append(f"Linha {idx + 2}: E-mail inválido")
+            if email_col and pd.notna(row.get(email_col, '')):
+                email = str(row.get(email_col, '')).strip()
+                if email and not validate_email(email):
+                    errors.append(f"Linha {idx + 2}: E-mail inválido")
 
-            # Advertências (não impedem importação)
-            if documento_col and (pd.isna(row.get(documento_col, '')) or str(row.get(documento_col, '')).strip() == ''):
-                warnings.append(f"Linha {idx + 2}: Documento vazio")
-        
+            if telefone_col and pd.notna(row.get(telefone_col, '')):
+                telefone = str(row.get(telefone_col, '')).strip()
+                if telefone and not validate_phone(telefone):
+                    warnings.append(f"Linha {idx + 2}: Telefone pode estar em formato incorreto")
+
+            if documento_col:
+                documento = str(row.get(documento_col, '')).strip()
+                if not documento:
+                    warnings.append(f"Linha {idx + 2}: Documento vazio")
+                else:
+                    tipo_documento = str(row.get(tipo_documento_col, 'CPF')).strip().upper()
+                    if tipo_documento == 'CPF' and not is_cpf_valid(documento):
+                        errors.append(f"Linha {idx + 2}: CPF inválido")
+                    elif tipo_documento == 'CNPJ' and not is_cnpj_valid(documento):
+                        errors.append(f"Linha {idx + 2}: CNPJ inválido")
+
         return {
             "valid": len(errors) == 0,
             "errors": errors,
@@ -213,28 +343,78 @@ class FileProcessor:
     def validate_inmuebles(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Validar datos de inmuebles"""
         errors = []
-        required_columns = ['nombre', 'direccion_completa']
         
-        df_columns_lower = [col.lower() for col in df.columns]
-        missing_columns = [col for col in required_columns if col not in df_columns_lower]
+        # Mapeamento de colunas para maior flexibilidade
+        column_mapping = {
+            'nome': ['nome', 'Nome', 'NOME', 'nombre', 'Nombre', 'NOMBRE'],
+            'endereco_completo': ['endereco_completo', 'endereço', 'Endereço', 'ENDERECO', 'direccion_completa', 'Dirección Completa', 'DIRECCION_COMPLETA'],
+            'quartos': ['quartos', 'Quartos', 'QUARTOS', 'dormitorios', 'Dormitorios', 'DORMITORIOS'],
+            'banheiros': ['banheiros', 'Banheiros', 'BANHEIROS', 'baños', 'Baños', 'BANOS'],
+            'garagens': ['garagens', 'Garagens', 'GARAGENS', 'cocheras', 'Cocheras', 'COCHERAS'],
+            'area_total': ['area_total', 'Área Total', 'AREA_TOTAL', 'area total', 'Area Total'],
+            'area_construida': ['area_construida', 'Área Construida', 'AREA_CONSTRUIDA', 'area construida', 'Area Construida'],
+            'valor_cadastral': ['valor_cadastral', 'Valor Catastral', 'VALOR_CADASTRAL', 'valor catastral', 'Valor Cadastral'],
+            'valor_mercado': ['valor_mercado', 'Valor Mercado', 'VALOR_MERCADO', 'valor mercado', 'Valor de Mercado'],
+            'iptu_anual': ['iptu_anual', 'IPTU Anual', 'IPTU_ANUAL', 'iptu anual', 'IPTU Anual'],
+            'condominio_mensal': ['condominio_mensal', 'Condominio', 'CONDOMINIO', 'condominio mensal', 'Condomínio Mensal']
+        }
         
-        if missing_columns:
-            errors.append(f"Columnas faltantes: {missing_columns}")
+        # Verificar se pelo menos nome e endereço existem
+        has_nome = any(col in df.columns for col in column_mapping['nome'])
+        has_endereco = any(col in df.columns for col in column_mapping['endereco_completo'])
         
+        if not has_nome:
+            errors.append("Coluna 'nome' (ou variações) não encontrada")
+        if not has_endereco:
+            errors.append("Coluna 'endereço' (ou variações) não encontrada")
+        
+        if not has_nome or not has_endereco:
+            return {"valid": False, "errors": errors, "total_rows": len(df)}
+
+        numeric_cols = ['quartos', 'banheiros', 'garagens', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_anual', 'condominio_mensal']
+
         for idx, row in df.iterrows():
-            if pd.isna(row.get('nombre', '')):
+            # Usar mapeamento flexível para acessar valores
+            nome_val = None
+            for col_name in column_mapping['nome']:
+                if col_name in df.columns:
+                    nome_val = row.get(col_name)
+                    break
+            
+            endereco_val = None
+            for col_name in column_mapping['endereco_completo']:
+                if col_name in df.columns:
+                    endereco_val = row.get(col_name)
+                    break
+            
+            if pd.isna(nome_val) or str(nome_val).strip() == '':
                 errors.append(f"Fila {idx + 2}: Nombre del inmueble vacío")
             
-            if pd.isna(row.get('direccion_completa', '')):
+            if pd.isna(endereco_val) or str(endereco_val).strip() == '':
                 errors.append(f"Fila {idx + 2}: Dirección vacía")
-        
+
+            for field in numeric_cols:
+                col_found = None
+                for col_name in column_mapping.get(field, [field]):
+                    if col_name in df.columns:
+                        col_found = col_name
+                        break
+                
+                if col_found and col_found in row and pd.notna(row[col_found]):
+                    try:
+                        val = float(row[col_found])
+                        if val < 0:
+                            errors.append(f"Fila {idx + 2}: Valor negativo para {field}")
+                    except (ValueError, TypeError):
+                        errors.append(f"Fila {idx + 2}: Valor inválido para {field}")
+
         return {
             "valid": len(errors) == 0,
             "errors": errors,
             "total_rows": len(df)
         }
     
-    def validate_participaciones(self, df: pd.DataFrame) -> Dict[str, Any]:
+    def validate_participacoes(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Validar dados de participações com busca em lote."""
         errors = []
         required_columns = ['imovel_id', 'proprietario_id', 'porcentagem']
@@ -290,7 +470,7 @@ class FileProcessor:
                     if not (0 <= porcentagem <= 100):
                         errors.append(f"Linha {idx + 2}: porcentagem deve estar entre 0 e 100")
                 except (ValueError, TypeError):
-                    errors.append(f"Linha {idx + 2}: porcentagem deve ser um número")
+                    errors.append(f"Linha {idx + 2: } porcentagem deve ser um número")
         
         return {
             "valid": len(errors) == 0,
@@ -301,16 +481,16 @@ class FileProcessor:
     def validate_alquileres(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Validar datos de alquileres"""
         errors = []
-        required_columns = ['mes', 'ano', 'valor_alquiler_propietario', 'inmueble_id', 'proprietario_id']
+        required_columns = ['mes', 'ano', 'valor_aluguel_propietario', 'inmueble_id', 'proprietario_id']
         
         df_columns_lower = [col.lower() for col in df.columns]
         missing_columns = [col for col in required_columns if col not in df_columns_lower]
         
         if missing_columns:
-            errors.append(f"Columnas faltantes: {missing_columns}")
+            errors.append(f"Colunas faltantes: {missing_columns}")
         
         for idx, row in df.iterrows():
-            if pd.isna(row.get('valor_alquiler_propietario', 0)) or row.get('valor_alquiler_propietario', 0) <= 0:
+            if pd.isna(row.get('valor_aluguel_propietario', 0)) or row.get('valor_aluguel_propietario', 0) <= 0:
                 errors.append(f"Fila {idx + 2}: Valor de alquiler inválido")
         
         return {
@@ -318,7 +498,45 @@ class FileProcessor:
             "errors": errors,
             "total_rows": len(df)
         }
-
+    
+    def validate_participacoes_matricial(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """Validar dados de participações no formato matricial"""
+        errors = []
+        
+        # Verificar colunas obrigatórias
+        required_columns = ['Nome', 'Endereço']
+        for col in required_columns:
+            if col not in df.columns:
+                errors.append(f"Coluna obrigatória faltante: {col}")
+        
+        # Verificar se há colunas de proprietário (Nnnn* ou nomes reais)
+        nnnn_columns = [col for col in df.columns if col.startswith('Nnnn')]
+        proprietario_nomes_conhecidos = ['Jandira', 'Manoel', 'Fabio', 'Carla', 'Armando', 'Suely', 'Felipe', 'Adriana', 'Regina', 'Mario']
+        proprietario_columns_reais = [col for col in df.columns if any(nome in col for nome in proprietario_nomes_conhecidos)]
+        
+        if len(nnnn_columns) == 0 and len(proprietario_columns_reais) == 0:
+            errors.append("Nenhuma coluna de proprietário encontrada (Nnnn* ou nomes reais)")
+        
+        # Verificar valores de porcentagem
+        proprietario_columns = nnnn_columns + proprietario_columns_reais
+        for idx, row in df.iterrows():
+            for col in proprietario_columns:
+                if col in df.columns:
+                    valor = row.get(col, 0)
+                    if pd.notna(valor):
+                        try:
+                            porcentagem = float(valor)
+                            if porcentagem < 0 or porcentagem > 1:
+                                errors.append(f"Linha {idx + 2}, coluna {col}: Porcentagem deve estar entre 0 e 1")
+                        except (ValueError, TypeError):
+                            errors.append(f"Linha {idx + 2}, coluna {col}: Valor inválido para porcentagem")
+        
+        return {
+            "valid": len(errors) == 0,
+            "errors": errors,
+            "total_rows": len(df)
+        }
+    
 @router.post("/")
 async def upload_file(file: UploadFile = File(...), admin_user: Usuario = Depends(is_admin)):
     """Subir archivo para procesamiento"""
@@ -371,11 +589,16 @@ async def upload_file(file: UploadFile = File(...), admin_user: Usuario = Depend
             "size": len(content)
         }
         
+    except HTTPException:
+        # Re-lançar HTTPExceptions sem modificar
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al subir archivo: {str(e)}")
+        # Log do erro interno para debugging
+        print(f"Erro interno no upload: {str(e)}")
+        raise HTTPException(status_code=500, detail="Erro interno ao fazer upload do arquivo. Tente novamente.")
 
 @router.post("/process/{file_id}")
-async def process_file(file_id: str, db: Session = Depends(get_db), admin_user: Usuario = Depends(is_admin)):
+async def process_file(file_id: str, db: Session = Depends(get_db)):
     """Procesar archivo subido"""
     try:
         # Verificar que el archivo existe
@@ -397,10 +620,10 @@ async def process_file(file_id: str, db: Session = Depends(get_db), admin_user: 
         if not read_result["success"]:
             raise HTTPException(status_code=400, detail=read_result["error"])
         
-        # Validar datos
+        # Validar dados
         validation_results = processor.validate_data()
         
-        # Compilar errores y advertencias de validación
+        # Compilar erros e advertências de validación
         all_validation_errors = []
         all_validation_warnings = []
         for sheet_name, validation in validation_results.items():
@@ -411,10 +634,18 @@ async def process_file(file_id: str, db: Session = Depends(get_db), admin_user: 
                 for warning in validation["warnings"]:
                     all_validation_warnings.append(f"{sheet_name}: {warning}")
         
+        # Coletar os tipos de dados detectados
+        detected_types = list(set(
+            sheet.get("data_type") 
+            for sheet in read_result.get("sheets_processed", []) 
+            if sheet.get("data_type") != "desconhecido"
+        ))
+
         # Marcar como procesado
         uploaded_files[file_id]["processed"] = True
         uploaded_files[file_id]["process_time"] = datetime.now().isoformat()
         uploaded_files[file_id]["validation_results"] = validation_results
+        uploaded_files[file_id]["detected_types"] = detected_types
         
         return {
             "success": True,
@@ -423,6 +654,7 @@ async def process_file(file_id: str, db: Session = Depends(get_db), admin_user: 
             "validation_errors": all_validation_errors,
             "validation_warnings": all_validation_warnings,
             "total_sheets": read_result["total_sheets"],
+            "detected_types": detected_types,
             "message": "Archivo procesado exitosamente"
         }
         
@@ -430,7 +662,7 @@ async def process_file(file_id: str, db: Session = Depends(get_db), admin_user: 
         raise HTTPException(status_code=500, detail=f"Error al procesar archivo: {str(e)}")
 
 @router.post("/import/{file_id}")
-async def import_data(file_id: str, db: Session = Depends(get_db), admin_user: Usuario = Depends(is_admin)):
+async def import_data(file_id: str, db: Session = Depends(get_db)):
     """Importar datos procesados a la base de datos"""
     try:
         # Verificar que el archivo existe y está procesado
@@ -469,8 +701,11 @@ async def import_data(file_id: str, db: Session = Depends(get_db), admin_user: U
             elif data_type == "imoveis":
                 count = await import_inmuebles(df, db)
                 records_imported["imoveis"] = count
+            elif data_type == "participacoes_matricial":
+                count = await import_participacoes_matricial(df, db)
+                records_imported["participacoes"] = count
             elif data_type == "participacoes":
-                count = await import_participaciones(df, db)
+                count = await import_participacoes(df, db)
                 records_imported["participacoes"] = count
             elif data_type == "alugueis":
                 count = await import_alquileres(df, db)
@@ -503,11 +738,17 @@ async def import_data(file_id: str, db: Session = Depends(get_db), admin_user: U
             log_import.detalhes_erros = str(e)
             db.commit()
         
-        raise HTTPException(status_code=500, detail=f"Error al importar datos: {str(e)}")
+        # Log do erro interno para debugging
+        print(f"Erro interno na importação: {str(e)}")
+        raise HTTPException(status_code=500, detail="Erro interno ao importar dados. Verifique os logs do sistema.")
 
 async def import_propietarios(df: pd.DataFrame, db: Session) -> int:
-    """Importar proprietários desde DataFrame"""
+    """Importar e atualizar proprietários desde DataFrame com sanitização."""
+    # Sanitizar DataFrame
+    df = sanitize_dataframe(df)
+    
     new_proprietarios = []
+    updated_proprietarios = []
     count = 0
 
     # Mapeamento de colunas para maior flexibilidade
@@ -556,18 +797,7 @@ async def import_propietarios(df: pd.DataFrame, db: Session) -> int:
                 documento = ""
 
             if not nome or not sobrenome:
-                print(f"Pulando linha {index}: dados faltantes - Nome: '{nome}', Sobrenome: '{sobrenome}'")
                 continue
-            
-            # Verificar duplicidade usando os dados pré-carregados
-            is_duplicate = False
-            if documento and documento in existing_proprietarios_by_doc:
-                is_duplicate = True
-            elif (nome, sobrenome) in existing_proprietarios_by_nome_sobrenome:
-                is_duplicate = True
-            
-            if is_duplicate:
-                continue  # Pular duplicados
             
             propietario_data = {
                 "nome": nome,
@@ -577,14 +807,25 @@ async def import_propietarios(df: pd.DataFrame, db: Session) -> int:
                 "documento": documento if documento else None,
                 "email": str(get_column_value(row, 'email') or '').strip() if pd.notna(get_column_value(row, 'email')) else None,
                 "telefono": str(get_column_value(row, 'telefone') or '').strip() if pd.notna(get_column_value(row, 'telefone')) else None,
-                "endereco": str(get_column_value(row, 'endereco') or '').strip() if pd.notna(get_column_value(row, 'endereco')) else None,
-                "banco": str(get_column_value(row, 'banco') or '').strip() if pd.notna(get_column_value(row, 'banco')) else None,
-                "agencia": str(get_column_value(row, 'agencia') or '').strip() if pd.notna(get_column_value(row, 'agencia')) else None,
-                "cuenta": str(get_column_value(row, 'conta') or '').strip() if pd.notna(get_column_value(row, 'conta')) else None,
-                "tipo_cuenta": str(get_column_value(row, 'tipo_conta') or '').strip() if pd.notna(get_column_value(row, 'tipo_conta')) else None,
+                "endereco": str(get_column_value(row, 'banco') or '').strip() if pd.notna(get_column_value(row, 'banco')) else None,
+                "banco": str(get_column_value(row, 'agencia') or '').strip() if pd.notna(get_column_value(row, 'agencia')) else None,
+                "agencia": str(get_column_value(row, 'conta') or '').strip() if pd.notna(get_column_value(row, 'conta')) else None,
+                "cuenta": str(get_column_value(row, 'tipo_conta') or '').strip() if pd.notna(get_column_value(row, 'tipo_conta')) else None,
+                "tipo_cuenta": str(get_column_value(row, 'ativo') or '').strip() if pd.notna(get_column_value(row, 'ativo')) else None,
                 "ativo": bool(get_column_value(row, 'ativo') or True)
             }
-            new_proprietarios.append(propietario_data)
+
+            existing_proprietario = None
+            if documento and documento in existing_proprietarios_by_doc:
+                existing_proprietario = existing_proprietarios_by_doc[documento]
+            elif (nome, sobrenome) in existing_proprietarios_by_nome_sobrenome:
+                existing_proprietario = existing_proprietarios_by_nome_sobrenome[(nome, sobrenome)]
+
+            if existing_proprietario:
+                proprietario_data["id"] = existing_proprietario.id
+                updated_proprietarios.append(propietario_data)
+            else:
+                new_proprietarios.append(propietario_data)
             
         except Exception as e:
             print(f"Erro processando proprietário na linha {index}: {e}")
@@ -592,273 +833,571 @@ async def import_propietarios(df: pd.DataFrame, db: Session) -> int:
     
     if new_proprietarios:
         db.bulk_insert_mappings(Propietario, new_proprietarios)
-        count = len(new_proprietarios)
+        count += len(new_proprietarios)
+
+    if updated_proprietarios:
+        db.bulk_update_mappings(Propietario, updated_proprietarios)
+        count += len(updated_proprietarios)
     
     return count
 
 async def import_inmuebles(df: pd.DataFrame, db: Session) -> int:
-    """Importar inmuebles desde DataFrame"""
+    """Importar e atualizar inmuebles desde DataFrame com sanitização."""
+    # Sanitizar DataFrame
+    df = sanitize_dataframe(df)
+    
     new_inmuebles_data = []
+    updated_inmuebles_data = []
     count = 0
 
+    # Mapeamento de colunas para maior flexibilidade
+    column_mapping = {
+        'nome': ['nome', 'Nome', 'NOME', 'nombre', 'Nombre', 'NOMBRE'],
+        'tipo': ['tipo', 'Tipo', 'TIPO'],
+        'endereco_completo': ['endereco_completo', 'endereço', 'Endereço', 'ENDERECO', 'direccion_completa', 'Dirección Completa', 'DIRECCION_COMPLETA'],
+        'rua': ['rua', 'Rua', 'RUA', 'calle', 'Calle', 'CALLE'],
+        'numero': ['numero', 'Número', 'NUMERO', 'numero', 'Numero', 'NUMERO'],
+        'apartamento': ['apartamento', 'Apartamento', 'APARTAMENTO', 'apartamento', 'Apartamento', 'APARTAMENTO'],
+        'bairro': ['bairro', 'Bairro', 'BAIRRO', 'barrio', 'Barrio', 'BARRIO'],
+        'ciudad': ['ciudad', 'Cidade', 'CIDADE', 'ciudad', 'Ciudad', 'CIUDAD'],
+        'estado': ['estado', 'Estado', 'ESTADO', 'estado', 'Estado', 'ESTADO'],
+        'cep': ['cep', 'CEP', 'Cep', 'codigo_postal', 'Código Postal', 'CODIGO_POSTAL'],
+        'quartos': ['quartos', 'Quartos', 'QUARTOS', 'dormitorios', 'Dormitorios', 'DORMITORIOS'],
+        'banheiros': ['banheiros', 'Banheiros', 'BANHEIROS', 'baños', 'Baños', 'BANOS'],
+        'garagens': ['garagens', 'Garagens', 'GARAGENS', 'cocheras', 'Cocheras', 'COCHERAS'],
+        'area_total': ['area_total', 'Área Total', 'AREA_TOTAL', 'area total', 'Area Total'],
+        'area_construida': ['area_construida', 'Área Construida', 'AREA_CONSTRUIDA', 'area construida', 'Area Construida'],
+        'valor_cadastral': ['valor_cadastral', 'Valor Catastral', 'VALOR_CADASTRAL', 'valor catastral', 'Valor Cadastral'],
+        'valor_mercado': ['valor_mercado', 'Valor Mercado', 'VALOR_MERCADO', 'valor mercado', 'Valor de Mercado'],
+        'iptu_anual': ['iptu_anual', 'IPTU Anual', 'IPTU_ANUAL', 'iptu anual', 'IPTU Anual'],
+        'condominio_mensal': ['condominio_mensal', 'Condominio', 'CONDOMINIO', 'condominio mensal', 'Condomínio Mensal'],
+        'activo': ['activo', 'Ativo', 'ATIVO', 'activo', 'Activo', 'ACTIVO']
+    }
+    
+    # Normalizar nomes de colunas
+    def get_column_value(row, field_name):
+        possible_names = column_mapping.get(field_name, [field_name])
+        for name in possible_names:
+            if name in row.index:
+                return row.get(name)
+        return None
+
     # Bulk Fetching: Coletar todos os nomes de imóveis para verificar existência
-    nomes_to_check = df.apply(lambda row: str(row.get('nome', '')).strip(), axis=1).tolist()
+    nomes_to_check = df.apply(lambda row: str(get_column_value(row, 'nome') or '').strip(), axis=1).tolist()
     existing_inmuebles_by_nome = {i.nome: i for i in db.query(Inmueble).filter(Inmueble.nome.in_(nomes_to_check)).all()}
     
     for _, row in df.iterrows():
         try:
-            nome = str(row.get('nome', '')).strip()
+            nome = str(get_column_value(row, 'nome') or '').strip()
             
             if not nome:
                 continue # Pular linhas sem nome
 
-            # Verificar duplicidade usando os dados pré-carregados
-            if nome in existing_inmuebles_by_nome:
-                continue  # Pular duplicados
+            endereco_completo = str(get_column_value(row, 'endereco_completo') or '').strip()
             
-            # Criar novo inmueble
+            if not endereco_completo:
+                continue # Pular linhas sem endereço
+
             inmueble_data = {
                 "nome": nome,
-                "tipo": str(row.get('tipo', '')).strip() if pd.notna(row.get('tipo')) else None,
-                "endereco_completo": str(row.get('endereco_completo', '')).strip(),
-                "rua": str(row.get('rua', '')).strip() if pd.notna(row.get('rua')) else None,
-                "numero": str(row.get('numero', '')).strip() if pd.notna(row.get('numero')) else None,
-                "apartamento": str(row.get('apartamento', '')).strip() if pd.notna(row.get('apartamento')) else None,
-                "bairro": str(row.get('bairro', '')).strip() if pd.notna(row.get('bairro')) else None,
-                "ciudad": str(row.get('ciudad', '')).strip() if pd.notna(row.get('ciudad')) else None,
-                "estado": str(row.get('estado', '')).strip() if pd.notna(row.get('estado')) else None,
-                "cep": str(row.get('cep', '')).strip() if pd.notna(row.get('cep')) else None,
-                "quartos": int(row.get('quartos', 0)) if pd.notna(row.get('quartos')) else None,
-                "banheiros": int(row.get('banheiros', 0)) if pd.notna(row.get('banheiros')) else None,
-                "garagens": int(row.get('garagens', 0)) if pd.notna(row.get('garagens')) else None,
-                "area_total": float(row.get('area_total', 0)) if pd.notna(row.get('area_total')) else None,
-                "area_construida": float(row.get('area_construida', 0)) if pd.notna(row.get('area_construida')) else None,
-                "valor_cadastral": float(row.get('valor_cadastral', 0)) if pd.notna(row.get('valor_cadastral')) else None,
-                "valor_mercado": float(row.get('valor_mercado', 0)) if pd.notna(row.get('valor_mercado')) else None,
-                "iptu_anual": float(row.get('iptu_anual', 0)) if pd.notna(row.get('iptu_anual')) else None,
-                "condominio_mensal": float(row.get('condominio_mensal', 0)) if pd.notna(row.get('condominio_mensal')) else None,
-                "observacoes": str(row.get('observacoes', '')).strip() if pd.notna(row.get('observacoes')) else None,
-                "activo": bool(row.get('activo', True))
+                "endereco": endereco_completo,
+                "tipo_imovel": str(get_column_value(row, 'tipo') or '').strip() if get_column_value(row, 'tipo') is not None else None,
+                "numero_quartos": int(get_column_value(row, 'quartos') or 0) if get_column_value(row, 'quartos') is not None else None,
+                "numero_banheiros": int(get_column_value(row, 'banheiros') or 0) if get_column_value(row, 'banheiros') is not None else None,
+                "numero_vagas_garagem": int(get_column_value(row, 'garagens') or 0) if get_column_value(row, 'garagens') is not None else None,
+                "area_total": float(get_column_value(row, 'area_total') or 0) if get_column_value(row, 'area_total') is not None else None,
+                "area_construida": float(get_column_value(row, 'area_construida') or 0) if get_column_value(row, 'area_construida') is not None else None,
+                "valor_cadastral": float(get_column_value(row, 'valor_cadastral') or 0) if get_column_value(row, 'valor_cadastral') is not None else None,
+                "valor_mercado": float(get_column_value(row, 'valor_mercado') or 0) if get_column_value(row, 'valor_mercado') is not None else None,
+                "iptu_mensal": float(get_column_value(row, 'iptu_anual') or 0) if get_column_value(row, 'iptu_anual') is not None else None,
+                "condominio_mensal": float(get_column_value(row, 'condominio_mensal') or 0) if get_column_value(row, 'condominio_mensal') is not None else None,
+                "alugado": bool(get_column_value(row, 'activo') or False) if get_column_value(row, 'activo') is not None else None,
+                "ativo": bool(get_column_value(row, 'activo') or True) if get_column_value(row, 'activo') is not None else None
             }
-            new_inmuebles_data.append(inmueble_data)
+
+            existing_inmueble = None
+            if nome in existing_inmuebles_by_nome:
+                existing_inmueble = existing_inmuebles_by_nome[nome]
+
+            if existing_inmueble:
+                inmueble_data["id"] = existing_inmueble.id
+                updated_inmuebles_data.append(inmueble_data)
+            else:
+                new_inmuebles_data.append(inmueble_data)
             
         except Exception as e:
-            print(f"Error processando inmueble: {e}")
+            print(f"Erro processando imóvel na linha {index}: {e}")
             continue
     
     if new_inmuebles_data:
         db.bulk_insert_mappings(Inmueble, new_inmuebles_data)
-        count = len(new_inmuebles_data)
+        count += len(new_inmuebles_data)
+
+    if updated_inmuebles_data:
+        db.bulk_update_mappings(Inmueble, updated_inmuebles_data)
+        count += len(updated_inmuebles_data)
     
     return count
 
-async def import_participaciones(df: pd.DataFrame, db: Session) -> int:
-    """Importar participaciones desde DataFrame"""
-    new_participaciones = []
-    updated_participaciones = []
+async def import_participacoes_matricial(df: pd.DataFrame, db: Session) -> int:
+    """Importar participações desde DataFrame matricial (formato especial do Excel)"""
+    # Salvar versão histórica antes de qualquer alteração
+    versao_id = await salvar_historico_participacoes(db)
+    
+    # Sanitizar DataFrame
+    df = sanitize_dataframe(df)
+
+    new_participacoes = []
     count = 0
 
-    # Bulk Fetching: Coletar todos os pares (imovel_id, proprietario_id) para verificar existência
-    participacao_pairs_to_check = df.apply(lambda row: (
-        int(row.get('imovel_id', 0)) if pd.notna(row.get('imovel_id')) else None,
-        int(row.get('proprietario_id', 0)) if pd.notna(row.get('proprietario_id')) else None
-    ), axis=1).tolist()
-
-    # Filtrar pares inválidos (onde imovel_id ou proprietario_id é None)
-    valid_participacao_pairs = [p for p in participacao_pairs_to_check if p[0] is not None and p[1] is not None]
-
-    existing_participaciones = {
-        (p.imovel_id, p.proprietario_id): p
-        for p in db.query(Participacion).filter(
-            tuple_(Participacion.imovel_id, Participacion.proprietario_id).in_(valid_participacao_pairs)
-        ).all()
-    }
-    
-    for _, row in df.iterrows():
+    # PASSO 1: Desativar participações existentes para o imóvel
+    # (O histórico já foi criado acima)
+    for idx, row in df.iterrows():
         try:
-            imovel_id = int(row.get('imovel_id', 0)) if pd.notna(row.get('imovel_id')) else None
-            proprietario_id = int(row.get('proprietario_id', 0)) if pd.notna(row.get('proprietario_id')) else None
-            porcentagem = float(row.get('porcentagem', 0)) if pd.notna(row.get('porcentagem')) else 0.0
-            ativo = bool(row.get('ativo', True))
-
-            if imovel_id is None or proprietario_id is None:
-                print(f"Pulando linha: imovel_id ou proprietario_id inválido - Imovel: {imovel_id}, Proprietario: {proprietario_id}")
+            nome_imovel = str(row.get('Nome', '')).strip()
+            imovel = db.query(Inmueble).filter(Inmueble.nome == nome_imovel).first()
+            
+            if not imovel:
+                print(f"Imóvel não encontrado: {nome_imovel}")
                 continue
             
-            participacion_key = (imovel_id, proprietario_id)
-            existing_participacion = existing_participaciones.get(participacion_key)
-            
-            if existing_participacion:
-                # Actualizar porcentaje existente
-                updated_participaciones.append({
-                    "id": existing_participacion.id,
-                    "porcentagem": porcentagem,
-                    "ativo": ativo
-                })
-            else:
-                # Crear nueva participación
-                new_participaciones.append({
-                    "imovel_id": imovel_id,
-                    "proprietario_id": proprietario_id,
-                    "porcentagem": porcentagem,
-                    "ativo": ativo
-                })
-            
+            # Desativar participações existentes para este imóvel
+            db.query(Participacion).filter(Participacion.imovel_id == imovel.id, Participacion.ativo == True).update({"ativo": False}, synchronize_session=False)
+            db.commit()
+            print(f"Desativadas participações existentes para o imóvel: {nome_imovel}")
+        
         except Exception as e:
-            print(f"Error importando participación: {e}")
+            print(f"Erro desativando participações na linha {idx}: {e}")
             continue
     
-    if new_participaciones:
-        db.bulk_insert_mappings(Participacion, new_participaciones)
-        count += len(new_participaciones)
+    # PASSO 2: Validar e processar novas participações
+    # Obter imóveis existentes por nome
+    nomes_imoveis = df['Nome'].dropna().unique().tolist()
+    existing_imoveis = {i.nome: i for i in db.query(Inmueble).filter(Inmueble.nome.in_(nomes_imoveis)).all()}
     
-    if updated_participaciones:
-        db.bulk_update_mappings(Participacion, updated_participaciones)
-        count += len(updated_participaciones)
+    # Detectar formato: Nnnn* ou nomes reais
+    nnnn_columns = [col for col in df.columns if col.startswith('Nnnn')]
+    proprietario_nomes_conhecidos = ['Jandira', 'Manoel', 'Fabio', 'Carla', 'Armando', 'Suely', 'Felipe', 'Adriana', 'Regina', 'Mario']
+    proprietario_columns_reais = [col for col in df.columns if any(nome in col for nome in proprietario_nomes_conhecidos)]
+    
+    if len(nnnn_columns) > 0:
+        # Formato Nnnn*: usar mapeamento ordinal
+        proprietarios_ordenados = db.query(Propietario).order_by(Propietario.nome, Propietario.sobrenome).all()
+        proprietario_mapping = {}
+        for i, col in enumerate(nnnn_columns):
+            if i < len(proprietarios_ordenados):
+                proprietario_mapping[col] = proprietarios_ordenados[i]
+    elif len(proprietario_columns_reais) > 0:
+        # Formato com nomes reais: mapear pelo nome
+        proprietario_nomes = {p.nome + ' ' + (p.sobrenome or ''): p for p in db.query(Propietario).all()}
+        proprietario_nomes.update({p.nome: p for p in db.query(Propietario).all()})  # também sem sobrenome
+        
+        proprietario_mapping = {}
+        for col in proprietario_columns_reais:
+            # Tentar encontrar proprietário pelo nome da coluna
+            proprietario = proprietario_nomes.get(col.strip())
+            if proprietario:
+                proprietario_mapping[col] = proprietario
+            else:
+                print(f"Proprietário não encontrado para coluna: {col}")
+    else:
+        print("Nenhuma coluna de proprietário válida encontrada")
+        return 0
+    
+    # Processar cada linha do DataFrame
+    current_timestamp = datetime.utcnow()
+    for _, row in df.iterrows():
+        try:
+            nome_imovel = str(row.get('Nome', '')).strip()
+            imovel = existing_imoveis.get(nome_imovel)
+            
+            if not imovel:
+                print(f"Imóvel não encontrado: {nome_imovel}")
+                continue
+            
+            # Processar cada coluna de proprietário
+            for col, proprietario in proprietario_mapping.items():
+                porcentagem = row.get(col, 0)
+                
+                if pd.isna(porcentagem) or porcentagem <= 0:
+                    continue
+                
+                # Sempre criar nova participação (histórico)
+                new_participacoes.append({
+                    "imovel_id": imovel.id,
+                    "proprietario_id": proprietario.id,
+                    "porcentagem": round(float(porcentagem), 8),
+                    "ativo": True,
+                    "data_registro": current_timestamp
+                })
+                    
+        except Exception as e:
+            print(f"Erro processando participação: {e}")
+            continue
+    
+    # Executar operações em lote
+    if new_participacoes:
+        db.bulk_insert_mappings(Participacion, new_participacoes)
+        count += len(new_participacoes)
+        print(f"Inseridas {len(new_participacoes)} novas participações")
+    
+    return count
 
+async def import_participacoes(df: pd.DataFrame, db: Session) -> int:
+    """Importar e atualizar participações desde DataFrame com validação em lote."""
+    # Salvar versão histórica antes de qualquer alteração
+    versao_id = await salvar_historico_participacoes(db)
+    print(f"Criada versão histórica: {versao_id}")
+    
+    errors = []
+    count = 0
+
+    # Mapeamento de colunas para maior flexibilidade
+    column_mapping = {
+        'imovel_id': ['imovel_id', 'Imovel ID', 'IMOVEL_ID', 'inmueble_id', 'Inmueble ID', 'INMUEBLE_ID'],
+        'proprietario_id': ['proprietario_id', 'Proprietario ID', 'PROPRIETARIO_ID', 'propietario_id', 'Propietario ID', 'PROPIETARIO_ID'],
+        'porcentagem': ['porcentagem', 'Porcentagem', 'PORCENTAGEM', 'participacao', 'Participacao', 'PARTICIPACION']
+    }
+    
+    # Normalizar nomes de colunas
+    def get_column_value(row, field_name):
+        possible_names = column_mapping.get(field_name, [field_name])
+        for name in possible_names:
+            if name in row.index:
+                return row.get(name)
+        return None
+
+    # PASSO 1: Criar histórico completo das participações existentes
+    existing_participacoes = db.query(Participacion).filter(Participacion.ativo == True).all()
+
+    if existing_participacoes:
+        # Criar novas versões de TODAS as participações existentes com nova data_registro
+        current_timestamp = datetime.utcnow()
+        historical_participacoes = []
+
+        for existing_part in existing_participacoes:
+            historical_participacoes.append({
+                "imovel_id": existing_part.imovel_id,
+                "proprietario_id": existing_part.proprietario_id,
+                "porcentagem": round(float(existing_part.porcentagem), 8),
+                "ativo": True,
+                "data_registro": current_timestamp
+            })
+
+        # Inserir histórico completo
+        if historical_participacoes:
+            db.bulk_insert_mappings(Participacion, historical_participacoes)
+            print(f"Criado histórico de {len(historical_participacoes)} participações existentes")
+
+    # PASSO 2: Validar e processar novas participações
+    # Obter imóveis existentes por nome
+    nomes_imoveis = df['Nome'].dropna().unique().tolist()
+    existing_imoveis = {i.nome: i for i in db.query(Inmueble).filter(Inmueble.nome.in_(nomes_imoveis)).all()}
+    
+    # Detectar formato: Nnnn* ou nomes reais
+    nnnn_columns = [col for col in df.columns if col.startswith('Nnnn')]
+    proprietario_nomes_conhecidos = ['Jandira', 'Manoel', 'Fabio', 'Carla', 'Armando', 'Suely', 'Felipe', 'Adriana', 'Regina', 'Mario']
+    proprietario_columns_reais = [col for col in df.columns if any(nome in col for nome in proprietario_nomes_conhecidos)]
+    
+    if len(nnnn_columns) > 0:
+        # Formato Nnnn*: usar mapeamento ordinal
+        proprietarios_ordenados = db.query(Propietario).order_by(Propietario.nome, Propietario.sobrenome).all()
+        proprietario_mapping = {}
+        for i, col in enumerate(nnnn_columns):
+            if i < len(proprietarios_ordenados):
+                proprietario_mapping[col] = proprietarios_ordenados[i]
+    elif len(proprietario_columns_reais) > 0:
+        # Formato com nomes reais: mapear pelo nome
+        proprietario_nomes = {p.nome + ' ' + (p.sobrenome or ''): p for p in db.query(Propietario).all()}
+        proprietario_nomes.update({p.nome: p for p in db.query(Propietario).all()})  # também sem sobrenome
+        
+        proprietario_mapping = {}
+        for col in proprietario_columns_reais:
+            # Tentar encontrar proprietário pelo nome da coluna
+            proprietario = proprietario_nomes.get(col.strip())
+            if proprietario:
+                proprietario_mapping[col] = proprietario
+            else:
+                print(f"Proprietário não encontrado para coluna: {col}")
+    else:
+        print("Nenhuma coluna de proprietário válida encontrada")
+        return 0
+    
+    # Processar cada linha do DataFrame
+    current_timestamp = datetime.utcnow()
+    for _, row in df.iterrows():
+        try:
+            nome_imovel = str(row.get('Nome', '')).strip()
+            imovel = existing_imoveis.get(nome_imovel)
+            
+            if not imovel:
+                print(f"Imóvel não encontrado: {nome_imovel}")
+                continue
+            
+            # Processar cada coluna de proprietário
+            for col, proprietario in proprietario_mapping.items():
+                porcentagem = row.get(col, 0)
+                
+                if pd.isna(porcentagem) or porcentagem <= 0:
+                    continue
+                
+                # Sempre criar nova participação (histórico)
+                new_participacoes.append({
+                    "imovel_id": imovel.id,
+                    "proprietario_id": proprietario.id,
+                    "porcentagem": round(float(porcentagem), 8),
+                    "ativo": True,
+                    "data_registro": current_timestamp
+                })
+                    
+        except Exception as e:
+            print(f"Erro processando participação: {e}")
+            continue
+    
+    # Executar operações em lote
+    if new_participacoes:
+        db.bulk_insert_mappings(Participacion, new_participacoes)
+        count += len(new_participacoes)
+        print(f"Inseridas {len(new_participacoes)} novas participações")
+    
     return count
 
 async def import_alquileres(df: pd.DataFrame, db: Session) -> int:
-    """Importar alquileres desde DataFrame"""
-    new_alquileres_data = []
+    """Importar dados de aluguel"""
+    errors = []
+    new_alugueis = []
+    count = 0
     
-    for _, row in df.iterrows():
-        try:
-            alquiler_data = {
-                "imovel_id": int(row.get('imovel_id', 0)) if pd.notna(row.get('imovel_id')) else None,
-                "proprietario_id": int(row.get('proprietario_id', 0)) if pd.notna(row.get('proprietario_id')) else None,
-                "mes": int(row.get('mes', 1)),
-                "ano": int(row.get('ano', datetime.now().year)),
-                "valor_aluguel_proprietario": float(row.get('valor_aluguel_propietario', 0)),
-                "taxa_administracao_total": float(row.get('taxa_administracao_total', 0)),
-                "taxa_administracao_proprietario": float(row.get('taxa_administracao_proprietario', 0)),
-                "valor_liquido_proprietario": float(row.get('valor_liquido_proprietario', 0))
-            }
-            new_alquileres_data.append(alquiler_data)
-            
-        except Exception as e:
-            print(f"Error processando alquiler en la fila: {e}")
-            continue
+    # Mapeamento de colunas para maior flexibilidade
+    column_mapping = {
+        'mes': ['mes', 'Mes', 'MES', 'meses', 'Meses', 'MESES'],
+        'ano': ['ano', 'Ano', 'ANO', 'ano', 'Ano', 'ANOS'],
+        'valor_aluguel_propietario': ['valor_aluguel_propietario', 'valor_aluguel', 'Valor Aluguel', 'VALOR_ALUGUEL'],
+        'inmueble_id': ['inmueble_id', 'imovel_id', 'Imovel ID', 'IMOVEL_ID'],
+        'proprietario_id': ['proprietario_id', 'Proprietario ID', 'PROPRIETARIO_ID']
+    }
     
-    if new_alquileres_data:
-        db.bulk_insert_mappings(AluguelSimples, new_alquileres_data)
-        return len(new_alquileres_data)
-    
-    return 0
+    # Normalizar nomes de colunas
+    def get_column_value(row, field_name):
+        possible_names = column_mapping.get(field_name, [field_name])
+        for name in possible_names:
+            if name in row.index:
+                return row.get(name)
+        return None
 
-@router.get("/files")
-async def list_uploaded_files(current_user: Usuario = Depends(verify_token)):
-    """Listar archivos subidos recientemente"""
-    try:
-        files_list = []
-        for file_id, file_info in uploaded_files.items():
-            files_list.append({
-                "id": file_id,
-                "name": file_info["original_name"],
-                "upload_date": file_info["upload_time"],
-                "size": file_info["file_size"],
-                "processed": file_info.get("processed", False)
+    for idx, row in df.iterrows():
+        try:
+            mes = row['mes']
+            ano = row['ano']
+            valor_aluguel_propietario = row['valor_aluguel_propietario']
+            inmueble_id = row['inmueble_id']
+            proprietario_id = row['proprietario_id']
+
+            # Validar e converter tipos
+            if pd.isna(mes) or pd.isna(ano) or pd.isna(valor_aluguel_propietario) or pd.isna(inmueble_id) or pd.isna(proprietario_id):
+                errors.append(f"Linha {idx + 2}: Dados faltantes")
+                continue
+            
+            if not isinstance(mes, int) or not isinstance(ano, int):
+                errors.append(f"Linha {idx + 2}: Mês e ano devem ser inteiros")
+                continue
+            
+            if not (1 <= mes <= 12):
+                errors.append(f"Linha {idx + 2}: Mês inválido")
+                continue
+            
+            # Adicionar novo aluguel
+            new_alugueis.append({
+                "mes": mes,
+                "ano": ano,
+                "valor_aluguel_propietario": valor_aluguel_propietario,
+                "inmueble_id": inmueble_id,
+                "proprietario_id": proprietario_id
             })
         
-        # Ordenar por fecha de subida (más reciente primero)
-        files_list.sort(key=lambda x: x["upload_date"], reverse=True)
-        
-        return {
-            "success": True,
-            "files": files_list
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al listar archivos: {str(e)}")
+        except Exception as e:
+            print(f"Erro processando aluguel na linha {idx}: {e}")
+            continue
+    
+    if new_alugueis:
+        db.bulk_insert_mappings(AluguelSimples, new_alugueis)
+        count += len(new_alugueis)
+    
+    return count
 
-@router.get("/templates/{template_type}")
-async def download_template(template_type: str):
-    """Baixar modelo Excel"""
-    try:
-        # Criar modelos segundo o tipo
-        if template_type == "proprietarios":
-            data = {
-                'nome': ['João', 'Maria'],
-                'sobrenome': ['Silva', 'Santos'],
-                'tipo_documento': ['CPF', 'CPF'],
-                'documento': ['12345678901', '98765432100'],
-                'email': ['joao@email.com', 'maria@email.com'],
-                'telefone': ['11-99999-0001', '11-99999-0002'],
-                'endereco': ['Rua das Flores, 123', 'Avenida Paulista, 456'],
-                'banco': ['Banco do Brasil', 'Itaú'],
-                'agencia': ['0001', '0002'],
-                'conta': ['123456-7', '654321-0'],
-                'tipo_conta': ['Poupança', 'Corrente'],
-                'ativo': [True, True]
-            }
-        elif template_type == "imoveis":
-            data = {
-                'nome': ['Apartamento Centro', 'Casa Norte'],
-                'tipo': ['Apartamento', 'Casa'],
-                'endereco_completo': ['Rua Augusta, 123 - Apto 101', 'Rua dos Jardins, 456'],
-                'rua': ['Rua Augusta', 'Rua dos Jardins'],
-                'numero': ['123', '456'],
-                'apartamento': ['101', ''],
-                'bairro': ['Centro', 'Norte'],
-                'cidade': ['São Paulo', 'Rio de Janeiro'],
-                'estado': ['SP', 'RJ'],
-                'cep': ['01310-100', '20040-020'],
-                'quartos': [2, 3],
-                'banheiros': [2, 2],
-                'vagas_garagem': [1, 2],
-                'area_total': [80.5, 120.0],
-                'area_construida': [75.0, 110.0],
-                'valor_venal': [300000.00, 450000.00],
-                'valor_mercado': [350000.00, 500000.00],
-                'iptu_anual': [3600.00, 5400.00],
-                'condominio_mensal': [450.00, 0.00],
-                'observacoes': ['Apartamento bem localizado', 'Casa com quintal'],
-                'ativo': [True, True]
-            }
-        elif template_type == "participacoes":
-            data = {
-                'imovel_id': [1, 1, 2],
-                'proprietario_id': [1, 2, 1],
-                'porcentagem': [60.0, 40.0, 100.0],
-                'ativo': [True, True, True]
-            }
-        elif template_type == "alugueis":
-            data = {
-                'imovel_id': [1, 2],
-                'proprietario_id': [1, 2],
-                'mes': [1, 1],
-                'ano': [2025, 2025],
-                'valor_aluguel_proprietario': [2500.00, 3500.00],
-                'taxa_administracao_total': [250.00, 0.00],
-                'taxa_administracao_proprietario': [150.00, 0.00],
-                'valor_liquido_proprietario': [2350.00, 3500.00]
-            }
+# ============================================
+# FUNÇÕES AUXILIARES PARA HISTÓRICO
+# ============================================
+
+async def salvar_historico_participacoes(db: Session, versao_id: str = None) -> str:
+    """
+    Salva uma versão histórica de todas as participações atuais.
+    Retorna o ID da versão criada.
+    """
+    if not versao_id:
+        # Gerar ID único para a versão baseado no timestamp
+        versao_id = f"v_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
+    
+    # Buscar todas as participações atuais ativas
+    participacoes_atuais = db.query(Participacion).filter(Participacion.ativo == True).all()
+    
+    if not participacoes_atuais:
+        print("Nenhuma participação ativa encontrada para histórico")
+        return versao_id
+    
+    # Verificar se já existe uma versão com os mesmos dados
+    # Comparar com a versão mais recente
+    versao_recente = db.query(HistoricoParticipacao.versao_id).order_by(
+        HistoricoParticipacao.data_versao.desc()
+    ).first()
+    
+    if versao_recente:
+        # Verificar se os dados são idênticos
+        dados_recentes = db.query(
+            HistoricoParticipacao.imovel_id,
+            HistoricoParticipacao.proprietario_id,
+            HistoricoParticipacao.porcentagem
+        ).filter(
+            HistoricoParticipacao.versao_id == versao_recente.versao_id
+        ).order_by(
+            HistoricoParticipacao.imovel_id,
+            HistoricoParticipacao.proprietario_id
+        ).all()
+        
+        dados_atuais = [
+            (p.imovel_id, p.proprietario_id, p.porcentagem)
+            for p in sorted(participacoes_atuais, key=lambda x: (x.imovel_id, x.proprietario_id))
+        ]
+        
+        dados_recentes_sorted = [
+            (d.imovel_id, d.proprietario_id, d.porcentagem)
+            for d in sorted(dados_recentes, key=lambda x: (x[0], x[1]))
+        ]
+        
+        if dados_atuais == dados_recentes_sorted:
+            print(f"Dados não mudaram, retornando versão existente: {versao_recente.versao_id}")
+            return versao_recente.versao_id
         else:
-            raise HTTPException(status_code=404, detail="Tipo de modelo não encontrado")
-        
-        # Criar DataFrame e arquivo Excel
-        df = pd.DataFrame(data)
-        
-        # Criar arquivo temporário
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp_file:
-            df.to_excel(tmp_file.name, index=False)
-            
-            return FileResponse(
-                path=tmp_file.name,
-                filename=f"modelo_{template_type}.xlsx",
-                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao gerar modelo: {str(e)}")
+            print("Dados mudaram, criando nova versão")
+    else:
+        print("Nenhuma versão recente encontrada, criando primeira versão")
+    
+    historico_entries = []
+    for participacao in participacoes_atuais:
+        historico_entries.append({
+            "versao_id": versao_id,
+            "data_versao": datetime.now(),
+            "porcentagem": participacao.porcentagem,
+            "data_registro_original": participacao.data_registro,
+            "ativo": participacao.ativo,
+            "imovel_id": participacao.imovel_id,
+            "proprietario_id": participacao.proprietario_id
+        })
+    
+    # Inserir em lote no histórico
+    if historico_entries:
+        try:
+            db.bulk_insert_mappings(HistoricoParticipacao, historico_entries)
+            print(f"Salvo histórico: {len(historico_entries)} participações na versão {versao_id}")
+        except Exception as e:
+            print(f"Erro ao salvar histórico: {e}")
+            # Retornar versão existente em caso de erro
+            versao_existente = db.query(HistoricoParticipacao.versao_id).order_by(
+                HistoricoParticipacao.data_versao.desc()
+            ).first()
+            if versao_existente:
+                return versao_existente.versao_id
+    
+    return versao_id
 
-@router.get("/health")
-async def health_check():
-    """Health check endpoint"""
+# ============================================
+# ENDPOINTS PARA HISTÓRICO DE PARTICIPAÇÕES
+# ============================================
+
+@router.get("/historico/participacoes/versoes")
+async def get_versoes_historico_participacoes(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+    """
+    Retorna lista de todas as versões históricas disponíveis
+    """
+    versoes = db.query(
+        HistoricoParticipacao.versao_id,
+        HistoricoParticipacao.data_versao,
+        func.count(HistoricoParticipacao.id).label('total_participacoes')
+    ).group_by(
+        HistoricoParticipacao.versao_id,
+        HistoricoParticipacao.data_versao
+    ).order_by(
+        HistoricoParticipacao.data_versao.desc()
+    ).all()
+    
     return {
-        "status": "ok",
-        "service": "Sistema de Alquileres V2",
-        "timestamp": datetime.now().isoformat(),
-        "upload_dir": UPLOAD_DIR,
-        "uploaded_files_count": len(uploaded_files)
+        "success": True,
+        "data": [
+            {
+                "versao_id": v.versao_id,
+                "data_versao": v.data_versao.isoformat(),
+                "total_participacoes": v.total_participacoes
+            } for v in versoes
+        ]
     }
+
+@router.get("/historico/participacoes/{versao_id}")
+async def get_historico_participacoes_por_versao(
+    versao_id: str,
+    imovel_id: int = Query(None, description="Filtrar por imóvel"),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(verify_token)
+):
+    """
+    Retorna as participações de uma versão específica do histórico
+    """
+    query = db.query(HistoricoParticipacao).filter(HistoricoParticipacao.versao_id == versao_id)
+    
+    if imovel_id:
+        query = query.filter(HistoricoParticipacao.imovel_id == imovel_id)
+    
+    historico = query.order_by(HistoricoParticipacao.imovel_id, HistoricoParticipacao.proprietario_id).all()
+    
+    return {
+        "success": True,
+        "versao_id": versao_id,
+        "data_versao": historico[0].data_versao.isoformat() if historico else None,
+        "data": [h.to_dict() for h in historico]
+    }
+
+@router.get("/historico/participacoes/imovel/{imovel_id}")
+async def get_historico_participacoes_por_imovel(
+    imovel_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(verify_token)
+):
+    """
+    Retorna todo o histórico de participações para um imóvel específico
+    """
+    # Buscar informações do imóvel
+    imovel = db.query(Inmueble).filter(Inmueble.id == imovel_id).first()
+    if not imovel:
+        raise HTTPException(status_code=404, detail="Imóvel não encontrado")
+    
+    # Buscar todas as versões históricas para este imóvel
+    versoes = db.query(
+        HistoricoParticipacao.versao_id,
+        HistoricoParticipacao.data_versao
+    ).filter(
+        HistoricoParticipacao.imovel_id == imovel_id
+    ).distinct().order_by(
+        HistoricoParticipacao.data_versao.desc()
+    ).all()
+    
+    historico_completo = []
+    for versao in versoes:
+        participacoes_versao = db.query(HistoricoParticipacao).filter(
+            HistoricoParticipacao.versao_id == versao.versao_id,
+            HistoricoParticipacao.imovel_id == imovel_id
+        ).order_by(HistoricoParticipacao.proprietario_id).all()
+        
+        historico_completo.append({
+            "versao_id": versao.versao_id,
+            "data_versao": versao.data_versao.isoformat(),
+            "participacoes": [p.to_dict() for p in participacoes_versao]
+        })

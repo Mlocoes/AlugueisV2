@@ -4,8 +4,9 @@ from sqlalchemy import func
 from typing import List, Dict
 import pandas as pd
 import traceback
+import uuid
 from datetime import datetime, timedelta
-from models_final import Participacao, Proprietario, Imovel, Usuario
+from models_final import Participacao, Proprietario, Imovel, Usuario, HistoricoParticipacao
 from config import get_db
 from .auth import verify_token, is_admin
 
@@ -266,3 +267,186 @@ def criar_nova_versao_participacoes(payload: Dict, db: Session = Depends(get_db)
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro ao criar nova versão: {str(e)}")
+
+# ============================================
+# ENDPOINTS PARA HISTÓRICO DE PARTICIPAÇÕES
+# ============================================
+
+@router.get("/historico/versoes")
+async def get_versoes_historico(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+    """
+    Retorna lista de todas as versões históricas disponíveis
+    """
+    versoes = db.query(
+        HistoricoParticipacao.versao_id,
+        HistoricoParticipacao.data_versao,
+        func.count(HistoricoParticipacao.id).label('total_participacoes')
+    ).group_by(
+        HistoricoParticipacao.versao_id,
+        HistoricoParticipacao.data_versao
+    ).order_by(
+        HistoricoParticipacao.data_versao.desc()
+    ).all()
+    
+    return {
+        "success": True,
+        "data": [
+            {
+                "versao_id": v.versao_id,
+                "data_versao": v.data_versao.isoformat(),
+                "total_participacoes": v.total_participacoes
+            } for v in versoes
+        ]
+    }
+
+@router.get("/historico/{versao_id}")
+async def get_historico_por_versao(
+    versao_id: str,
+    imovel_id: int = None,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(verify_token)
+):
+    """
+    Retorna as participações de uma versão específica do histórico
+    """
+    query = db.query(HistoricoParticipacao).filter(HistoricoParticipacao.versao_id == versao_id)
+    
+    if imovel_id:
+        query = query.filter(HistoricoParticipacao.imovel_id == imovel_id)
+    
+    historico = query.order_by(HistoricoParticipacao.imovel_id, HistoricoParticipacao.proprietario_id).all()
+    
+    if not historico:
+        raise HTTPException(status_code=404, detail=f"Versão {versao_id} não encontrada")
+    
+    return {
+        "success": True,
+        "versao_id": versao_id,
+        "data_versao": historico[0].data_versao.isoformat(),
+        "data": [h.to_dict() for h in historico]
+    }
+
+@router.get("/historico/imovel/{imovel_id}")
+async def get_historico_por_imovel(
+    imovel_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(verify_token)
+):
+    """
+    Retorna todo o histórico de participações para um imóvel específico
+    """
+    # Verificar se imóvel existe
+    imovel = db.query(Imovel).filter(Imovel.id == imovel_id).first()
+    if not imovel:
+        raise HTTPException(status_code=404, detail="Imóvel não encontrado")
+    
+    # Buscar todas as versões históricas para este imóvel
+    versoes = db.query(
+        HistoricoParticipacao.versao_id,
+        HistoricoParticipacao.data_versao
+    ).filter(
+        HistoricoParticipacao.imovel_id == imovel_id
+    ).distinct().order_by(
+        HistoricoParticipacao.data_versao.desc()
+    ).all()
+    
+    historico_completo = []
+    for versao in versoes:
+        participacoes_versao = db.query(HistoricoParticipacao).filter(
+            HistoricoParticipacao.versao_id == versao.versao_id,
+            HistoricoParticipacao.imovel_id == imovel_id
+        ).order_by(HistoricoParticipacao.proprietario_id).all()
+        
+        historico_completo.append({
+            "versao_id": versao.versao_id,
+            "data_versao": versao.data_versao.isoformat(),
+            "participacoes": [p.to_dict() for p in participacoes_versao]
+        })
+    
+    return {
+        "success": True,
+        "imovel": {
+            "id": imovel.id,
+            "nome": imovel.nome,
+            "endereco": imovel.endereco
+        },
+        "historico": historico_completo
+    }
+
+@router.post("/criar-versao")
+async def criar_nova_versao_participacoes(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+    """
+    Cria uma nova versão das participações atuais no histórico
+    """
+    if not current_user.tipo_de_usuario in ['administrador', 'usuario']:
+        raise HTTPException(status_code=403, detail="Acesso negado: Requer privilégios de usuário ou administrador.")
+    
+    # Gerar ID único para a versão
+    versao_id = f"v_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
+    
+    # Buscar todas as participações atuais ativas
+    participacoes_atuais = db.query(Participacao).filter(Participacao.ativo == True).all()
+    
+    if not participacoes_atuais:
+        raise HTTPException(status_code=400, detail="Nenhuma participação ativa encontrada")
+    
+    # Verificar se já existe uma versão idêntica
+    versao_recente = db.query(HistoricoParticipacao.versao_id).order_by(
+        HistoricoParticipacao.data_versao.desc()
+    ).first()
+    
+    if versao_recente:
+        # Comparar dados
+        dados_recentes = db.query(
+            HistoricoParticipacao.imovel_id,
+            HistoricoParticipacao.proprietario_id,
+            HistoricoParticipacao.porcentagem
+        ).filter(
+            HistoricoParticipacao.versao_id == versao_recente.versao_id
+        ).order_by(
+            HistoricoParticipacao.imovel_id,
+            HistoricoParticipacao.proprietario_id
+        ).all()
+        
+        dados_atuais = [
+            (p.imovel_id, p.proprietario_id, p.porcentagem)
+            for p in sorted(participacoes_atuais, key=lambda x: (x.imovel_id, x.proprietario_id))
+        ]
+        
+        dados_recentes_sorted = [
+            (d.imovel_id, d.proprietario_id, d.porcentagem)
+            for d in sorted(dados_recentes, key=lambda x: (x[0], x[1]))
+        ]
+        
+        if dados_atuais == dados_recentes_sorted:
+            return {
+                "success": True,
+                "message": f"Dados não mudaram, versão existente: {versao_recente.versao_id}",
+                "versao_id": versao_recente.versao_id
+            }
+    
+    # Criar nova versão
+    historico_entries = []
+    for participacao in participacoes_atuais:
+        historico_entries.append({
+            "versao_id": versao_id,
+            "data_versao": datetime.now(),
+            "porcentagem": participacao.porcentagem,
+            "data_registro_original": participacao.data_registro,
+            "ativo": participacao.ativo,
+            "imovel_id": participacao.imovel_id,
+            "proprietario_id": participacao.proprietario_id
+        })
+    
+    try:
+        db.bulk_insert_mappings(HistoricoParticipacao, historico_entries)
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": f"Nova versão criada: {versao_id}",
+            "versao_id": versao_id
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Erro ao criar versão: {str(e)}")
