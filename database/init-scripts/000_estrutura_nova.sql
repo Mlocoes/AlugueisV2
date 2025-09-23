@@ -1,7 +1,7 @@
 -- SCRIPT DE INICIALIZAÇÃO OPTIMIZADO - SISTEMA DE ALUGUEIS V2
--- Versión actualizada con estructura optimizada
+-- Versión actualizada com estrutura optimizada
 
--- Extensiones necesarias
+-- Extensões necessárias
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Tabela de usuários para autenticação
@@ -59,7 +59,8 @@ CREATE TABLE IF NOT EXISTS participacoes (
     uuid UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
     proprietario_id INTEGER NOT NULL REFERENCES proprietarios(id) ON DELETE CASCADE,
     imovel_id INTEGER NOT NULL REFERENCES imoveis(id) ON DELETE CASCADE,
-    porcentagem DECIMAL(5,2) NOT NULL CHECK (porcentagem >= 0 AND porcentagem <= 100),
+    porcentagem DECIMAL(10,8) NOT NULL CHECK (porcentagem >= 0 AND porcentagem <= 100),
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
     data_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(proprietario_id, imovel_id, data_registro)
 );
@@ -114,6 +115,19 @@ CREATE TABLE IF NOT EXISTS log_importacoes (
     tempo_processamento INTERVAL
 );
 
+-- Tabela de histórico de participações
+CREATE TABLE IF NOT EXISTS historico_participacoes (
+    id SERIAL PRIMARY KEY,
+    uuid UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
+    versao_id VARCHAR(50) NOT NULL,
+    data_versao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    porcentagem DECIMAL(10,8) NOT NULL DEFAULT 0.00000000,
+    data_registro_original TIMESTAMP NOT NULL,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    imovel_id INTEGER NOT NULL REFERENCES imoveis(id),
+    proprietario_id INTEGER NOT NULL REFERENCES proprietarios(id)
+);
+
 -- ÍNDICES OPTIMIZADOS
 CREATE INDEX IF NOT EXISTS idx_proprietarios_nome ON proprietarios(nome);
 CREATE INDEX IF NOT EXISTS idx_proprietarios_documento ON proprietarios(documento);
@@ -124,6 +138,8 @@ CREATE INDEX IF NOT EXISTS idx_participacoes_imovel ON participacoes(imovel_id);
 CREATE INDEX IF NOT EXISTS idx_alugueis_imovel ON alugueis(imovel_id);
 CREATE INDEX IF NOT EXISTS idx_alugueis_proprietario ON alugueis(proprietario_id);
 CREATE INDEX IF NOT EXISTS idx_alugueis_data ON alugueis(ano, mes);
+CREATE INDEX IF NOT EXISTS idx_historico_participacoes_versao_imovel ON historico_participacoes(versao_id, imovel_id);
+CREATE INDEX IF NOT EXISTS idx_historico_participacoes_data ON historico_participacoes(data_versao);
 CREATE INDEX IF NOT EXISTS idx_alias_alias ON alias(alias);
 CREATE INDEX IF NOT EXISTS idx_transferencias_alias_id ON transferencias(alias_id);
 CREATE INDEX IF NOT EXISTS idx_transferencias_data_criacao ON transferencias(data_criacao);
@@ -133,6 +149,11 @@ COMMENT ON TABLE alias IS 'Tabela para alias (grupos de proprietários) - antes 
 COMMENT ON COLUMN alias.id_proprietarios IS 'JSON array com IDs dos proprietários pertencentes ao alias';
 COMMENT ON TABLE transferencias IS 'Tabela para armazenar transferências cadastradas';
 COMMENT ON COLUMN transferencias.id_proprietarios IS 'JSON array com objetos {id: number, valor: number}';
+
+-- CONSTRAINT ÚNICA PARA HISTÓRICO DE PARTICIPAÇÕES
+ALTER TABLE historico_participacoes
+ADD CONSTRAINT IF NOT EXISTS uniq_historico_participacao_versao
+UNIQUE (versao_id, imovel_id, proprietario_id);
 
 -- FUNÇÃO OPTIMIZADA PARA CÁLCULO DE TAXA (sin usar campo ativo eliminado)
 CREATE OR REPLACE FUNCTION calcular_taxa_proprietario_automatico()
@@ -215,18 +236,6 @@ CREATE TABLE IF NOT EXISTS imoveis (
     observacoes TEXT
 );
 
--- Tabela de participações
-CREATE TABLE IF NOT EXISTS participacoes (
-    id SERIAL PRIMARY KEY,
-    uuid UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
-    proprietario_id INTEGER NOT NULL REFERENCES proprietarios(id) ON DELETE CASCADE,
-    imovel_id INTEGER NOT NULL REFERENCES imoveis(id) ON DELETE CASCADE,
-    porcentagem DECIMAL(5,2) NOT NULL CHECK (porcentagem > 0 AND porcentagem <= 100),
-    data_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    observacoes TEXT,
-    ativo BOOLEAN DEFAULT TRUE
-);
-
 -- Tabela de alugueis
 CREATE TABLE IF NOT EXISTS alugueis (
     id SERIAL PRIMARY KEY,
@@ -304,6 +313,8 @@ CREATE INDEX IF NOT EXISTS idx_participacoes_imovel ON participacoes(imovel_id);
 CREATE INDEX IF NOT EXISTS idx_alugueis_imovel ON alugueis(imovel_id);
 CREATE INDEX IF NOT EXISTS idx_alugueis_proprietario ON alugueis(proprietario_id);
 CREATE INDEX IF NOT EXISTS idx_alugueis_data ON alugueis(ano, mes);
+CREATE INDEX IF NOT EXISTS idx_historico_participacoes_versao_imovel ON historico_participacoes(versao_id, imovel_id);
+CREATE INDEX IF NOT EXISTS idx_historico_participacoes_data ON historico_participacoes(data_versao);
 CREATE INDEX IF NOT EXISTS idx_alias_alias ON alias(alias);
 CREATE INDEX IF NOT EXISTS idx_transferencias_alias_id ON transferencias(alias_id);
 CREATE INDEX IF NOT EXISTS idx_transferencias_data_criacao ON transferencias(data_criacao);
