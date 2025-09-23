@@ -198,6 +198,9 @@ class FileProcessor:
                 for sheet_name in excel_file.sheet_names:
                     df = pd.read_excel(self.file_path, sheet_name=sheet_name)
                     
+                    # Debug: verificar tipos de dados das colunas
+                    print(f"Debug: Sheet {sheet_name}, dtypes: {df.dtypes.to_dict()}")
+                    
                     # Información básica de la hoja
                     sheet_info = {
                         "name": sheet_name,
@@ -217,6 +220,9 @@ class FileProcessor:
             }
             
         except Exception as e:
+            print(f"Debug: Error in read_excel_file: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return {
                 "success": False,
                 "error": f"Error leyendo archivo: {str(e)}"
@@ -224,14 +230,15 @@ class FileProcessor:
     
     def detect_data_type(self, df: pd.DataFrame, sheet_name: str) -> str:
         """Detectar tipo de dados na planilha"""
-        columns = [col.lower() for col in df.columns]
+        # Garantir que os nomes de colunas sejam strings
+        columns = [str(col).lower() for col in df.columns]
         columns_text = ' '.join(columns)
         
         # Detectar participações matriciais (formato especial: Nome, Endereço, VALOR, Nnnn1, Nnnn2, ... ou nomes reais)
-        nnnn_columns = [col for col in df.columns if col.startswith('Nnnn')]
+        nnnn_columns = [col for col in df.columns if str(col).startswith('Nnnn')]
         # Verificar se tem nomes de proprietários conhecidos
         proprietario_nomes_conhecidos = ['Jandira', 'Manoel', 'Fabio', 'Carla', 'Armando', 'Suely', 'Felipe', 'Adriana', 'Regina', 'Mario']
-        proprietario_columns_reais = [col for col in df.columns if any(nome in col for nome in proprietario_nomes_conhecidos)]
+        proprietario_columns_reais = [col for col in df.columns if any(str(nome) in str(col) for nome in proprietario_nomes_conhecidos)]
         
         has_matricial_participacoes = (
             'nome' in columns and 
@@ -1398,7 +1405,6 @@ async def get_historico_participacoes_por_imovel(
         HistoricoParticipacao.versao_id,
         HistoricoParticipacao.data_versao
     ).filter(
-        HistoricoParticipacao.imovel_id == imovel_id
     ).distinct().order_by(
         HistoricoParticipacao.data_versao.desc()
     ).all()
@@ -1415,9 +1421,4 @@ async def get_historico_participacoes_por_imovel(
             "data_versao": versao.data_versao.isoformat(),
             "participacoes": [p.to_dict() for p in participacoes_versao]
         })
-    
-    return {
-        "success": True,
-        "imovel_id": imovel_id,
-        "historico": historico_completo
-    }
+   
