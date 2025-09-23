@@ -97,20 +97,28 @@ def is_cnpj_valid(cnpj: str) -> bool:
     # 6. Validate the second check digit
     return digit2 == int(cnpj[13])
 
-def sanitize_string(value: str) -> str:
+def sanitize_string(value) -> str:
     """Sanitiza uma string removendo tags HTML e caracteres de controle."""
-    if not isinstance(value, str):
-        return str(value) if value is not None else ""
+    # Garantir que o valor seja convertido para string adequadamente
+    if value is None:
+        return ""
+    
+    # Se for datetime, converter para string ISO
+    if hasattr(value, 'isoformat'):
+        return value.isoformat()
+    
+    # Converter para string
+    value_str = str(value)
     
     # Escapar HTML
     from html import escape
-    value = escape(value)
+    value_str = escape(value_str)
     
     # Remover caracteres de controle
-    value = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', value)
+    value_str = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', value_str)
     
     # Limitar tamanho para prevenir ataques
-    return value[:1000] if len(value) > 1000 else value
+    return value_str[:1000] if len(value_str) > 1000 else value_str
 
 def validate_email(email: str) -> bool:
     """Valida formato de e-mail."""
@@ -132,8 +140,14 @@ def sanitize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """Sanitiza todas as strings em um DataFrame."""
     df_copy = df.copy()
     for col in df_copy.columns:
+        # Só processar colunas de tipo object (strings misturadas)
         if df_copy[col].dtype == 'object':
-            df_copy[col] = df_copy[col].apply(lambda x: sanitize_string(x) if pd.notna(x) else x)
+            try:
+                df_copy[col] = df_copy[col].apply(lambda x: sanitize_string(x) if pd.notna(x) else x)
+            except Exception as e:
+                # Se houver erro, tentar converter a coluna inteira para string primeiro
+                print(f"Aviso: Erro ao sanitizar coluna {col}: {e}")
+                df_copy[col] = df_copy[col].astype(str).apply(lambda x: sanitize_string(x) if x != 'nan' else '')
     return df_copy
 
 class FileProcessor:
@@ -1401,3 +1415,9 @@ async def get_historico_participacoes_por_imovel(
             "data_versao": versao.data_versao.isoformat(),
             "participacoes": [p.to_dict() for p in participacoes_versao]
         })
+    
+    return {
+        "success": True,
+        "imovel_id": imovel_id,
+        "historico": historico_completo
+    }
