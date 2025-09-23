@@ -792,8 +792,8 @@ async def import_propietarios(df: pd.DataFrame, db: Session) -> int:
             sobrenome = str(get_column_value(row, 'sobrenome') or '').strip()
             
             doc_val = get_column_value(row, 'documento')
-            documento = str(doc_val).strip() if pd.notna(doc_val) else ""
-            if documento.lower() == 'nan':
+            documento = str(doc_val).strip() if doc_val is not None and pd.notna(doc_val) else ""
+            if isinstance(documento, str) and documento.lower() == 'nan':
                 documento = ""
 
             if not nome or not sobrenome:
