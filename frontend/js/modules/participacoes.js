@@ -1,5 +1,3 @@
-
-
 /**
  * Módulo Participacoes - Gestão de participações de imóveis e proprietários
  * Inclui CRUD, seleção de conjuntos, renderização de matriz e validações
@@ -47,9 +45,9 @@ class ParticipacoesModule {
                 return;
             }
             
-            const seen = new Set();
-            this.datas = datas.filter(d => !seen.has(d) && seen.add(d));
-            this.selectedData = this.datas.length ? this.datas[0] : null;
+            // Não filtrar duplicatas, pois cada item é único com versao_id
+            this.datas = datas;
+            this.selectedData = this.datas.length ? this.datas[0].versao_id : null;
             this.renderDataSelector();
             
             if (this.selectedData) {
@@ -70,9 +68,9 @@ class ParticipacoesModule {
         }
         let html = '<label for="data-participacoes">Conjunto de Participações:</label> ';
         html += `<select id="data-participacoes">`;
-        for (const d of this.datas) {
-            const formattedDate = new Date(d).toLocaleString();
-            html += `<option value="${SecurityUtils.escapeHtml(d)}"${d === this.selectedData ? ' selected' : ''}>${SecurityUtils.escapeHtml(formattedDate)}</option>`;
+        for (const item of this.datas) {
+            const isSelected = item.versao_id === this.selectedData;
+            html += `<option value="${SecurityUtils.escapeHtml(item.versao_id)}"${isSelected ? ' selected' : ''}>${SecurityUtils.escapeHtml(item.label)}</option>`;
         }
         html += '</select>';
         SecurityUtils.setSafeHTML(container, html);
@@ -85,11 +83,24 @@ class ParticipacoesModule {
     async loadParticipacoes() {
         try {
             this.uiManager.showLoading('Carregando participações...');
-            const [participacoes, proprietarios, imoveis] = await Promise.all([
-                this.apiService.getParticipacoes(this.selectedData),
+            
+            let participacoes;
+            
+            // Verificar se é uma versão do histórico (versao_id começa com "v_")
+            if (this.selectedData && this.selectedData.startsWith('v_')) {
+                // Buscar do histórico
+                const response = await this.apiService.get(`/api/upload/historico/participacoes/${this.selectedData}`);
+                participacoes = response.success ? response.data : [];
+            } else {
+                // Buscar participações ativas por data
+                participacoes = await this.apiService.getParticipacoes(this.selectedData);
+            }
+            
+            const [proprietarios, imoveis] = await Promise.all([
                 this.apiService.getProprietarios(),
                 this.apiService.getImoveis()
             ]);
+            
             this.uiManager.hideLoading();
             this.participacoes = participacoes || [];
             this.proprietarios = proprietarios || [];
@@ -206,7 +217,6 @@ class ParticipacoesModule {
             recalc();
 
             const salvar = async () => {
-                // ...existing code...
                 // Normalizar apenas o imóvel editado
                 const edited = {};
                 body.querySelectorAll('input[data-prop]').forEach(inp => {

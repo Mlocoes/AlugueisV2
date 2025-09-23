@@ -14,19 +14,55 @@ router = APIRouter(prefix="/api/participacoes", tags=["participacoes"])
 
 @router.get("/datas", response_model=Dict)
 def listar_datas_participacoes(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
-    """Lista todas as datas de conjuntos de participações disponíveis."""
-    datas = db.query(Participacao.data_registro).order_by(Participacao.data_registro.desc()).all()
-    # Filtra datas distintas por ano, mês, dia
+    """Lista todas as datas de conjuntos de participações disponíveis (incluindo histórico)."""
+    # Buscar versões do histórico - uma por versao_id com a data mais recente
+    from sqlalchemy import func
+    versoes_historico = db.query(
+        HistoricoParticipacao.versao_id,
+        func.max(HistoricoParticipacao.data_versao).label('data_versao')
+    )\
+    .group_by(HistoricoParticipacao.versao_id)\
+    .order_by(func.max(HistoricoParticipacao.data_versao).desc())\
+    .all()
+    
+    # Buscar datas das participações ativas atuais
+    datas_ativas = db.query(Participacao.data_registro)\
+        .filter(Participacao.ativo == True)\
+        .order_by(Participacao.data_registro.desc())\
+        .all()
+    
+    # Combinar e filtrar datas distintas
     seen = set()
     datas_list = []
-    for d in datas:
-        if d[0] is None:
-            continue
-        key = d[0].date()
-        if key in seen:
-            continue
-        seen.add(key)
-        datas_list.append(d[0].isoformat())
+    
+    # Adicionar versões do histórico
+    for versao in versoes_historico:
+        versao_id, data_versao = versao
+        if data_versao:
+            datas_list.append({
+                "data": data_versao.isoformat(),
+                "tipo": "histórico",
+                "versao_id": versao_id,
+                "label": f"Versão {versao_id} - {data_versao.strftime('%d/%m/%Y %H:%M')}"
+            })
+    
+    # Adicionar datas ativas (se não estiverem no histórico)
+    seen_dates = {item["data"].split("T")[0] for item in datas_list}  # Extrair apenas a data (YYYY-MM-DD)
+    for d in datas_ativas:
+        if d[0]:
+            key = d[0].date().isoformat()
+            if key not in seen_dates:
+                seen_dates.add(key)
+                datas_list.append({
+                    "data": d[0].isoformat(),
+                    "tipo": "ativo",
+                    "versao_id": None,
+                    "label": f"Participações Ativas - {d[0].strftime('%d/%m/%Y %H:%M')}"
+                })
+    
+    # Ordenar por data descendente
+    datas_list.sort(key=lambda x: x["data"], reverse=True)
+    
     return {"success": True, "datas": datas_list}
 
 @router.get("/", response_model=Dict)
