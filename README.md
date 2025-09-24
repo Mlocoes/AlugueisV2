@@ -22,6 +22,9 @@ O Sistema de Gestão de Aluguéis V2 é uma solução completa para administraç
 - 📈 **Relatórios Avançados**: Filtros por período e proprietário.
 - 📤 **Importação Excel**: Drag & drop com validação automática.
 - 🐳 **Docker Ready**: Orquestração completa com Docker Compose.
+- 🛡️ **Segurança Avançada**: Proteções contra SQL injection, XSS, rate limiting.
+- 📊 **Monitoramento**: Health checks e métricas do sistema.
+- ✅ **Testes Automatizados**: Cobertura completa com pytest.
 
 ---
 
@@ -35,7 +38,9 @@ AlugueisV2/
 │   ├── main.py                # Aplicação principal
 │   ├── models_final.py        # Modelos de dados
 │   ├── routers/               # Endpoints organizados
-│   └── ...
+│   ├── utils/                 # Utilitários e handlers
+│   ├── tests/                 # Testes automatizados
+│   └── requirements.txt       # Dependências Python
 ├── frontend/                   # Interface web principal
 │   ├── index.html             # Página principal
 │   ├── mobile/                # Versão PWA mobile
@@ -47,7 +52,12 @@ AlugueisV2/
 │           └── services/      # Serviços
 ├── database/                   # Scripts BD e backups
 ├── docs/                       # Documentação técnica
-├── scripts/                    # Scripts automação
+│   ├── GUIA_SEGURANCA.md      # Políticas de segurança
+│   ├── GUIA_DESENVOLVIMENTO.md # Padrões de desenvolvimento
+│   └── RUNBOOK_OPERACOES.md   # Procedimentos operacionais
+├── scripts/                    # Scripts de automação
+│   ├── security_fixes.sh      # Correções de segurança
+│   └── validate_system.py     # Validação do sistema
 ├── docker-compose.yml          # Orquestração containers
 └── README.md                   # Este arquivo
 ```
@@ -63,6 +73,8 @@ AlugueisV2/
 - **🔗 SQLAlchemy**
 - **📊 Pandas**
 - **🔐 JWT**
+- **🛡️ SlowAPI** (Rate Limiting)
+- **📊 psutil** (Monitoramento)
 
 ### Frontend
 - **🌐 HTML5/CSS3/JavaScript ES6+**
@@ -73,6 +85,8 @@ AlugueisV2/
 ### DevOps & Infraestrutura
 - **🐳 Docker & Docker Compose**
 - **🌐 Nginx**
+- **🧪 pytest** (Testes)
+- **📋 flake8** (Linting)
 
 ---
 
@@ -100,6 +114,7 @@ AlugueisV2/
    - 🌐 **Frontend Desktop**: [http://192.168.0.7:3000](http://192.168.0.7:3000)
    - 📱 **Versão Mobile**: [http://192.168.0.7:3000/mobile](http://192.168.0.7:3000/mobile)
    - 📚 **Documentação API**: [http://192.168.0.7:8000/docs](http://192.168.0.7:8000/docs)
+   - 💚 **Health Check**: [http://192.168.0.7:8000/health](http://192.168.0.7:8000/health)
 
 ### Usuário Padrão
 
@@ -145,7 +160,81 @@ AlugueisV2/
 
 ---
 
-## �️ Solução de Problemas
+## 🛡️ Segurança e Validação
+
+### Correções de Segurança Implementadas
+
+O sistema inclui proteções avançadas contra vulnerabilidades comuns:
+
+- ✅ **SQL Injection Prevention**: Validação de entrada e uso de SQLAlchemy ORM
+- ✅ **XSS Protection**: Sanitização de dados no frontend com SecurityUtils
+- ✅ **Rate Limiting**: Controle de frequência de requisições com SlowAPI
+- ✅ **CORS Configuration**: Controle de origens permitidas
+- ✅ **File Upload Security**: Validação de tipos MIME e tamanho de arquivos
+- ✅ **Secrets Management**: Remoção de credenciais hardcoded
+- ✅ **Input Validation**: Validação rigorosa de todos os dados de entrada
+
+### Validação Automática
+
+Execute a validação completa do sistema:
+
+```bash
+# Validação de segurança e integridade
+python scripts/validate_system.py
+
+# Correções automáticas de segurança
+bash scripts/security_fixes.sh
+```
+
+### Monitoramento de Saúde
+
+- 📊 **Health Checks**: Endpoint `/health` com métricas do sistema
+- 📈 **Métricas em Tempo Real**: CPU, memória, disco e conectividade BD
+- 🚨 **Alertas Automáticos**: Detecção de problemas de conectividade
+
+---
+
+## 🧪 Testes e Qualidade
+
+### Executando Testes
+
+```bash
+# Entrar no container do backend
+docker exec -it alugueisv2_backend bash
+
+# Executar todos os testes
+pytest backend/tests/ -v
+
+# Executar testes específicos
+pytest backend/tests/test_auth.py -v
+pytest backend/tests/test_upload.py -v
+pytest backend/tests/test_proprietarios.py -v
+```
+
+### Cobertura de Testes
+
+- 🔐 **Autenticação**: Testes de login, JWT e rate limiting
+- 📤 **Upload**: Validação de arquivos e segurança
+- 👥 **Proprietários**: CRUD e validações de dados
+- 🏥 **Health Checks**: Monitoramento e métricas
+
+---
+
+## 📚 Documentação
+
+### Guias Disponíveis
+
+- 📋 **[Guia de Segurança](docs/GUIA_SEGURANCA.md)**: Políticas, configurações e melhores práticas
+- 🛠️ **[Guia de Desenvolvimento](docs/GUIA_DESENVOLVIMENTO.md)**: Padrões de código, testes e deployment
+- 📖 **[Runbook de Operações](docs/RUNBOOK_OPERACOES.md)**: Procedimentos operacionais e manutenção
+
+### Documentação da API
+
+Acesse a documentação interativa da API em [http://192.168.0.7:8000/docs](http://192.168.0.7:8000/docs)
+
+---
+
+## 🔧 Solução de Problemas
 
 ### Importação de Alquileres (0 registros importados)
 
@@ -178,15 +267,83 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 
-### Verificación de Importación Exitosa
+### Verificação de Importação Exitosa
 
 ```bash
 # Verificar registros importados
 docker exec -t alugueisV1_postgres psql -U alugueisv1_usuario -d alugueisv1_db -c "SELECT COUNT(*) FROM alugueis;"
 ```
 
+### Problemas de Conectividade
+
+```bash
+# Verificar status dos containers
+docker ps
+
+# Verificar logs do backend
+docker logs alugueisv2_backend
+
+# Verificar conectividade com banco
+docker exec alugueisv2_backend python -c "import psycopg2; print('DB OK')"
+```
+
+### Validação de Segurança
+
+```bash
+# Executar validação completa
+python scripts/validate_system.py
+
+# Verificar health check
+curl http://localhost:8000/health
+```
+
 ---
 
-## �📄 Licença
+## 🚀 Deployment e Produção
+
+### Ambiente de Produção
+
+1. **Configurar variáveis de ambiente**
+   ```bash
+   cp .env.example .env
+   # Editar .env com configurações de produção
+   ```
+
+2. **Deploy com Traefik**
+   ```bash
+   docker-compose -f docker-compose.traefik.yml up -d
+   ```
+
+3. **Backup automático**
+   ```bash
+   bash scripts/backup.sh
+   ```
+
+### Monitoramento Contínuo
+
+- 📊 **Métricas**: CPU, memória, conexões BD
+- 🚨 **Alertas**: Falhas de conectividade, alto uso de recursos
+- 📈 **Logs**: Centralizados e rotacionados
+
+---
+
+## 🤝 Contribuição
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+### Padrões de Código
+
+- 📋 **PEP 8**: Padrão Python
+- 🧪 **Testes**: Cobertura mínima 80%
+- 📚 **Documentação**: Docstrings obrigatórios
+- 🔒 **Segurança**: Revisão de segurança em PRs
+
+---
+
+## 📄 Licença
 
 Este projeto está licenciado sob a **MIT License** - veja o arquivo [LICENSE](LICENSE) para detalhes.
