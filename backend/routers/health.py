@@ -7,6 +7,7 @@ from config import get_db
 import psutil
 import time
 from datetime import datetime
+from sqlalchemy import text
 
 router = APIRouter(prefix="/api/health", tags=["health"])
 
@@ -16,10 +17,13 @@ async def detailed_health(db: Session = Depends(get_db)):
     # Verificar banco de dados
     db_start = time.time()
     try:
-        db.query("SELECT 1").first()
+        # Usar uma query mais simples
+        result = db.execute(text("SELECT 1"))
+        result.fetchone()
         db_status = "ok"
         db_time = time.time() - db_start
     except Exception as e:
+        print(f"Database error: {e}")  # Debug
         db_status = "error"
         db_time = -1
 
