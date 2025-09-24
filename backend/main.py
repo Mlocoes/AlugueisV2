@@ -15,8 +15,9 @@ from fastapi_utils.tasks import repeat_every
 from config import APP_CONFIG, CORS_CONFIG, get_db, UPLOAD_DIR
 from models_final import AluguelSimples, Imovel
 from routers import alugueis, estadisticas, upload, auth
-from routers import proprietarios, imoveis, participacoes, reportes, extras, transferencias, dashboard
+from routers import proprietarios, imoveis, participacoes, reportes, extras, transferencias, dashboard, health
 from routers.auth import verify_token
+from utils.error_handlers import global_exception_handler
 
 # Configuração da aplicação
 
@@ -33,6 +34,10 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
+
+# Handler global de exceções
+from fastapi import Request
+app.add_exception_handler(Exception, global_exception_handler)
 
 # Tarefa de limpeza de arquivos de upload
 @app.on_event("startup")
@@ -65,6 +70,7 @@ app.include_router(participacoes.router)
 app.include_router(reportes.router)
 app.include_router(extras.router)
 app.include_router(transferencias.router)
+app.include_router(health.router)
 
 # =====================================================
 # ENDPOINTS PRINCIPAIS

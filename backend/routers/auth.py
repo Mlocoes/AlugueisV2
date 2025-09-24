@@ -168,12 +168,12 @@ def is_user_or_admin(current_user: Usuario = Depends(verify_token)):
 
 @router.post("/login", response_model=LoginResponse)
 @limiter.limit("5/minute")  # Máximo 5 tentativas de login por minuto por IP
-async def login(request: LoginRequest, db: Session = Depends(get_db)):
+async def login(request: Request, login_data: LoginRequest, db: Session = Depends(get_db)):
     """
     Endpoint de login
     """
     # Buscar usuário no banco
-    usuario = db.query(Usuario).filter(Usuario.usuario == request.usuario).first()
+    usuario = db.query(Usuario).filter(Usuario.usuario == login_data.usuario).first()
     
     if not usuario:
         raise HTTPException(
@@ -182,7 +182,7 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
         )
     
     # Verificar senha
-    if not verify_password(request.senha, usuario.senha):
+    if not verify_password(login_data.senha, usuario.senha):
         raise HTTPException(
             status_code=401,
             detail="Usuário ou senha inválidos"

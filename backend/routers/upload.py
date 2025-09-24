@@ -20,6 +20,14 @@ from routers.auth import is_admin, verify_token
 
 router = APIRouter(prefix="/api/upload", tags=["upload"])
 
+# Constantes de segurança
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+ALLOWED_MIME_TYPES = [
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/csv'
+]
+
 # Almacenar información de archivos subidos
 uploaded_files = {}
 
@@ -632,7 +640,11 @@ async def upload_file(file: UploadFile = File(...), admin_user: Usuario = Depend
         with open(file_path, "wb") as f:
             f.write(content)
         
-        # Guardar información del archivo
+        # Validar segurança do arquivo
+        if not validate_file_security(file_path):
+            raise HTTPException(status_code=400, detail="Arquivo não atende aos requisitos de segurança")
+        
+        # Guardar informação del archivo
         uploaded_files[file_id] = {
             "id": file_id,
             "original_name": file.filename,
