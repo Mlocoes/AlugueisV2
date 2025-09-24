@@ -42,10 +42,22 @@ APP_CONFIG = {
 }
 
 import logging
-# Configuração CORS parametrizável por ambiente
-raw_origins = os.getenv("CORS_ALLOW_ORIGINS", "*")
-ALLOW_ORIGINS = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+# Configuração CORS mais segura - SEM WILDCARD por padrão
+raw_origins = os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+
+# Em produção, forçar origens específicas e não aceitar wildcard
+if ENV == "production":
+    if "*" in raw_origins or not raw_origins.strip():
+        logging.warning("[CORS] AVISO: Usando CORS permissivo em produção! Configure CORS_ALLOW_ORIGINS com origens específicas.")
+        ALLOW_ORIGINS = ["http://localhost:3000"]  # Fallback seguro
+    else:
+        ALLOW_ORIGINS = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+else:
+    # Desenvolvimento - permitir localhost
+    ALLOW_ORIGINS = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+
 logging.basicConfig(level=logging.INFO)
+logging.info(f"[CORS] Ambiente: {ENV}")
 logging.info(f"[CORS] ALLOW_ORIGINS: {ALLOW_ORIGINS}")
 
 # Controlar credenciais por variável (padrão: false em dev, true em prod)
@@ -57,12 +69,13 @@ else:
 # Se wildcard for usado, não permitir credenciais (requisito do navegador)
 if "*" in ALLOW_ORIGINS:
     allow_credentials_effective = False
+    logging.warning("[CORS] AVISO: Wildcard detectado - credentials desabilitadas")
 
 CORS_CONFIG = {
     "allow_origins": ALLOW_ORIGINS,
     "allow_credentials": allow_credentials_effective,
     "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    "allow_headers": ["*"]
+    "allow_headers": ["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"]
 }
 
 # Configurações de segredo e debug

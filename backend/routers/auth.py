@@ -16,6 +16,11 @@ from models_final import Usuario
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 security = HTTPBearer()
 
+# Importar rate limiter
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+limiter = Limiter(key_func=get_remote_address)
+
 @router.get("/setup-status")
 async def get_setup_status(db: Session = Depends(get_db)):
     """
@@ -162,6 +167,7 @@ def is_user_or_admin(current_user: Usuario = Depends(verify_token)):
     return current_user
 
 @router.post("/login", response_model=LoginResponse)
+@limiter.limit("5/minute")  # Máximo 5 tentativas de login por minuto por IP
 async def login(request: LoginRequest, db: Session = Depends(get_db)):
     """
     Endpoint de login

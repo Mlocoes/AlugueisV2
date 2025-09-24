@@ -242,7 +242,7 @@ class UIManager {
     }
 
     /**
-     * Controlar visibilidade de botões de ação baseada nos permisos do usuário
+     * Controlar visibilidad de botões de ação baseada nos permisos do usuário
      */
     updateActionButtonsVisibility() {
         const isAdmin = this.checkAdminPermission();
@@ -360,10 +360,13 @@ class UIManager {
         alertElement.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show mb-2`;
         alertElement.style.cssText = 'animation: slideInRight 0.3s ease-out;';
 
+        // Usar SecurityUtils para prevenir XSS
+        const safeMessage = window.SecurityUtils ? window.SecurityUtils.escapeHtml(message) : message;
+
         alertElement.innerHTML = `
             <div class="d-flex align-items-center">
                 <i class="fas fa-${this.getAlertIcon(type)} me-2"></i>
-                <span>${message}</span>
+                <span>${safeMessage}</span>
                 <button type="button" class="btn-close ms-auto" onclick="uiManager.hideAlert('${alertId}')"></button>
             </div>
         `;

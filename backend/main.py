@@ -23,6 +23,17 @@ from routers.auth import verify_token
 app = FastAPI(**APP_CONFIG)
 app.add_middleware(CORSMiddleware, **CORS_CONFIG)
 
+# Configuração de Rate Limiting para prevenir ataques de força bruta
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
 # Tarefa de limpeza de arquivos de upload
 @app.on_event("startup")
 @repeat_every(seconds=6 * 60 * 60)  # Executar a cada 6 horas

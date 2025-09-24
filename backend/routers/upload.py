@@ -98,26 +98,34 @@ def is_cnpj_valid(cnpj: str) -> bool:
     return digit2 == int(cnpj[13])
 
 def sanitize_string(value) -> str:
-    """Sanitiza uma string removendo tags HTML e caracteres de controle."""
+    """Sanitiza uma string removendo tags HTML e caracteres perigosos para prevenir XSS e SQL injection."""
     # Garantir que o valor seja convertido para string adequadamente
     if value is None:
         return ""
-    
+
     # Se for datetime, converter para string ISO
     if hasattr(value, 'isoformat'):
         return value.isoformat()
-    
+
     # Converter para string
     value_str = str(value)
-    
-    # Escapar HTML
+
+    # Remover caracteres de controle perigosos
+    value_str = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', value_str)
+
+    # Escapar aspas simples e duplas para prevenir SQL injection
+    value_str = value_str.replace("'", "''").replace('"', '""')
+
+    # Remover ou escapar caracteres SQL perigosos
+    dangerous_sql = [';', '--', '/*', '*/', 'xp_', 'sp_', 'exec', 'union', 'select', 'drop', 'delete', 'update', 'insert']
+    for dangerous in dangerous_sql:
+        value_str = re.sub(re.escape(dangerous), '', value_str, flags=re.IGNORECASE)
+
+    # Escapar HTML para prevenir XSS
     from html import escape
     value_str = escape(value_str)
-    
-    # Remover caracteres de controle
-    value_str = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', value_str)
-    
-    # Limitar tamanho para prevenir ataques
+
+    # Limitar tamanho para prevenir ataques de denial of service
     return value_str[:1000] if len(value_str) > 1000 else value_str
 
 def validate_email(email: str) -> bool:
@@ -135,6 +143,29 @@ def validate_phone(phone: str) -> bool:
     phone = re.sub(r'[^\d]', '', phone)
     # Deve ter 10 ou 11 dígitos (DDD + número)
     return len(phone) in [10, 11] and phone.startswith(('1', '2', '3', '4', '5', '6', '7', '8', '9'))
+
+def validate_excel_content(df: pd.DataFrame) -> bool:
+    """Valida conteúdo do Excel antes do processamento para prevenir ataques."""
+    # Verificar tamanho máximo do DataFrame
+    MAX_ROWS = 10000
+    if len(df) > MAX_ROWS:
+        raise HTTPException(status_code=400, detail=f"Arquivo muito grande. Máximo {MAX_ROWS} linhas permitidas.")
+
+    # Verificar colunas suspeitas que podem indicar ataques
+    dangerous_columns = ['script', 'javascript', 'onload', 'onerror', 'eval', 'alert', 'document.cookie']
+    for col in df.columns:
+        col_str = str(col).lower().strip()
+        if any(dangerous in col_str for dangerous in dangerous_columns):
+            raise HTTPException(status_code=400, detail=f"Coluna suspeita detectada: {col}")
+
+    # Verificar conteúdo suspeito nas células
+    for col in df.columns:
+        for value in df[col].dropna():
+            value_str = str(value).lower()
+            if any(dangerous in value_str for dangerous in dangerous_columns):
+                raise HTTPException(status_code=400, detail=f"Conteúdo suspeito detectado na coluna {col}")
+
+    return True
 
 def sanitize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """Sanitiza todas as strings em um DataFrame."""
@@ -168,6 +199,8 @@ class FileProcessor:
             if self.file_path.endswith('.csv'):
                 # Procesar archivo CSV
                 df = pd.read_csv(self.file_path)
+                # Validar conteúdo antes de processar
+                validate_excel_content(df)
                 sheet_info = {
                     "name": "Sheet1",
                     "rows": len(df),
@@ -181,6 +214,8 @@ class FileProcessor:
             elif self.file_path.endswith('.tsv'):
                 # Procesar archivo TSV
                 df = pd.read_csv(self.file_path, sep='\t')
+                # Validar conteúdo antes de processar
+                validate_excel_content(df)
                 sheet_info = {
                     "name": "Sheet1", 
                     "rows": len(df),
@@ -197,10 +232,15 @@ class FileProcessor:
                 
                 for sheet_name in excel_file.sheet_names:
                     df = pd.read_excel(self.file_path, sheet_name=sheet_name)
-                    
-                    # Debug: verificar tipos de dados das colunas
-                    print(f"Debug: Sheet {sheet_name}, dtypes: {df.dtypes.to_dict()}")
-                    
+
+                    # Validar conteúdo antes de processar
+                    validate_excel_content(df)
+
+                    # Debug: verificar tipos de dados das colunas (apenas em desenvolvimento)
+                    import os
+                    if os.getenv("DEBUG") == "true":
+                        print(f"Debug: Sheet {sheet_name}, dtypes: {df.dtypes.to_dict()}")
+
                     # Información básica de la hoja
                     sheet_info = {
                         "name": sheet_name,
@@ -1421,4 +1461,9 @@ async def get_historico_participacoes_por_imovel(
             "data_versao": versao.data_versao.isoformat(),
             "participacoes": [p.to_dict() for p in participacoes_versao]
         })
-   
+        
+    return {
+        "success": True,
+        "imovel_id": imovel_id,
+        "historico": historico_completo
+    }
