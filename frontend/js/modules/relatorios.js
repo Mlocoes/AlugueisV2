@@ -4,6 +4,8 @@ class RelatoriosManager {
         this.currentData = [];
         this.filteredData = [];
         this.apiService = null;
+        this.transferenciasCache = new Map(); // Cache para transferências
+        this.cacheTimeout = 5 * 60 * 1000; // 5 minutos
         this.init();
     }
 
@@ -104,12 +106,27 @@ class RelatoriosManager {
                 return;
             }
 
+            // Limpar cache antigo
+            this.clearOldCache();
+
             // ⭐ IMPORTANTE: Configurar event listeners agora que o DOM está pronto
             this.setupEventListeners();
 
             await this.loadInitialData();
         } catch (error) {
             console.error('❌ Erro ao carregar relatórios:', error);
+        }
+    }
+
+    /**
+     * Limpar cache antigo
+     */
+    clearOldCache() {
+        const now = Date.now();
+        for (const [key, cachedData] of this.transferenciasCache.entries()) {
+            if (now - cachedData.timestamp > this.cacheTimeout) {
+                this.transferenciasCache.delete(key);
+            }
         }
     }
 
@@ -200,58 +217,89 @@ class RelatoriosManager {
                 return;
             }
 
+            // Mostrar loading state
+            const tbody = document.getElementById('relatorios-table-body');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                            Carregando dados...
+                        </td>
+                    </tr>
+                `;
+            }
+
             // Construir parâmetros de consulta
             const params = new URLSearchParams();
-            
+
             const ano = document.getElementById('relatorios-ano-select')?.value;
             const mes = document.getElementById('relatorios-mes-select')?.value;
             const proprietarioSelection = document.getElementById('relatorios-proprietario-select')?.value;
-            
+
             if (ano) params.append('ano', ano);
             if (mes) params.append('mes', mes);
-            
+
             // Manejar selección de proprietário o alias
             if (proprietarioSelection) {
                 const proprietarioIds = await this.getProprietarioIds(proprietarioSelection);
-                
+
                 if (proprietarioIds && proprietarioIds.length > 0) {
                     if (proprietarioIds.length === 1) {
                         // Un solo proprietário
                         params.append('proprietario_id', proprietarioIds[0]);
                     } else {
-                        // Múltiples proprietários (alias) - necesitamos filtrar después
+                        // Múltiples proprietários (alias) - necesitamos filtrar depois
                         this.selectedProprietarioIds = proprietarioIds;
-                        console.log(`🔍 Filtrando por múltiples proprietários: ${proprietarioIds.join(', ')}`);
+                        console.log(`🔍 Filtrando por múltiplos proprietários: ${proprietarioIds.join(', ')}`);
                     }
                 }
             } else {
                 this.selectedProprietarioIds = null;
             }
-            
+
+            console.log('📡 Carregando dados de relatórios com parâmetros:', params.toString());
+
             const response = await this.apiService.get(`/api/reportes/resumen-mensual?${params.toString()}`);
             const data = response.success ? response.data : response;
-            
+
             if (!Array.isArray(data)) {
                 console.error('Resposta de relatórios não é um array:', data);
-                return;
+                throw new Error('Formato de resposta inválido');
             }
-            
+
             this.currentData = data;
             this.filteredData = [...data];
-            
+
             // Aplicar filtro de múltiples proprietários se é um alias
             if (this.selectedProprietarioIds && this.selectedProprietarioIds.length > 1) {
-                this.filteredData = this.filteredData.filter(item => 
+                this.filteredData = this.filteredData.filter(item =>
                     this.selectedProprietarioIds.includes(item.proprietario_id)
                 );
                 console.log(`📊 Filtrados ${this.filteredData.length} registros para o alias`);
             }
-            
+
+            console.log(`✅ Carregados ${this.currentData.length} registros, filtrados: ${this.filteredData.length}`);
+
             this.updateTable();
             this.updateSummary();
-            
+
         } catch (error) {
             console.error('Erro ao carregar dados de relatórios:', error);
+
+            // Mostrar erro na tabela
+            const tbody = document.getElementById('relatorios-table-body');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-danger py-4">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Erro ao carregar relatórios: ${error.message}
+                        </td>
+                    </tr>
+                `;
+            }
+
             this.showError('Erro ao carregar relatórios');
         }
     }
@@ -350,149 +398,130 @@ class RelatoriosManager {
     // Función para obtener valor de transferencias para un proprietário específico
     async getTransferenciasValue(proprietarioId, ano, mes) {
         console.log(`🔍 Calculando transferências para proprietário ${proprietarioId} em ${mes}/${ano}`);
-        
+
         if (!proprietarioId) {
             console.log('⚠️ Proprietário ID inválido');
             return 0;
         }
-        
-        try {
-            // Intentar obtener transferencias desde la API
-            console.log('📡 Buscando transferências na API...');
-            const response = await this.apiService.get('/api/transferencias/relatorios');
-            
-            let transferencias = [];
-            
-            if (response.success && Array.isArray(response.data)) {
-                transferencias = response.data;
-                console.log(`📊 ${transferencias.length} transferências encontradas na API`);
-            } else if (Array.isArray(response)) {
-                transferencias = response;
-                console.log(`📊 ${transferencias.length} transferências encontradas na API (resposta direta)`);
-            } else {
-                console.warn('⚠️ API não disponível, usando dados de fallback');
-                // Fallback para dados de prueba cuando la API no está disponible
-                transferencias = [
-                    {
-                        id: 1,
-                        data_criacao: "2025-07-01T00:00:00",
-                        data_fim: null,
-                        id_proprietarios: JSON.stringify([
-                            {"id": 1, "valor": 1000.00}, // Jandira Cozzolino
-                            {"id": 3, "valor": -1000.00}  // Fabio Cozzolino
-                        ])
-                    }
-                ];
-                console.log(`📊 Usando ${transferencias.length} transferências de fallback`);
-            }
-            
-            let valorTotal = 0;
-            
-            for (const transferencia of transferencias) {
-                console.log(`🔍 Analisando transferência ID ${transferencia.id}`);
-                
-                // Verificar se a transferência está ativa no período
-                const dataInicio = new Date(transferencia.data_criacao);
-                const dataFim = transferencia.data_fim ? new Date(transferencia.data_fim) : null;
-                const periodoConsulta = new Date(ano, mes - 1, 1); // Primer día del mes
-                
-                const estaAtiva = dataInicio <= periodoConsulta && (!dataFim || dataFim >= periodoConsulta);
-                
-                if (estaAtiva) {
-                    try {
-                        // Verificar se este proprietário está na lista de beneficiarios
-                        let proprietarios = [];
-                        
-                        // La API puede devolver los datos de diferentes formas
-                        if (transferencia.id_proprietarios) {
-                            // Formato de la base de datos (JSON string)
-                            proprietarios = JSON.parse(transferencia.id_proprietarios);
-                        } else if (transferencia.proprietarios) {
-                            // Formato ya parseado
-                            proprietarios = transferencia.proprietarios;
-                        }
-                        
-                        const proprietario = proprietarios.find(p => p.id == proprietarioId);
-                        if (proprietario && proprietario.valor) {
-                            const valor = parseFloat(proprietario.valor);
-                            valorTotal += valor;
-                            console.log(`💰 Transferência encontrada: R$ ${valor.toFixed(2)} para proprietário ${proprietarioId}`);
-                        }
-                    } catch (parseError) {
-                        console.error('Erro ao parsear proprietários da transferência:', parseError);
-                    }
+
+        // Verificar cache
+        const cacheKey = `transferencias_${ano}_${mes}`;
+        const cachedData = this.transferenciasCache.get(cacheKey);
+
+        let transferencias;
+        if (cachedData && (Date.now() - cachedData.timestamp) < this.cacheTimeout) {
+            transferencias = cachedData.data;
+            console.log(`📋 Usando transferências do cache para ${cacheKey}`);
+        } else {
+            try {
+                // Intentar obter transferencias desde la API
+                console.log('📡 Buscando transferências na API...');
+                const response = await this.apiService.get('/api/transferencias/relatorios');
+
+                if (response.success && Array.isArray(response.data)) {
+                    transferencias = response.data;
+                    console.log(`📊 ${transferencias.length} transferências encontradas na API`);
+                } else if (Array.isArray(response)) {
+                    transferencias = response;
+                    console.log(`📊 ${transferencias.length} transferências encontradas na API (resposta direta)`);
+                } else {
+                    console.warn('⚠️ API não disponível, usando dados de fallback');
+                    transferencias = this.getFallbackTransferencias();
                 }
+
+                // Armazenar no cache com timestamp
+                this.transferenciasCache.set(cacheKey, {
+                    data: transferencias,
+                    timestamp: Date.now()
+                });
+                console.log(`💾 Transferências armazenadas no cache para ${cacheKey}`);
+
+            } catch (error) {
+                console.error('❌ Erro ao obter transferências da API:', error);
+                transferencias = this.getFallbackTransferencias();
             }
-            
-            console.log(`💵 Total transferências para proprietário ${proprietarioId}: R$ ${valorTotal.toFixed(2)}`);
-            return valorTotal;
-            
-        } catch (error) {
-            console.error('❌ Erro ao obter transferências da API:', error);
-            
-            // Fallback para dados de prueba em caso de erro
-            console.log('🔄 Usando dados de fallback...');
-            return this.getTransferenciasValueFallback(proprietarioId, ano, mes);
         }
+
+        return this.calcularValorTransferencias(transferencias, proprietarioId, ano, mes);
     }
-    
-    // Función de fallback con datos de prueba
-    getTransferenciasValueFallback(proprietarioId, ano, mes) {
-        console.log(`🔄 Fallback: Calculando transferências para proprietário ${proprietarioId}`);
-        
-        const transferenciasSimuladas = [
+
+    getFallbackTransferencias() {
+        console.log('🔄 Usando dados de fallback...');
+        return [
             {
                 id: 1,
                 data_criacao: "2025-07-01T00:00:00",
                 data_fim: null,
-                proprietarios: [
+                id_proprietarios: JSON.stringify([
                     {"id": 1, "valor": 1000.00}, // Jandira Cozzolino
                     {"id": 3, "valor": -1000.00}  // Fabio Cozzolino
-                ]
+                ])
             }
         ];
-        
+    }
+
+    calcularValorTransferencias(transferencias, proprietarioId, ano, mes) {
         let valorTotal = 0;
-        
-        for (const transferencia of transferenciasSimuladas) {
+
+        for (const transferencia of transferencias) {
+            console.log(`🔍 Analisando transferência ID ${transferencia.id}`);
+
+            // Verificar se a transferência está ativa no período
             const dataInicio = new Date(transferencia.data_criacao);
             const dataFim = transferencia.data_fim ? new Date(transferencia.data_fim) : null;
-            const periodoConsulta = new Date(ano, mes - 1, 1);
-            
+            const periodoConsulta = new Date(ano, mes - 1, 1); // Primer día del mes
+
             const estaAtiva = dataInicio <= periodoConsulta && (!dataFim || dataFim >= periodoConsulta);
-            
+
             if (estaAtiva) {
-                const proprietario = transferencia.proprietarios.find(p => p.id == proprietarioId);
-                if (proprietario && proprietario.valor) {
-                    const valor = parseFloat(proprietario.valor);
-                    valorTotal += valor;
-                    console.log(`💰 Fallback: R$ ${valor.toFixed(2)} para proprietário ${proprietarioId}`);
+                try {
+                    // Verificar se este proprietário está na lista de beneficiarios
+                    let proprietarios = [];
+
+                    // La API puede devolver los datos de diferentes formas
+                    if (transferencia.id_proprietarios) {
+                        // Formato de la base de datos (JSON string)
+                        proprietarios = JSON.parse(transferencia.id_proprietarios);
+                    } else if (transferencia.proprietarios) {
+                        // Formato ya parseado
+                        proprietarios = transferencia.proprietarios;
+                    }
+
+                    const proprietario = proprietarios.find(p => p.id == proprietarioId);
+                    if (proprietario && proprietario.valor) {
+                        const valor = parseFloat(proprietario.valor);
+                        valorTotal += valor;
+                        console.log(`💰 Transferência encontrada: R$ ${valor.toFixed(2)} para proprietário ${proprietarioId}`);
+                    }
+                } catch (parseError) {
+                    console.error('Erro ao parsear proprietários da transferência:', parseError);
                 }
             }
         }
-        
+
+        console.log(`💵 Total transferências para proprietário ${proprietarioId}: R$ ${valorTotal.toFixed(2)}`);
         return valorTotal;
     }
 
     async updateTable() {
         console.log('🔄 updateTable() chamada');
-        
+
         const tbody = document.getElementById('relatorios-table-body');
-        
+
         if (!tbody) {
             console.error('Elemento relatorios-table-body não encontrado');
             return;
         }
-        
+
         // Verificar se checkbox de transferências existe e está marcado
         const transferenciasCheck = document.getElementById('relatorios-transferencias-check');
         const incluirTransferencias = transferenciasCheck ? transferenciasCheck.checked : false;
         console.log(`📋 Checkbox transferências: ${incluirTransferencias ? 'ATIVADO' : 'DESATIVADO'}`);
-        
+
         if (!this.filteredData || this.filteredData.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center text-muted py-4">
+                    <td colspan="6" class="text-center text-muted py-4">
                         <i class="fas fa-info-circle me-2"></i>
                         Nenhum dado encontrado para os filtros selecionados
                     </td>
@@ -500,41 +529,92 @@ class RelatoriosManager {
             `;
             return;
         }
-        
-        tbody.innerHTML = '';
-        
-        for (let index = 0; index < this.filteredData.length; index++) {
-            const item = this.filteredData[index];
-            
-            // Calcular valor base de aluguéis
-            let somaAlugueis = parseFloat(item.soma_alugueis || 0);
-            
-            // Si transferencias están activadas, agregar el valor
-            if (incluirTransferencias) {
-                const valorTransferencias = await this.getTransferenciasValue(
-                    item.proprietario_id, 
-                    item.ano, 
-                    item.mes
-                );
-                somaAlugueis += valorTransferencias;
+
+        // Mostrar loading state
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-muted py-4">
+                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                    Calculando valores...
+                </td>
+            </tr>
+        `;
+
+        try {
+            // Processar dados em lotes para melhor performance
+            const batchSize = 10;
+            tbody.innerHTML = '';
+
+            for (let i = 0; i < this.filteredData.length; i += batchSize) {
+                const batch = this.filteredData.slice(i, i + batchSize);
+                const batchPromises = batch.map(async (item, index) => {
+                    const globalIndex = i + index;
+
+                    // Calcular valor base de aluguéis
+                    let somaAlugueis = parseFloat(item.soma_alugueis || 0);
+
+                    // Se transferências estão ativadas, agregar o valor
+                    if (incluirTransferencias) {
+                        try {
+                            const valorTransferencias = await this.getTransferenciasValue(
+                                item.proprietario_id,
+                                item.ano,
+                                item.mes
+                            );
+                            somaAlugueis += valorTransferencias;
+                        } catch (error) {
+                            console.error(`Erro ao calcular transferências para proprietário ${item.proprietario_id}:`, error);
+                        }
+                    }
+
+                    return {
+                        globalIndex,
+                        item,
+                        somaAlugueis
+                    };
+                });
+
+                // Aguardar processamento do lote
+                const processedBatch = await Promise.all(batchPromises);
+
+                // Renderizar lote
+                for (const { globalIndex, item, somaAlugueis } of processedBatch) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${globalIndex + 1}</td>
+                        <td class="fw-bold">${item.nome_proprietario}</td>
+                        <td class="text-center">${item.mes}/${item.ano}</td>
+                        <td class="text-end">
+                            ${this.formatMoney(somaAlugueis)}
+                        </td>
+                        <td class="text-end">${this.formatMoney(item.soma_taxas)}</td>
+                        <td class="text-center">
+                            <span class="badge bg-success">
+                                <i class="fas fa-building me-1"></i>${item.quantidade_imoveis || 1} imóvel(is)
+                            </span>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                }
+
+                // Pequena pausa entre lotes para não bloquear a UI
+                if (i + batchSize < this.filteredData.length) {
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                }
             }
-            
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${index + 1}</td>
-                <td class="fw-bold">${item.nome_proprietario}</td>
-                <td class="text-center">${item.mes}/${item.ano}</td>
-                <td class="text-end">
-                    ${this.formatMoney(somaAlugueis)}
-                </td>
-                <td class="text-end">${this.formatMoney(item.soma_taxas)}</td>
-                <td class="text-center">
-                    <span class="badge bg-success">
-                        <i class="fas fa-building me-1"></i>${item.quantidade_imoveis || 1} imóvel(is)
-                    </span>
-                </td>
+
+            console.log(`✅ Tabela atualizada com ${this.filteredData.length} registros`);
+
+        } catch (error) {
+            console.error('Erro ao atualizar tabela:', error);
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center text-danger py-4">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Erro ao carregar dados da tabela
+                    </td>
+                </tr>
             `;
-            tbody.appendChild(row);
         }
     }
 
@@ -586,7 +666,12 @@ class RelatoriosManager {
 }
 
 // Inicializar quando o DOM estiver pronto
-
+document.addEventListener('DOMContentLoaded', function() {
+    window.relatoriosManager = new RelatoriosManager();
+    // Disponibilizar também como relatoriosModule para o gerenciador de UI
+    window.relatoriosModule = window.relatoriosManager;
+    console.log('✅ RelatoriosManager inicializado');
+});
 
 // Função para mostrar tab (compatibilidade com sistema existente)
 function showRelatorios() {
