@@ -88,38 +88,36 @@ class ParticipacoesModule {
             
             // Verificar se é uma versão do histórico (versao_id começa com "v_")
             if (this.selectedData && this.selectedData.startsWith('v_')) {
-                // Primeiro verificar se o arquivo histórico existe (HEAD request)
                 try {
-                    const headResponse = await fetch(`/api/upload/historico/participacoes/${this.selectedData}`, {
-                        method: 'HEAD',
-                        headers: this.apiService.getAuthHeaders()
-                    });
-                    
-                    if (headResponse.ok) {
-                        // Arquivo existe, carregar normalmente
-                        const response = await this.apiService.get(`/api/upload/historico/participacoes/${this.selectedData}`);
-                        participacoes = response.success ? response.data : [];
-                    } else {
-                        throw new Error('Arquivo histórico não encontrado');
-                    }
+                    // Tentar carregar do histórico diretamente
+                    const response = await this.apiService.get(`/api/upload/historico/participacoes/${this.selectedData}`);
+                    participacoes = response.success ? response.data : [];
                 } catch (historicoError) {
                     // Se o arquivo histórico não existe, tentar carregar participações ativas
                     console.warn('Arquivo histórico não encontrado, tentando carregar participações ativas');
                     this.uiManager.showAlert('Arquivo histórico não encontrado. Carregando versão mais recente...', 'warning');
                     
-                    // Tentar carregar participações ativas (última versão disponível)
-                    if (this.datas.length > 1) {
-                        // Selecionar a próxima versão disponível (não histórica)
+                    // Tentar carregar participações ativas (sempre tentar, independente do número de versões)
+                    try {
+                        // Procurar por qualquer versão não histórica disponível
                         const versaoAtiva = this.datas.find(d => !d.versao_id.startsWith('v_'));
+                        
                         if (versaoAtiva) {
+                            console.log('Encontrada versão ativa:', versaoAtiva.versao_id);
                             this.selectedData = versaoAtiva.versao_id;
                             this.renderDataSelector(); // Atualizar seletor
                             participacoes = await this.apiService.getParticipacoes(this.selectedData);
+                            console.log('Participações ativas carregadas:', participacoes?.length || 0);
                         } else {
-                            participacoes = [];
+                            // Se não há versões ativas, tentar carregar participações sem especificar data (versão atual)
+                            console.log('Nenhuma versão ativa encontrada, tentando carregar versão atual');
+                            participacoes = await this.apiService.getParticipacoes(null);
+                            console.log('Participações atuais carregadas:', participacoes?.length || 0);
                         }
-                    } else {
+                    } catch (ativaError) {
+                        console.warn('Erro ao carregar participações ativas:', ativaError);
                         participacoes = [];
+                        this.uiManager.showAlert('Não foi possível carregar participações. Dados podem estar indisponíveis.', 'warning');
                     }
                 }
             } else {
@@ -144,16 +142,36 @@ class ParticipacoesModule {
     }
 
     renderTable() {
+        console.log('🔧 renderTable chamado com:', {
+            participacoes: this.participacoes?.length || 0,
+            proprietarios: this.proprietarios?.length || 0,
+            imoveis: this.imoveis?.length || 0
+        });
+        
         const tableHead = document.getElementById('participacoes-matrix-head');
         const tableBody = document.getElementById('participacoes-matrix-body');
         const tableContainer = document.getElementById('participacoes-table-container');
+        
+        console.log('🔧 Elementos DOM encontrados:', {
+            tableHead: !!tableHead,
+            tableBody: !!tableBody,
+            tableContainer: !!tableContainer
+        });
+        
         if (tableContainer) tableContainer.style.display = 'block';
-        if (!tableHead || !tableBody) return;
+        if (!tableHead || !tableBody) {
+            console.warn('🔧 Elementos da tabela não encontrados');
+            return;
+        }
+        
         if (!this.participacoes.length || !this.proprietarios.length || !this.imoveis.length) {
+            console.log('🔧 Renderizando tabela vazia');
             SecurityUtils.setSafeHTML(tableHead, '');
             SecurityUtils.setSafeHTML(tableBody, '<tr><td colspan="5" class="text-center text-muted">Nenhuma participação encontrada.</td></tr>');
             return;
         }
+        
+        console.log('🔧 Renderizando tabela com dados');
         let headHtml = '<tr><th>Imóvel</th>';
         for (const prop of this.proprietarios) {
             headHtml += `<th>${prop.nome}</th>`;
