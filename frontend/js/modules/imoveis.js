@@ -44,19 +44,7 @@ class ImoveisModule {
     }
 
     bindEvents() {
-        // Interceptar submit do formulário de Cadastro (Novo Imóvel)
-        const formNovoImovel = document.getElementById('form-novo-imovel');
-        if (formNovoImovel) {
-            formNovoImovel.addEventListener('submit', (e) => {
-                logToLocalStorage('[Imoveis] form-novo-imovel submit');
-                console.log('[Imoveis] form-novo-imovel submit');
-                e.preventDefault();
-                const formData = new FormData(formNovoImovel);
-                const data = Object.fromEntries(formData.entries());
-                this.handleCreateData(data, formNovoImovel, 'main');
-            });
-        }
-
+        // Interceptar submit do formulário de Edição (Editar Imóvel)
         const formEditar = document.getElementById('edit-imovel-form');
         if (formEditar) {
             formEditar.addEventListener('submit', (e) => {
@@ -76,15 +64,6 @@ class ImoveisModule {
             });
         }
 
-        // Botão Novo Imóvel
-        const btnNovoImovel = document.getElementById('btn-novo-imovel');
-        if (btnNovoImovel) {
-            btnNovoImovel.addEventListener('click', () => {
-                console.log('[Imoveis] Botão Novo Imóvel clicado');
-                this.showNewModal();
-            });
-        }
-
         // Aplicar el patrón de focus management
         const modals = ['novo-imovel-modal', 'editar-imovel-modal'];
         modals.forEach(modalId => {
@@ -100,57 +79,136 @@ class ImoveisModule {
     }
 
     showNewModal() {
-    const form = document.getElementById('form-novo-imovel');
-    if (form) form.reset();
-    this.modalManager.abrirModalCadastro();
+        console.log('[Imoveis] showNewModal() chamado - abrindo modal de novo imóvel');
+        const form = document.getElementById('form-novo-imovel');
+        if (form) form.reset();
+        this.modalManager.abrirModalCadastro();
     }
 
     // Método de compatibilidade para eliminar advertências legacy
     async load() {
+        console.log('[Imoveis] Método load() chamado');
         if (!this.initialized) {
+            console.log('[Imoveis] Inicializando módulo...');
             this.init();
         }
-        await this.loadImoveis();
+
+        // Garantir que os event listeners sejam configurados após o DOM estar pronto
+        console.log('[Imoveis] Configurando event listeners específicos...');
+        this.setupFormEventListeners();
+
+        // Só carregar imóveis se o usuário estiver autenticado
+        if (window.authService && window.authService.isAuthenticated()) {
+            console.log('[Imoveis] Carregando imóveis...');
+            await this.loadImoveis();
+        } else {
+            console.log('[Imoveis] Usuário não autenticado, pulando carregamento de imóveis');
+        }
+    }
+
+    setupFormEventListeners() {
+        console.log('[Imoveis] setupFormEventListeners() chamado');
+
+        // Pequeno delay para garantir que o DOM esteja atualizado
+        setTimeout(() => {
+            // Botão Novo Imóvel
+            const btnNovoImovel = document.getElementById('btn-novo-imovel');
+            console.log('[Imoveis] Elemento btn-novo-imovel encontrado:', btnNovoImovel);
+            if (btnNovoImovel) {
+                btnNovoImovel.addEventListener('click', () => {
+                    console.log('[Imoveis] Botão Novo Imóvel clicado');
+                    this.showNewModal();
+                });
+                console.log('[Imoveis] Event listener configurado para btn-novo-imovel');
+            } else {
+                console.warn('[Imoveis] Botão btn-novo-imovel não encontrado');
+            }
+
+            // Interceptar submit do formulário de Cadastro (Novo Imóvel)
+            const formNovoImovel = document.getElementById('form-novo-imovel');
+            console.log('[Imoveis] Elemento form-novo-imovel encontrado:', formNovoImovel);
+
+            if (formNovoImovel) {
+                // Remover event listener anterior se existir
+                formNovoImovel.onsubmit = null;
+
+                formNovoImovel.addEventListener('submit', (e) => {
+                    console.log('[Imoveis] Submit interceptado para form-novo-imovel');
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const formData = new FormData(formNovoImovel);
+                    const data = Object.fromEntries(formData.entries());
+                    console.log('[Imoveis] Dados do formulário:', data);
+
+                    this.handleCreateData(data, formNovoImovel, 'main');
+                    return false;
+                });
+                console.log('[Imoveis] Event listener configurado para form-novo-imovel');
+            } else {
+                console.warn('[Imoveis] Formulário form-novo-imovel não encontrado');
+            }
+        }, 100);
     }
 
     async handleCreateData(data, formElement, source = 'main') {
         logToLocalStorage('[Imoveis] handleCreateData called', data);
         console.log('[Imoveis] handleCreateData called', data);
-        // Adaptar campos según modelo Imovel actualizado
-        const nullableFields = ['tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem', 'alugado'];
-        const payload = { ...data };
-        // Eliminar campo 'observacoes' si existe
-        if ('observacoes' in payload) {
-            delete payload.observacoes;
-        }
-        // Si data_cadastro está vacío, asignar la fecha actual en formato ISO
-        if (!payload.data_cadastro || payload.data_cadastro === '') {
-            payload.data_cadastro = new Date().toISOString();
-        }
-        for (const field of nullableFields) {
-            if (payload[field] === '') {
-                payload[field] = null;
-            }
-        }
-        // Validación de campos obrigatórios
-        const requiredFields = ['nome', 'endereco'];
-        for (const field of requiredFields) {
-            if (!payload[field] || payload[field].trim() === '') {
-                this.uiManager.showErrorToast('Campos obrigatórios não podem estar em branco', `Preencha o campo: ${field}`);
-                return;
-            }
-        }
+
         try {
+            // Adaptar campos según modelo Imovel actualizado
+            const nullableFields = ['tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem', 'alugado'];
+            const payload = { ...data };
+            console.log('[Imoveis] Payload inicial:', payload);
+
+            // Eliminar campo 'observacoes' si existe
+            if ('observacoes' in payload) {
+                delete payload.observacoes;
+            }
+
+            // Si data_cadastro está vacío, asignar la fecha actual en formato ISO
+            if (!payload.data_cadastro || payload.data_cadastro === '') {
+                payload.data_cadastro = new Date().toISOString();
+            }
+
+            for (const field of nullableFields) {
+                if (payload[field] === '') {
+                    payload[field] = null;
+                }
+            }
+
+            console.log('[Imoveis] Payload processado:', payload);
+
+            // Validación de campos obrigatórios
+            const requiredFields = ['nome', 'endereco'];
+            for (const field of requiredFields) {
+                if (!payload[field] || payload[field].trim() === '') {
+                    console.error(`[Imoveis] Campo obrigatório vazio: ${field}`);
+                    this.uiManager.showErrorToast('Campos obrigatórios não podem estar em branco', `Preencha o campo: ${field}`);
+                    return;
+                }
+            }
+
+            console.log('[Imoveis] Validações passaram, chamando API...');
+
             this.uiManager.showLoading('Criando imóvel...');
             const response = await this.apiService.createImovel(payload);
+
+            console.log('[Imoveis] Resposta da API:', response);
+
             if (response && response.success) {
+                console.log('[Imoveis] Imóvel criado com sucesso, fechando modal...');
                 this.modalManager.fecharModalCadastro();
                 formElement.reset();
+                console.log('[Imoveis] Recarregando lista de imóveis...');
                 await this.loadImoveis();
+                console.log('[Imoveis] Processo concluído com sucesso!');
             } else {
+                console.error('[Imoveis] Resposta da API indica erro:', response);
                 throw new Error(response?.error || 'Erro ao criar imóvel');
             }
         } catch (error) {
+            console.error('[Imoveis] Erro no handleCreateData:', error);
             this.uiManager.showErrorToast('Erro ao criar imóvel', error.message);
         } finally {
             this.uiManager.hideLoading();

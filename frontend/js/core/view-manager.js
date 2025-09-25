@@ -657,7 +657,7 @@ class ViewManager {
         return `
             <div class="imoveis-container">
                 <div class="d-flex justify-content-end mb-3">
-                    <button class="btn btn-primary" id="btn-novo-imovel"><i class="fas fa-plus me-2"></i>Novo Imóvel</button>
+                    <button class="btn btn-primary" id="btn-novo-imovel" onclick="console.log('[TESTE] Botão clicado inline'); if(window.imoveisModule) window.imoveisModule.showNewModal();"><i class="fas fa-plus me-2"></i>Novo Imóvel</button>
                 </div>
                 <div class="card-responsive">
                     <div class="card-body-responsive">

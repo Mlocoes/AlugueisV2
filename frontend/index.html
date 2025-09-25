@@ -563,11 +563,6 @@
                     console.log('✅ Módulo Proprietarios criado');
                 }
 
-                if (typeof ImoveisModule !== 'undefined') {
-                    window.imoveisModule = new ImoveisModule();
-                    console.log('✅ Módulo Imoveis criado');
-                }
-
                 if (typeof ParticipacoesModule !== 'undefined') {
                     window.participacoesModule = new ParticipacoesModule();
                     console.log('✅ Módulo Participacoes criado');
@@ -719,6 +714,13 @@
         document.addEventListener('DOMContentLoaded', () => {
             window.unifiedApp = new UnifiedApp();
             window.unifiedApp.init();
+        });
+    </script>
+
+    <script>
+        console.log('[TESTE] JavaScript carregado e executando');
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[TESTE] DOM completamente carregado');
         });
     </script>
 </body>
