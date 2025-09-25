@@ -92,7 +92,9 @@ class ParticipacoesModule {
                 // Carregar a versão selecionada (ativa ou histórica)
                 console.log('selectedData:', this.selectedData);
                 const response = await this.apiService.get(`/api/participacoes/historico/${this.selectedData}`);
-                participacoes = response.success ? response.data.data : [];
+                console.log('response.data:', response.data);
+                console.log('response.data.data:', response.data.data);
+                participacoes = response.success ? (Array.isArray(response.data) ? response.data : response.data.data || []) : [];
                 console.log('Response:', response);
                 console.log('participacoes loaded:', participacoes);
             } catch (error) {
