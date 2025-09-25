@@ -57,7 +57,7 @@ class UsuarioManager {
             }
         }
 
-        // Forzar el botón 'Salvar' a type='submit'
+        // Forçar o botão 'Salvar' a type='submit'
         this.forceSubmitButtonType(this.form, 'btn-salvar-usuario');
         this.forceSubmitButtonType(this.formAlterar, 'btn-alterar-usuario');
 
@@ -73,13 +73,17 @@ class UsuarioManager {
 
     getFormWithId(formId, modalId) {
         let form = document.getElementById(formId);
+        console.log('getFormWithId direct', formId, form);
         if (!form) {
             const modalEl = document.getElementById(modalId);
+            console.log('getFormWithId modalEl', modalId, modalEl);
             if (modalEl) {
                 form = modalEl.querySelector('form');
+                console.log('getFormWithId form in modal', form);
                 if (form) form.id = formId;
             }
         }
+        console.log('getFormWithId final', formId, form);
         return form;
     }
 
@@ -829,6 +833,14 @@ class UsuarioManager {
             console.log('✅ UsuarioManager carregado com sucesso');
         } catch (error) {
             console.error('❌ Erro ao carregar UsuarioManager:', error);
+        }
+    }
+
+    showAlterarModal() {
+        if (this.modalAlterar) {
+            this.modalAlterar.show();
+        } else {
+            console.error('Modal alterar usuario no encontrado');
         }
     }
 }

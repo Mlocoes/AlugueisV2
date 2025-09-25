@@ -1027,7 +1027,7 @@ class ViewManager {
                             <div class="card-body-responsive">
                                 <div class="mb-4 text-end">
                                     <div class="d-flex flex-wrap justify-content-center gap-2">
-                                        <button class="btn btn-primary" style="width:150px" id="btn-alterar-usuario" data-bs-toggle="modal" data-bs-target="#modal-alterar-usuario"><i class="fas fa-user-edit me-2"></i> Alterar Usuário</button>
+                                        <button class="btn btn-primary" style="width:150px" id="btn-alterar-usuario" onclick="window.usuarioManagerModule.showAlterarModal()"><i class="fas fa-user-edit me-2"></i> Alterar Usuário</button>
                                         <button class="btn btn-primary" style="width:150px" id="btn-cadastrar-usuario" data-bs-toggle="modal" data-bs-target="#modal-cadastrar-usuario"><i class="fas fa-user-plus me-2"></i> Cadastrar Novo Usuário</button>
                                         <button class="btn btn-primary" style="width:150px" id="btn-novo-alias" type="button"><i class="fas fa-user-tag me-2"></i> Novo Alias</button>
                                         <button class="btn btn-primary" style="width:150px" id="btn-novas-transferencias" type="button"><i class="fas fa-exchange-alt me-2"></i> Nova Transferência</button>
@@ -1117,7 +1117,43 @@ class ViewManager {
                                     <button type="submit" class="btn btn-primary" id="btn-confirmar-cadastro">
                                         <span class="spinner-border spinner-border-sm d-none me-2" id="spinner-cadastro"></span>
                                         Cadastrar
-                                    </button
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Alterar Usuário -->
+                <div class="modal fade" id="modal-alterar-usuario" tabindex="-1" aria-labelledby="modalAlterarUsuarioLabel">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="modalAlterarUsuarioLabel"><i class="fas fa-user-edit me-2"></i>Alterar Usuário</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="selecionar-usuario" class="form-label">Selecionar Usuário *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-users"></i></span>
+                                        <select class="form-select" id="selecionar-usuario" required>
+                                            <option value="">Carregando usuários...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <form id="form-alterar-usuario" style="display: none;">
+                                    <div class="mb-3">
+                                        <label for="alterar-nova-senha" class="form-label">Nova Senha (deixe vazio para não alterar)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                            <input type="password" class="form-control" id="alterar-nova-senha" name="nova_senha" placeholder="Digite a nova senha" autocomplete="off">
+                                            <button class="btn btn-outline-secondary" type="button" id="toggle-alterar-senha"><i class="fas fa-eye"></i></button>
+                                        </div>
+                                        <div class="form-text">Mínimo 6 caracteres (opcional)</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="alterar-confirmar-senha" class="form-label">Confirmar Nova Senha</label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="fas fa-lock"></i></span>
                                             <input type="password" class="form-control" id="alterar-confirmar-senha" name="confirmar_nova_senha" placeholder="Confirme a nova senha" autocomplete="off">
@@ -1134,23 +1170,5 @@ class ViewManager {
                                                 <option value="visualizador">Visualizador</option>
                                             </select>
                                         </div>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-warning flex-fill"><i class="fas fa-save me-1"></i> Alterar Usuário</button>
-                                        <button type="button" class="btn btn-danger" id="btn-excluir-usuario-selecionado"><i class="fas fa-trash me-1"></i> Excluir</button>
-                                    </div>
-                                </form>
-                                <div id="erro-alterar-usuario" class="alert alert-danger d-none mt-3"></div>
-                                <div id="sucesso-alterar-usuario" class="alert alert-success d-none mt-3"></div>
-                            </div>
-                            <div class="modal-footer">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+                                    </div>`
     }
-}
-
-// Crear instancia global
-window.viewManager = new ViewManager();
