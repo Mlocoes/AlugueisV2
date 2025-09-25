@@ -88,9 +88,30 @@ class ParticipacoesModule {
             
             // Verificar se é uma versão do histórico (versao_id começa com "v_")
             if (this.selectedData && this.selectedData.startsWith('v_')) {
-                // Buscar do histórico
-                const response = await this.apiService.get(`/api/upload/historico/participacoes/${this.selectedData}`);
-                participacoes = response.success ? response.data : [];
+                try {
+                    // Buscar do histórico
+                    const response = await this.apiService.get(`/api/upload/historico/participacoes/${this.selectedData}`);
+                    participacoes = response.success ? response.data : [];
+                } catch (historicoError) {
+                    // Se o arquivo histórico não existe (404), tentar carregar participações ativas
+                    console.warn('Arquivo histórico não encontrado, tentando carregar participações ativas:', historicoError);
+                    this.uiManager.showAlert('Arquivo histórico não encontrado. Carregando versão mais recente...', 'warning');
+                    
+                    // Tentar carregar participações ativas (última versão disponível)
+                    if (this.datas.length > 1) {
+                        // Selecionar a próxima versão disponível (não histórica)
+                        const versaoAtiva = this.datas.find(d => !d.versao_id.startsWith('v_'));
+                        if (versaoAtiva) {
+                            this.selectedData = versaoAtiva.versao_id;
+                            this.renderDataSelector(); // Atualizar seletor
+                            participacoes = await this.apiService.getParticipacoes(this.selectedData);
+                        } else {
+                            participacoes = [];
+                        }
+                    } else {
+                        participacoes = [];
+                    }
+                }
             } else {
                 // Buscar participações ativas por data
                 participacoes = await this.apiService.getParticipacoes(this.selectedData);
