@@ -121,7 +121,7 @@ class ImoveisModule {
                 });
                 console.log('[Imoveis] Event listener configurado para btn-novo-imovel');
             } else {
-                console.warn('[Imoveis] Botão btn-novo-imovel não encontrado');
+                console.log('[Imoveis] Botão btn-novo-imovel não encontrado (pode ser normal em outras vistas)');
             }
 
             // Interceptar submit do formulário de Cadastro (Novo Imóvel)
