@@ -100,7 +100,7 @@ class ParticipacoesModule {
                     // Tentar carregar participações ativas (sempre tentar, independente do número de versões)
                     try {
                         // Procurar por qualquer versão não histórica disponível
-                        const versaoAtiva = this.datas.find(d => !d.versao_id.startsWith('v_'));
+                        const versaoAtiva = this.datas.find(d => d.tipo === "ativo");
                         
                         if (versaoAtiva) {
                             console.log('Encontrada versão ativa:', versaoAtiva.versao_id);
