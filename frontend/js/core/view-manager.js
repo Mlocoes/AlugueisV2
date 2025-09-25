@@ -677,7 +677,7 @@ class ViewManager {
                                 </thead>
                                 <tbody id="imoveis-table-body">
                                     <tr>
-                                        <td colspan="12" class="text-center text-muted py-4">
+                                        <td colspan="8" class="text-center text-muted py-4">
                                             <div class="spinner-border" role="status">
                                                 <span class="visually-hidden">Carregando...</span>
                                             </div>

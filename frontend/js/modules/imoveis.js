@@ -237,7 +237,7 @@ class ImoveisModule {
         if (this.imoveis.length === 0) {
             window.SecurityUtils.setSafeHTML(tableBody, `
                 <tr>
-                    <td colspan="12" class="text-center text-muted py-4">
+                    <td colspan="8" class="text-center text-muted py-4">
                         <i class="fas fa-home fa-2x mb-2"></i>
                         <br>Não há imóveis registrados
                     </td>
@@ -256,6 +256,10 @@ class ImoveisModule {
                 </td>
                 <td>
                     <span>${safeImovel.endereco || '<span class="text-muted fst-italic">Sem endereço</span>'}</span>
+                </td>
+                <td>
+                    <span>${safeImovel.area_total || '—'} m²</span><br>
+                    <span>${safeImovel.area_construida || '—'} m²</span>
                 </td>
                 <td>
                     <span>R$ ${safeImovel.valor_cadastral || '—'}</span><br>
