@@ -29,6 +29,7 @@ class ParticipacoesModule {
         try {
             this.uiManager.showLoading('Carregando datas de conjuntos...');
             const datas = await this.apiService.getDatasParticipacoes();
+            console.log('datas from API:', datas);
             this.uiManager.hideLoading();
             
             // Manejar caso donde datas es null o undefined
@@ -89,8 +90,10 @@ class ParticipacoesModule {
             
             try {
                 // Carregar a versão selecionada (ativa ou histórica)
+                console.log('selectedData:', this.selectedData);
                 const response = await this.apiService.get(`/api/participacoes/historico/${this.selectedData}`);
                 participacoes = response.success ? response.data.data : [];
+                console.log('Response:', response);
             } catch (error) {
                 console.warn('Erro ao carregar participações:', error);
                 participacoes = [];
@@ -240,7 +243,7 @@ class ParticipacoesModule {
             const salvar = async () => {
                 // Normalizar apenas o imóvel editado
                 const edited = {};
-                body.querySelectorAll('input[data-prop]').forEach(inp => {
+                body.querySelectorAll('input[data-prop]').forEach inp => {
                     const pid = Number(inp.getAttribute('data-prop'));
                     edited[pid] = Number(inp.value || 0);
                 });
