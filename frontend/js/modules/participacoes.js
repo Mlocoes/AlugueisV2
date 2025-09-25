@@ -47,7 +47,7 @@ class ParticipacoesModule {
             
             // Não filtrar duplicatas, pois cada item é único com versao_id
             this.datas = datas;
-            this.selectedData = this.datas.length ? this.datas[0].versao_id : null;
+            this.selectedData = this.datas.length ? (this.datas[0].versao_id || "ativo") : null;
             this.renderDataSelector();
             
             if (this.selectedData) {
@@ -69,8 +69,9 @@ class ParticipacoesModule {
         let html = '<label for="data-participacoes">Conjunto de Participações:</label> ';
         html += `<select id="data-participacoes">`;
         for (const item of this.datas) {
-            const isSelected = item.versao_id === this.selectedData;
-            html += `<option value="${SecurityUtils.escapeHtml(item.versao_id)}"${isSelected ? ' selected' : ''}>${SecurityUtils.escapeHtml(item.label)}</option>`;
+            const value = item.versao_id || "ativo";
+            const isSelected = value === (this.selectedData || "ativo");
+            html += `<option value="${SecurityUtils.escapeHtml(value)}"${isSelected ? ' selected' : ''}>${SecurityUtils.escapeHtml(item.label)}</option>`;
         }
         html += '</select>';
         SecurityUtils.setSafeHTML(container, html);
@@ -104,7 +105,7 @@ class ParticipacoesModule {
                         
                         if (versaoAtiva) {
                             console.log('Encontrada versão ativa:', versaoAtiva.versao_id);
-                            this.selectedData = versaoAtiva.versao_id;
+                            this.selectedData = versaoAtiva.versao_id || "ativo";
                             this.renderDataSelector(); // Atualizar seletor
                             participacoes = await this.apiService.getParticipacoes(this.selectedData);
                             console.log('Participações ativas carregadas:', participacoes?.length || 0);

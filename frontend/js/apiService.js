@@ -191,7 +191,7 @@ window.apiService = {
     // === MÉTODOS ESPECÍFICOS PARA PARTICIPAÇÕES ===
     async getParticipacoes(data = null) {
         let endpoint = '/api/participacoes/';
-        if (data) {
+        if (data && data !== "ativo") {
             // Si data es un string (fecha), usarlo como parámetro data_registro
             if (typeof data === 'string') {
                 endpoint += `?data_registro=${encodeURIComponent(data)}`;
