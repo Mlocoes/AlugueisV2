@@ -544,16 +544,15 @@ class ViewManager {
 
     getProprietariosTemplate() {
         return `
-            <div class="container-fluid proprietarios-container">
-                <div class="card shadow-sm">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Gestão de Proprietários</h5>
-                        <button class="btn btn-primary" id="btn-novo-proprietario"><i class="fas fa-plus me-2"></i>Novo Proprietário</button>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover table-striped">
-                                <thead class="table-light">
+            <div class="proprietarios-container">
+                <div class="d-flex justify-content-end mb-3">
+                    <button class="btn btn-primary" id="btn-novo-proprietario"><i class="fas fa-plus me-2"></i>Novo Proprietário</button>
+                </div>
+                <div class="card-responsive">
+                    <div class="card-body-responsive">
+                        <div class="table-responsive-custom" style="max-height: 75vh; min-height: 55vh; overflow-y: auto;">
+                            <table class="table table-striped table-hover table-custom" style="font-size: 0.8rem;">
+                                <thead class="table-dark">
                                     <tr>
                                         <th>ID</th>
                                         <th>Nome Completo</th>
@@ -1145,8 +1144,6 @@ class ViewManager {
                                 <div id="sucesso-alterar-usuario" class="alert alert-success d-none mt-3"></div>
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i> Fechar</button>
-                            </div>
                         </div>
                     </div>
                 </div>
