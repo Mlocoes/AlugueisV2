@@ -88,13 +88,23 @@ class ParticipacoesModule {
             
             // Verificar se é uma versão do histórico (versao_id começa com "v_")
             if (this.selectedData && this.selectedData.startsWith('v_')) {
+                // Primeiro verificar se o arquivo histórico existe (HEAD request)
                 try {
-                    // Buscar do histórico
-                    const response = await this.apiService.get(`/api/upload/historico/participacoes/${this.selectedData}`);
-                    participacoes = response.success ? response.data : [];
+                    const headResponse = await fetch(`/api/upload/historico/participacoes/${this.selectedData}`, {
+                        method: 'HEAD',
+                        headers: this.apiService.getAuthHeaders()
+                    });
+                    
+                    if (headResponse.ok) {
+                        // Arquivo existe, carregar normalmente
+                        const response = await this.apiService.get(`/api/upload/historico/participacoes/${this.selectedData}`);
+                        participacoes = response.success ? response.data : [];
+                    } else {
+                        throw new Error('Arquivo histórico não encontrado');
+                    }
                 } catch (historicoError) {
-                    // Se o arquivo histórico não existe (404), tentar carregar participações ativas
-                    console.warn('Arquivo histórico não encontrado, tentando carregar participações ativas:', historicoError);
+                    // Se o arquivo histórico não existe, tentar carregar participações ativas
+                    console.warn('Arquivo histórico não encontrado, tentando carregar participações ativas');
                     this.uiManager.showAlert('Arquivo histórico não encontrado. Carregando versão mais recente...', 'warning');
                     
                     // Tentar carregar participações ativas (última versão disponível)
