@@ -76,6 +76,15 @@ class ImoveisModule {
             });
         }
 
+        // Botão Novo Imóvel
+        const btnNovoImovel = document.getElementById('btn-novo-imovel');
+        if (btnNovoImovel) {
+            btnNovoImovel.addEventListener('click', () => {
+                console.log('[Imoveis] Botão Novo Imóvel clicado');
+                this.showNewModal();
+            });
+        }
+
         // Aplicar el patrón de focus management
         const modals = ['novo-imovel-modal', 'editar-imovel-modal'];
         modals.forEach(modalId => {
@@ -223,7 +232,7 @@ class ImoveisModule {
     }
 
     async editImovel(id) {
-        // Verificar autenticación antes de editar
+        // Verificar autenticação antes de editar
         if (!window.authService || !window.authService.isAuthenticated()) {
             this.uiManager.showErrorToast('Você precisa estar autenticado para editar imóveis.', 'error');
             if (window.loginManager) {
@@ -279,7 +288,7 @@ class ImoveisModule {
         const formData = new FormData(form);
         const raw = Object.fromEntries(formData.entries());
 
-        // Campos permitidos por el backend (modelo Imovel actualizado)
+        // Campos permitidos por el backend (modelo Imovel atualizado)
         const allowed = ['nome', 'endereco', 'tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem', 'alugado'];
         const numericFields = ['area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem'];
 
