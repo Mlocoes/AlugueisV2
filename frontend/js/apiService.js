@@ -212,7 +212,6 @@ window.apiService = {
 
     async getDatasParticipacoes() {
         const response = await this.get('/api/participacoes/datas');
-        console.log('getDatasParticipacoes response:', response);
         return response.success ? response.data?.datas : null;
     },
 

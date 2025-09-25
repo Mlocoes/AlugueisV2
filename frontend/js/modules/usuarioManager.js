@@ -68,22 +68,18 @@ class UsuarioManager {
 
     getBootstrapModal(modalId) {
         const el = document.getElementById(modalId);
-        return el ? new bootstrap.Modal(el) : null;
+        return el ? bootstrap.Modal.getOrCreateInstance(el) : null;
     }
 
     getFormWithId(formId, modalId) {
         let form = document.getElementById(formId);
-        console.log('getFormWithId direct', formId, form);
         if (!form) {
             const modalEl = document.getElementById(modalId);
-            console.log('getFormWithId modalEl', modalId, modalEl);
             if (modalEl) {
                 form = modalEl.querySelector('form');
-                console.log('getFormWithId form in modal', form);
                 if (form) form.id = formId;
             }
         }
-        console.log('getFormWithId final', formId, form);
         return form;
     }
 

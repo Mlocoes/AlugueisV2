@@ -1172,3 +1172,4 @@ class ViewManager {
                                         </div>
                                     </div>`
     }
+}
