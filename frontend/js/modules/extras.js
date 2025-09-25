@@ -119,6 +119,16 @@ class ExtrasManager {
             this.salvarAlias();
         });
 
+        // Formulário de transferências - configurar apenas uma vez
+        const formTransferencias = document.getElementById('form-transferencias');
+        if (formTransferencias && !formTransferencias.hasTransferenciasListener) {
+            formTransferencias.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.salvarTransferencias();
+            });
+            formTransferencias.hasTransferenciasListener = true;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             console.log('[DEBUG] JS extras.js cargado y DOM listo');
         });
@@ -529,7 +539,7 @@ class ExtrasManager {
                 }
             }
         }, 300);
-        // Si estamos en modo creación y ya hay un alias seleccionado, cargar propietarios igual que en edición
+        // Si estamos em modo criação e já hay um alias seleccionado, cargar propietarios igual que en edição
         if (!this.currentTransferencia) {
             const aliasSelect = document.getElementById('transferencia-alias');
             if (aliasSelect && aliasSelect.value) {
@@ -542,22 +552,9 @@ class ExtrasManager {
         const form = document.getElementById('form-transferencias');
         const modalTitle = document.getElementById('modalTransferenciasLabel');
 
-        // Registrar evento submit cada vez que se muestra el modal
-        if (form) {
-            // Eliminar cualquier submit anterior para evitar duplicados
-            form.onsubmit = null;
-            form.addEventListener('submit', (e) => {
-                console.log('[DEBUG] Submit interceptado en form-transferencias');
-                e.preventDefault();
-                try {
-                    this.salvarTransferencias();
-                } catch (err) {
-                    console.error('[DEBUG] Error al llamar salvarTransferencias:', err);
-                }
-            });
-        }
+        // REMOVIDO: Configuração de event listener duplicada - agora é feita no setupEvents()
 
-        // Se NÃO estivermos editando, limpiar todo y forçar título
+        // Se NÃO estivermos editando, limpiar todo e forçar título
         if (!this.currentTransferencia) {
             form.reset();
             if (modalTitle) {
@@ -1068,7 +1065,7 @@ class ExtrasManager {
                 return;
             }
             // Executar a exclusão diretamente (modal já confirma)
-            console.log('[DEBUG] Llamando executeDeleteTransferencia con:', id);
+            console.log('[DEBUG] Llamando executeDeleteTransferencia com:', id);
             await this.executeDeleteTransferencia(id);
         } catch (error) {
             console.error('Erro ao excluir transferência:', error);
@@ -1143,3 +1140,10 @@ class ExtrasManager {
 }
 
 // Inicializar quando o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', function() {
+    window.extrasManager = new ExtrasManager();
+    window.extrasManager.apiService = window.apiService;
+    // Disponibilizar também como extrasModule para o gerenciador de UI
+    window.extrasModule = window.extrasManager;
+    console.log('✅ ExtrasManager inicializado');
+});
