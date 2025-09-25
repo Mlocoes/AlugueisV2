@@ -243,7 +243,7 @@ class ParticipacoesModule {
             const salvar = async () => {
                 // Normalizar apenas o imóvel editado
                 const edited = {};
-                body.querySelectorAll('input[data-prop]').forEach inp => {
+                body.querySelectorAll('input[data-prop]').forEach(inp => {
                     const pid = Number(inp.getAttribute('data-prop'));
                     edited[pid] = Number(inp.value || 0);
                 });
