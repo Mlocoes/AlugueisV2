@@ -1173,3 +1173,6 @@ class ViewManager {
                                     </div>`
     }
 }
+
+// Inicializar ViewManager globalmente
+window.viewManager = new ViewManager();
