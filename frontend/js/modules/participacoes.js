@@ -87,43 +87,14 @@ class ParticipacoesModule {
             
             let participacoes;
             
-            // Verificar se é uma versão do histórico (versao_id começa com "v_")
-            if (this.selectedData && this.selectedData.startsWith('v_')) {
-                try {
-                    // Tentar carregar do histórico diretamente
-                    const response = await this.apiService.get(`/api/participacoes/historico/${this.selectedData}`);
-                    participacoes = response.success ? response.data.data : [];
-                } catch (historicoError) {
-                    // Se o arquivo histórico não existe, tentar carregar participações ativas
-                    console.warn('Arquivo histórico não encontrado, tentando carregar participações ativas');
-                    this.uiManager.showAlert('Arquivo histórico não encontrado. Carregando versão mais recente...', 'warning');
-                    
-                    // Tentar carregar participações ativas (sempre tentar, independente do número de versões)
-                    try {
-                        // Procurar por qualquer versão não histórica disponível
-                        const versaoAtiva = this.datas.find(d => d.tipo === "ativo");
-                        
-                        if (versaoAtiva) {
-                            console.log('Encontrada versão ativa:', versaoAtiva.versao_id);
-                            this.selectedData = versaoAtiva.versao_id || "ativo";
-                            this.renderDataSelector(); // Atualizar seletor
-                            participacoes = await this.apiService.getParticipacoes(this.selectedData);
-                            console.log('Participações ativas carregadas:', participacoes?.length || 0);
-                        } else {
-                            // Se não há versões ativas, tentar carregar participações sem especificar data (versão atual)
-                            console.log('Nenhuma versão ativa encontrada, tentando carregar versão atual');
-                            participacoes = await this.apiService.getParticipacoes(null);
-                            console.log('Participações atuais carregadas:', participacoes?.length || 0);
-                        }
-                    } catch (ativaError) {
-                        console.warn('Erro ao carregar participações ativas:', ativaError);
-                        participacoes = [];
-                        this.uiManager.showAlert('Não foi possível carregar participações. Dados podem estar indisponíveis.', 'warning');
-                    }
-                }
-            } else {
-                // Buscar participações ativas por data
-                participacoes = await this.apiService.getParticipacoes(this.selectedData);
+            try {
+                // Carregar a versão selecionada (ativa ou histórica)
+                const response = await this.apiService.get(`/api/participacoes/historico/${this.selectedData}`);
+                participacoes = response.success ? response.data.data : [];
+            } catch (error) {
+                console.warn('Erro ao carregar participações:', error);
+                participacoes = [];
+                this.uiManager.showAlert('Não foi possível carregar participações. Dados podem estar indisponíveis.', 'warning');
             }
             
             const [proprietarios, imoveis] = await Promise.all([
