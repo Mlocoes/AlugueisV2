@@ -91,8 +91,8 @@ class ParticipacoesModule {
             if (this.selectedData && this.selectedData.startsWith('v_')) {
                 try {
                     // Tentar carregar do histórico diretamente
-                    const response = await this.apiService.get(`/api/upload/historico/participacoes/${this.selectedData}`);
-                    participacoes = response.success ? response.data : [];
+                    const response = await this.apiService.get(`/api/participacoes/historico/${this.selectedData}`);
+                    participacoes = response.success ? response.data.data : [];
                 } catch (historicoError) {
                     // Se o arquivo histórico não existe, tentar carregar participações ativas
                     console.warn('Arquivo histórico não encontrado, tentando carregar participações ativas');
