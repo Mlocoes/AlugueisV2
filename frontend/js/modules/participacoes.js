@@ -36,7 +36,7 @@ class ParticipacoesModule {
             if (!datas) {
                 this.uiManager.showAlert('Nenhum conjunto de participações encontrado.', 'warning');
                 this.datas = [];
-                this.selectedData = null;
+                this.selectedData = "ativo";
                 this.renderDataSelector();
                 return;
             }
@@ -48,7 +48,7 @@ class ParticipacoesModule {
             
             // Não filtrar duplicatas, pois cada item é único com versao_id
             this.datas = datas;
-            this.selectedData = this.datas.length ? (this.datas[0].versao_id || "ativo") : null;
+            this.selectedData = this.datas.length ? this.datas[0].versao_id : "ativo";
             this.renderDataSelector();
             
             if (this.selectedData) {
@@ -94,6 +94,7 @@ class ParticipacoesModule {
                 const response = await this.apiService.get(`/api/participacoes/historico/${this.selectedData}`);
                 participacoes = response.success ? response.data.data : [];
                 console.log('Response:', response);
+                console.log('participacoes loaded:', participacoes);
             } catch (error) {
                 console.warn('Erro ao carregar participações:', error);
                 participacoes = [];

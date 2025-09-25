@@ -293,6 +293,19 @@ def criar_nova_versao_participacoes(payload: Dict, db: Session = Depends(get_db)
             db.add(p)
         db.commit()
 
+        # Salvar no histórico
+        versao_id = data_registro_novo.isoformat()
+        for p in novas:
+            db.add(HistoricoParticipacao(
+                versao_id=versao_id,
+                data_versao=data_registro_novo,
+                porcentagem=p.porcentagem,
+                data_registro_original=p.data_registro,
+                imovel_id=p.imovel_id,
+                proprietario_id=p.proprietario_id
+            ))
+        db.commit()
+
         return {
             "success": True,
             "data_registro": data_registro_novo.isoformat(),
