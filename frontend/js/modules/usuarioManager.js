@@ -29,9 +29,9 @@ class UsuarioManager {
      */
     init() {
         console.log('[UsuarioManager] init() called');
-        if (this.initialized) return;
+        // if (this.initialized) return;  // Removido para permitir re-inicialização
 
-        // Centralizar obtención de elementos
+        // Centralizar obtención de elementos - no fallar si no existen aún
         this.modal = this.getBootstrapModal('modal-cadastrar-usuario');
         this.modalAlterar = this.getBootstrapModal('modal-alterar-usuario');
         this.form = this.getFormWithId('form-cadastrar-usuario', 'modal-cadastrar-usuario');
@@ -40,9 +40,9 @@ class UsuarioManager {
         console.log('[UsuarioManager] form (cadastrar):', this.form);
         console.log('[UsuarioManager] formAlterar (alterar):', this.formAlterar);
 
-        // Verificación y logueo explícito
+        // No fallar si no se encuentran, se configurarán en setupEvents
         if (!this.form) {
-            console.error('[UsuarioManager] Formulario form-cadastrar-usuario NO encontrado en el DOM');
+            console.log('[UsuarioManager] Formulario form-cadastrar-usuario no encontrado aún, se configurará en setupEvents');
         } else {
             console.log('[UsuarioManager] Formulario form-cadastrar-usuario encontrado:', this.form);
             const salvarBtn = this.form.querySelector('button[type="submit"], .btn-success');
@@ -96,6 +96,20 @@ class UsuarioManager {
     setupEvents() {
         logToLocalStorage('[UsuarioManager] setupEvents chamado');
         console.log('[UsuarioManager] setupEvents chamado');
+
+        // Re-buscar elementos si no existen (para carga dinâmica)
+        if (!this.form) {
+            this.form = this.getFormWithId('form-cadastrar-usuario', 'modal-cadastrar-usuario');
+        }
+        if (!this.formAlterar) {
+            this.formAlterar = this.getFormWithId('form-alterar-usuario', 'modal-alterar-usuario');
+        }
+        if (!this.modal) {
+            this.modal = this.getBootstrapModal('modal-cadastrar-usuario');
+        }
+        if (!this.modalAlterar) {
+            this.modalAlterar = this.getBootstrapModal('modal-alterar-usuario');
+        }
 
         // --- FIX: Listener de submissão robusto ---
         // O handler é definido uma vez e anexado permanentemente.
@@ -618,6 +632,9 @@ class UsuarioManager {
             if (response && response.success) {
                 this.mostrarSucessoAlterar(`Usuário '${this.usuarioSelecionado.usuario}' alterado com sucesso!`);
 
+                // Recargar lista de usuários para atualizar na memória
+                await this.carregarUsuarios();
+
                 setTimeout(() => {
                     if (document.activeElement) document.activeElement.blur();
                     document.body.focus();
@@ -673,6 +690,9 @@ class UsuarioManager {
 
             if (response && response.success) {
                 this.mostrarSucessoAlterar(`Usuário '${this.usuarioSelecionado.usuario}' excluído com sucesso!`);
+
+                // Recargar lista de usuários para atualizar na memória
+                await this.carregarUsuarios();
 
                 setTimeout(() => {
                     if (document.activeElement) document.activeElement.blur();
