@@ -582,7 +582,7 @@ class RelatoriosManager {
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${globalIndex + 1}</td>
-                        <td class="fw-bold">${item.nome_proprietario}</td>
+                        <td class="fw-bold">${SecurityUtils.escapeHtml(item.nome_proprietario)}</td>
                         <td class="text-center">${item.mes}/${item.ano}</td>
                         <td class="text-end">
                             ${this.formatMoney(somaAlugueis)}

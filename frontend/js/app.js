@@ -160,6 +160,11 @@ class SistemaAlugueisApp {
     async initializeModules() {
         console.log('📦 Inicializando módulos...');
 
+        // Obtener CSRF token para proteção
+        if (window.apiService && typeof window.apiService.getCsrfToken === 'function') {
+            await window.apiService.getCsrfToken();
+        }
+
         // Instanciar DashboardModule ANTES del login
         if (typeof window.DashboardModule !== 'undefined') {
             this.modules.dashboard = new window.DashboardModule();

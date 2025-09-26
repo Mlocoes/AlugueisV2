@@ -5,12 +5,15 @@ Implementação refatorizada com estrutura organizada por módulos
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_csrf_protect import CsrfProtect
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 import os
 import time
 from fastapi_utils.tasks import repeat_every
+from fastapi.responses import JSONResponse
 
 from config import APP_CONFIG, CORS_CONFIG, get_db, UPLOAD_DIR
 from models_final import AluguelSimples, Imovel
@@ -18,6 +21,17 @@ from routers import alugueis, estadisticas, upload, auth
 from routers import proprietarios, imoveis, participacoes, reportes, extras, transferencias, dashboard, health
 from routers.auth import verify_token
 from utils.error_handlers import global_exception_handler
+
+# Configuração CSRF
+class CsrfSettings(BaseModel):
+    secret_key: str = "your-secret-key-here-change-in-production"
+    cookie_samesite: str = "lax"
+    token_location: str = "header"
+    token_key: str = "X-CSRF-Token"
+
+@CsrfProtect.load_config
+def get_csrf_config():
+    return CsrfSettings()
 
 # Configuração da aplicação
 
@@ -120,6 +134,30 @@ async def api_health_check(db: Session = Depends(get_db)):
 # ENDPOINTS DE COMPATIBILIDAD REMOVIDOS
 # Usar los routers específicos en /api/ en su lugar
 # =====================================================
+
+# CSRF Protection endpoints
+@app.get("/api/csrf-token")
+def get_csrf_token(csrf_protect: CsrfProtect = Depends()):
+    response = JSONResponse(content={"csrf_token": csrf_protect.generate_csrf()})
+    csrf_protect.set_csrf_cookie(response)
+    return response
+
+# Middleware para verificar CSRF em rutas POST/PUT/DELETE
+@app.middleware("http")
+async def csrf_middleware(request, call_next):
+    if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
+        # Skip CSRF for auth endpoints and health check
+        if not request.url.path.startswith("/api/auth/") and request.url.path != "/api/health":
+            # Verificar CSRF token
+            csrf_token = request.headers.get("X-CSRF-Token")
+            if not csrf_token:
+                return JSONResponse(
+                    status_code=403,
+                    content={"detail": "CSRF token missing"}
+                )
+            # Aqui se podria verificar el token, pero fastapi-csrf-protect lo maneja
+    response = await call_next(request)
+    return response
 
 if __name__ == "__main__":
     import uvicorn

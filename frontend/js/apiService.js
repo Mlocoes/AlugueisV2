@@ -1,5 +1,8 @@
 // API Service - Sistema de Aluguéis V2 - Unificado
 window.apiService = {
+    // CSRF token storage
+    csrfToken: null,
+
     // Función auxiliar para obtener la URL base
     getBaseUrl() {
         // La configuración de AppConfig es la única fuente de verdad.
@@ -19,6 +22,11 @@ window.apiService = {
             'Content-Type': 'application/json'
         };
 
+        // Agregar CSRF token si existe
+        if (this.csrfToken) {
+            headers['X-CSRF-Token'] = this.csrfToken;
+        }
+
         // Log de estado del authService
         if (window.authService) {
             console.log('🔍 AuthService status:', {
@@ -32,7 +40,8 @@ window.apiService = {
                 const authHeader = window.authService.getAuthHeader();
                 if (authHeader) {
                     headers.Authorization = authHeader;
-                    console.log('🔑 Authorization header added:', authHeader.substring(0, 20) + '...');
+                    // Remover logging de token completo por seguridad
+                    // console.log('🔑 Authorization header added:', authHeader.substring(0, 20) + '...');
                 }
             }
         } else {
@@ -41,59 +50,75 @@ window.apiService = {
 
         return headers;
     },
-        // Método para subir archivos (usado en importação de proprietários, alugueis, etc)
-        async upload(endpoint, file, options = {}) {
-            // Versión backup: acepta formData directamente
-            const url = `${this.getBaseUrl()}${endpoint}`;
-            // Si el primer parámetro es un FormData, úsalo directamente
-            let formData = file;
-            // Si no es FormData, crea uno (compatibilidad)
-            if (!(formData instanceof FormData)) {
-                formData = new FormData();
-                formData.append('file', file);
+
+    // Función para obtener CSRF token
+    async getCsrfToken() {
+        try {
+            const response = await this.get('/api/csrf-token');
+            if (response && response.data && response.data.csrf_token) {
+                this.csrfToken = response.data.csrf_token;
+                console.log('🔒 CSRF token obtained');
+                return this.csrfToken;
             }
-            const headers = this.getHeaders();
-            if (headers['Content-Type']) {
-                delete headers['Content-Type'];
+        } catch (error) {
+            console.warn('⚠️ Failed to get CSRF token:', error);
+        }
+        return null;
+    },
+
+    // Método para subir archivos (usado en importação de proprietários, alugueis, etc)
+    async upload(endpoint, file, options = {}) {
+        // Versión backup: acepta formData directamente
+        const url = `${this.getBaseUrl()}${endpoint}`;
+        // Si el primer parámetro es un FormData, úsalo directamente
+        let formData = file;
+        // Si no es FormData, crea uno (compatibilidad)
+        if (!(formData instanceof FormData)) {
+            formData = new FormData();
+            formData.append('file', file);
+        }
+        const headers = this.getHeaders();
+        if (headers['Content-Type']) {
+            delete headers['Content-Type'];
+        }
+        const requestOptions = {
+            method: 'POST',
+            headers,
+            body: formData,
+            ...options
+        };
+        try {
+            const response = await fetch(url, requestOptions);
+            let responseData;
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                responseData = await response.json();
+            } else {
+                responseData = await response.text();
             }
-            const requestOptions = {
-                method: 'POST',
-                headers,
-                body: formData,
-                ...options
-            };
-            try {
-                const response = await fetch(url, requestOptions);
-                let responseData;
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    responseData = await response.json();
+            if (!response.ok) {
+                let errorMsg = '';
+                if (typeof responseData === 'object') {
+                    errorMsg = JSON.stringify(responseData);
                 } else {
-                    responseData = await response.text();
+                    errorMsg = responseData;
                 }
-                if (!response.ok) {
-                    let errorMsg = '';
-                    if (typeof responseData === 'object') {
-                        errorMsg = JSON.stringify(responseData);
-                    } else {
-                        errorMsg = responseData;
-                    }
-                    throw new Error(errorMsg || 'Error al subir archivo');
-                }
-                return {
-                    success: true,
-                    data: responseData.data || responseData,
-                    status: response.status,
-                    statusText: response.statusText
-                };
-            } catch (error) {
-                console.error('❌ Error en upload:', error);
-                return {
-                    success: false,
-                    error: error.message || error
-                };
+                throw new Error(errorMsg || 'Error al subir archivo');
             }
-        },
+            return {
+                success: true,
+                data: responseData.data || responseData,
+                status: response.status,
+                statusText: response.statusText
+            };
+        } catch (error) {
+            console.error('❌ Error en upload:', error);
+            return {
+                success: false,
+                error: error.message || error
+            };
+        }
+    },
 
     // Método genérico GET
     async get(endpoint, options = {}) {
