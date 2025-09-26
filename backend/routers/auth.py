@@ -451,23 +451,23 @@ async def excluir_usuario(
     """
     # Buscar usuário a ser excluído
     usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
-    if not usuario:
-        raise HTTPException(
-            status_code=404,
-            detail="Usuário não encontrado"
-        )
     
-    # Não permitir excluir próprio usuário
-    if usuario.id == admin_user.id:
-        raise HTTPException(
-            status_code=400,
-            detail="Não é possível excluir seu próprio usuário"
-        )
-    
-    db.delete(usuario)
-    db.commit()
+    if usuario:
+        # Não permitir excluir próprio usuário
+        if usuario.id == admin_user.id:
+            raise HTTPException(
+                status_code=400,
+                detail="Não é possível excluir seu próprio usuário"
+            )
+        
+        db.delete(usuario)
+        db.commit()
+        message = "Usuário excluído com sucesso"
+    else:
+        # Se o usuário não existe, consideramos como sucesso (idempotente)
+        message = "Usuário não encontrado ou já excluído"
     
     return {
         "success": True,
-        "message": "Usuário excluído com sucesso"
+        "message": message
     }

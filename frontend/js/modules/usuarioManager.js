@@ -159,7 +159,7 @@ class UsuarioManager {
 
         // Selección y exclusión de usuario
         this.registerChange('selecionar-usuario', this.selecionarUsuarioParaAlterar.bind(this));
-        this.registerClick('btn-excluir-usuario-selecionado', this.confirmarExclusaoUsuario.bind(this));
+        // this.registerClick('btn-excluir-usuario-selecionado', this.confirmarExclusaoUsuario.bind(this)); // Movido a selecionarUsuarioParaAlterar para evitar duplicados
 
         // Mostrar/ocultar senha
         this.registerClick('toggle-senha', this.toggleSenhaVisibility);
@@ -568,6 +568,13 @@ class UsuarioManager {
                 formAlterar.style.display = 'block';
                 this.formAlterar = formAlterar;
                 this.preencherDadosUsuario();
+                
+                // Registrar evento del botón excluir solo si no está registrado
+                const btnExcluir = document.getElementById('btn-excluir-usuario-selecionado');
+                if (btnExcluir && !btnExcluir.dataset.excluirListenerAttached) {
+                    btnExcluir.dataset.excluirListenerAttached = 'true';
+                    btnExcluir.addEventListener('click', this.confirmarExclusaoUsuario.bind(this));
+                }
             } else {
                 formAlterar.style.display = 'none';
             }
