@@ -2,7 +2,7 @@
 Router para autenticação de usuários
 Sistema de Aluguéis V2
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -45,9 +45,7 @@ class LoginRequest(BaseModel):
     usuario: str
     senha: str
 
-class LoginResponse(BaseModel):
-    access_token: str
-    token_type: str
+class UserResponse(BaseModel):
     usuario: str
     tipo_usuario: str
 
@@ -166,44 +164,43 @@ def is_user_or_admin(current_user: Usuario = Depends(verify_token)):
         )
     return current_user
 
-@router.post("/login", response_model=LoginResponse)
-@limiter.limit("5/minute")  # Máximo 5 tentativas de login por minuto por IP
-async def login(request: Request, login_data: LoginRequest, db: Session = Depends(get_db)):
+@router.post("/login", response_model=UserResponse)
+@limiter.limit("5/minute")
+async def login(response: Response, login_data: LoginRequest, db: Session = Depends(get_db)):
     """
-    Endpoint de login
+    Endpoint de login. Autentica o usuário e define um cookie HttpOnly com o token.
     """
-    # Buscar usuário no banco
     usuario = db.query(Usuario).filter(Usuario.usuario == login_data.usuario).first()
     
-    if not usuario:
+    if not usuario or not verify_password(login_data.senha, usuario.senha):
         raise HTTPException(
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Usuário ou senha inválidos"
         )
     
-    # Verificar senha
-    if not verify_password(login_data.senha, usuario.senha):
-        raise HTTPException(
-            status_code=401,
-            detail="Usuário ou senha inválidos"
-        )
-    
-    # Criar token JWT
     access_token = create_access_token(
-        data={"sub": usuario.usuario, "tipo": usuario.tipo_de_usuario}
+        data={"sub": usuario.usuario, "tipo": usuario.tipo_de_usuario},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     
-    return LoginResponse(
-        access_token=access_token,
-        token_type="bearer",
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="lax",
+        secure=True,
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    )
+
+    return UserResponse(
         usuario=usuario.usuario,
         tipo_usuario=usuario.tipo_de_usuario
     )
 
 @router.get("/verify")
-async def verify_token_endpoint(current_user: Usuario = Depends(verify_token)):
+async def verify_token_endpoint(current_user: Usuario = Depends(verify_token_flexible)):
     """
-    Endpoint para verificar se o token ainda é válido
+    Endpoint para verificar se o token ainda é válido (usando cookie ou header)
     """
     return {
         "valid": True,
@@ -213,8 +210,8 @@ async def verify_token_endpoint(current_user: Usuario = Depends(verify_token)):
     }
 
 @router.post("/verify")
-async def verify_token_endpoint(current_user: Usuario = Depends(verify_token)):
-    """Verifica se o token é válido"""
+async def verify_token_endpoint_post(current_user: Usuario = Depends(verify_token_flexible)):
+    """Verifica se o token é válido (usando cookie ou header)"""
     return {
         "usuario": current_user.usuario,
         "tipo_usuario": current_user.tipo_de_usuario,
@@ -222,8 +219,11 @@ async def verify_token_endpoint(current_user: Usuario = Depends(verify_token)):
     }
 
 @router.post("/logout")
-async def logout():
-    """Logout (para consistência, mas o token expira automaticamente)"""
+async def logout(response: Response):
+    """
+    Faz logout do usuário limpando o cookie de autenticação.
+    """
+    response.delete_cookie(key="access_token")
     return {"message": "Logout realizado com sucesso"}
 
 class CadastroUsuarioRequest(BaseModel):
@@ -231,76 +231,45 @@ class CadastroUsuarioRequest(BaseModel):
     senha: str
     tipo_de_usuario: str
 
-@router.post("/setup-primeiro-admin")
-async def setup_primeiro_admin(
-    request: CadastroUsuarioRequest, 
-    db: Session = Depends(get_db)
-):
+@router.post("/create-initial-admin")
+async def create_initial_admin(db: Session = Depends(get_db)):
     """
-    Criar primeiro administrador se não existir nenhum admin no sistema
+    Cria o primeiro administrador com uma senha segura gerada aleatoriamente.
+    Este endpoint só pode ser usado uma vez.
     """
-    # Verificar se já existe algum administrador
+    import secrets
+    import string
+
     admin_exists = db.query(Usuario).filter(Usuario.tipo_de_usuario == "administrador").first()
-    
     if admin_exists:
         raise HTTPException(
-            status_code=400,
-            detail="Já existe um administrador no sistema. Use o endpoint /cadastrar-usuario"
+            status_code=409,
+            detail="Um administrador já existe no sistema."
         )
+
+    # Gerar uma senha forte
+    alphabet = string.ascii_letters + string.digits + string.punctuation
+    password = ''.join(secrets.choice(alphabet) for i in range(16))
     
-    # Forçar tipo administrador para o primeiro usuário
-    request.tipo_de_usuario = "administrador"
+    hashed_password = get_password_hash(password)
     
-    # Validar dados
-    if len(request.usuario) < 3:
-        raise HTTPException(
-            status_code=400,
-            detail="Nome de usuário deve ter pelo menos 3 caracteres"
-        )
+    novo_admin = Usuario(
+        usuario="admin",
+        senha=hashed_password,
+        tipo_de_usuario="administrador",
+        ativo=True
+    )
     
-    if len(request.senha) < 6:
-        raise HTTPException(
-            status_code=400,
-            detail="Senha deve ter pelo menos 6 caracteres"
-        )
+    db.add(novo_admin)
+    db.commit()
+    db.refresh(novo_admin)
     
-    # Verificar se usuário já existe
-    existing_user = db.query(Usuario).filter(Usuario.usuario == request.usuario).first()
-    if existing_user:
-        raise HTTPException(
-            status_code=400,
-            detail="Nome de usuário já existe"
-        )
-    
-    try:
-        # Criar hash da senha
-        hashed_password = get_password_hash(request.senha)
-        
-        # Criar novo usuário
-        novo_usuario = Usuario(
-            usuario=request.usuario,
-            senha=hashed_password,
-            tipo_de_usuario=request.tipo_de_usuario,
-            ativo=True
-        )
-        
-        db.add(novo_usuario)
-        db.commit()
-        db.refresh(novo_usuario)
-        
-        return {
-            "message": "Primeiro administrador criado com sucesso",
-            "usuario": novo_usuario.usuario,
-            "tipo_de_usuario": novo_usuario.tipo_de_usuario,
-            "setup_completo": True
-        }
-        
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erro ao criar usuário: {str(e)}"
-        )
+    return {
+        "message": "Administrador inicial criado com sucesso.",
+        "username": "admin",
+        "password": password,
+        "warning": "Guarde esta senha em um local seguro. Ela não será exibida novamente."
+    }
 
 @router.post("/cadastrar-usuario")
 async def cadastrar_usuario(
