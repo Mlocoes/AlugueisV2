@@ -6,7 +6,7 @@ uvicorn==0.24.0
 pandas==2.1.4
 openpyxl==3.1.2
 python-multipart==0.0.6
-pydantic==1.10.24
+pydantic==2.10.6
 jinja2==3.1.2
 python-jose[cryptography]==3.3.0
 passlib==1.7.4
@@ -17,4 +17,5 @@ typing-inspect==0.9.0
 mypy-extensions==1.0.0
 slowapi==0.1.9
 psutil==5.9.8
-fastapi-csrf-protect==0.2.1
+fastapi-csrf-protect==1.0.7
+pydantic-settings==2.1.0

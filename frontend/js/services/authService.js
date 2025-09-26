@@ -58,6 +58,19 @@ class AuthService {
     }
 
     /**
+     * Limpar storage local (compatibilidade)
+     */
+    clearStorage() {
+        try {
+            localStorage.removeItem('sistema_alquileres_token');
+            localStorage.removeItem('sistema_alquileres_user');
+            console.log('🧹 Storage local limpo.');
+        } catch (error) {
+            console.warn('Erro ao limpar localStorage:', error);
+        }
+    }
+
+    /**
      * Realizar logout. Chama o endpoint do backend para limpar o cookie.
      */
     async logout() {

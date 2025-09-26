@@ -22,22 +22,21 @@ from routers import proprietarios, imoveis, participacoes, reportes, extras, tra
 from routers.auth import verify_token
 from utils.error_handlers import global_exception_handler
 
-# Configuração CSRF
-class CsrfSettings(BaseModel):
-    secret_key: str
-    cookie_samesite: str = "lax"
-    token_location: str = "header"
-    token_key: str = "X-CSRF-Token"
-
-@CsrfProtect.load_config
-def get_csrf_config():
-    from dotenv import load_dotenv
-    import os
-    load_dotenv()
-    csrf_secret = os.getenv("CSRF_SECRET_KEY")
-    if not csrf_secret:
-        raise RuntimeError("CSRF_SECRET_KEY must be set in the environment")
-    return CsrfSettings(secret_key=csrf_secret)
+# Configuração CSRF - TEMPORARIAMENTE DESABILITADA
+# @CsrfProtect.load_config
+# def get_csrf_config():
+#     from dotenv import load_dotenv
+#     import os
+#     load_dotenv()
+#     csrf_secret = os.getenv("CSRF_SECRET_KEY")
+#     if not csrf_secret:
+#         raise RuntimeError("CSRF_SECRET_KEY must be set in the environment")
+#     return [
+#         ('secret_key', csrf_secret),
+#         ('cookie_samesite', 'lax'),
+#         ('token_location', 'header'),
+#         ('token_key', 'X-CSRF-Token')
+#     ]
 
 # Configuração da aplicação
 

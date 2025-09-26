@@ -166,7 +166,7 @@ def is_user_or_admin(current_user: Usuario = Depends(verify_token)):
 
 @router.post("/login", response_model=UserResponse)
 @limiter.limit("5/minute")
-async def login(response: Response, login_data: LoginRequest, db: Session = Depends(get_db)):
+async def login(request: Request, response: Response, login_data: LoginRequest, db: Session = Depends(get_db)):
     """
     Endpoint de login. Autentica o usuário e define um cookie HttpOnly com o token.
     """
