@@ -207,6 +207,11 @@ class ViewManager {
         // Aplicar configuraciones específicas del dispositivo
         this.applyDeviceSpecificConfig(view);
 
+        // Inicializar modales de usuario si estamos en la vista importar
+        if (view.id === 'importar' && window.usuarioManagerModule && typeof window.usuarioManagerModule.setupEvents === 'function') {
+            window.usuarioManagerModule.setupEvents();
+        }
+
         // Registrar evento para el botón Novo Alias si estamos en la vista importar
         if (view.id === 'importar') {
             const btnNovoAlias = document.getElementById('btn-novo-alias');
@@ -261,6 +266,11 @@ class ViewManager {
                     });
                 }
             }, 400);
+
+            // Inicializar UsuarioManager para los modales de usuario
+            if (window.usuarioManager && typeof window.usuarioManager.init === 'function') {
+                window.usuarioManager.init();
+            }
         }
 
         // Forzar la recarga de alias al cargar la vista extras para asegurar que allExtras siempre esté actualizado
@@ -752,8 +762,12 @@ class ViewManager {
                                     <div class="mb-3"><label class="form-label">Observações</label><textarea class="form-control" name="observacoes" style="font-size:0.85em;"></textarea></div>
                                 </div>
                                 <div class="modal-footer">
+                                    <button type="button" class="btn btn-danger" id="btn-excluir-usuario"><i class="fas fa-trash me-2"></i>Excluir</button>
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                    <button type="submit" class="btn btn-primary">Salvar</button>
+                                    <button type="submit" class="btn btn-primary" id="btn-confirmar-alterar">
+                                        <span class="spinner-border spinner-border-sm d-none me-2" id="spinner-alterar"></span>
+                                        Salvar
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -1027,8 +1041,8 @@ class ViewManager {
                             <div class="card-body-responsive">
                                 <div class="mb-4 text-end">
                                     <div class="d-flex flex-wrap justify-content-center gap-2">
-                                        <button class="btn btn-primary" style="width:150px" id="btn-alterar-usuario" onclick="window.usuarioManagerModule.showAlterarModal()"><i class="fas fa-user-edit me-2"></i> Alterar Usuário</button>
                                         <button class="btn btn-primary" style="width:150px" id="btn-cadastrar-usuario" data-bs-toggle="modal" data-bs-target="#modal-cadastrar-usuario"><i class="fas fa-user-plus me-2"></i> Cadastrar Novo Usuário</button>
+                                        <button class="btn btn-primary" style="width:150px" id="btn-alterar-usuario" data-bs-toggle="modal" data-bs-target="#modal-alterar-usuario"><i class="fas fa-user-edit me-2"></i> Alterar Usuário</button>
                                         <button class="btn btn-primary" style="width:150px" id="btn-novo-alias" type="button"><i class="fas fa-user-tag me-2"></i> Novo Alias</button>
                                         <button class="btn btn-primary" style="width:150px" id="btn-novas-transferencias" type="button"><i class="fas fa-exchange-alt me-2"></i> Nova Transferência</button>
                                     </div>
@@ -1104,8 +1118,7 @@ class ViewManager {
                                             <select class="form-select" id="tipo-usuario" name="tipo_de_usuario" required>
                                                 <option value="">Selecione o tipo</option>
                                                 <option value="administrador">Administrador</option>
-                                                <option value="usuario">Usuário Comum</option>
-                                                <option value="visualizador">Visualizador</option>
+                                                <option value="usuario">Usuário</option>
                                             </select>
                                         </div>
                                     </div>
@@ -1155,6 +1168,7 @@ class ViewManager {
                                     <div class="mb-3">
                                         <label for="alterar-confirmar-senha" class="form-label">Confirmar Nova Senha</label>
                                         <div class="input-group">
+                                        <div class="input-group">
                                             <span class="input-group-text"><i class="fas fa-lock"></i></span>
                                             <input type="password" class="form-control" id="alterar-confirmar-senha" name="confirmar_nova_senha" placeholder="Confirme a nova senha" autocomplete="off">
                                         </div>
@@ -1166,11 +1180,28 @@ class ViewManager {
                                             <select class="form-select" id="alterar-tipo-usuario" name="novo_tipo_usuario">
                                                 <option value="">Não alterar</option>
                                                 <option value="administrador">Administrador</option>
-                                                <option value="usuario">Usuário Comum</option>
-                                                <option value="visualizador">Visualizador</option>
+                                                <option value="usuario">Usuário</option>
                                             </select>
                                         </div>
-                                    </div>`
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" class="btn btn-warning flex-fill"><i class="fas fa-save me-1"></i> Alterar Usuário</button>
+                                        <button type="button" class="btn btn-danger" id="btn-excluir-usuario-selecionado"><i class="fas fa-trash me-1"></i> Excluir</button>
+                                    </div>
+                                </form>
+                                <div id="erro-alterar-usuario" class="alert alert-danger d-none mt-3"></div>
+                                <div id="sucesso-alterar-usuario" class="alert alert-success d-none mt-3"></div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i> Fechar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        `;
     }
 }
 

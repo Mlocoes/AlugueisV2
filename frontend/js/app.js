@@ -197,6 +197,11 @@ class SistemaAlugueisApp {
             console.log('✅ Módulo Alugueis criado');
         }
 
+        if (typeof window.usuarioManager !== 'undefined') {
+            window.usuarioManager.init();
+            console.log('✅ Módulo UsuarioManager inicializado');
+        }
+
         
 
         if (typeof ExtrasManager !== 'undefined') {
