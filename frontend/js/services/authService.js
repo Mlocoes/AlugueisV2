@@ -262,6 +262,20 @@ class AuthService {
             console.warn('Erro ao limpar storage:', error);
         }
     }
+
+    /**
+     * Verificar se o usuário é administrador
+     */
+    isAdmin() {
+        return this.tipo === 'administrador';
+    }
+
+    /**
+     * Obter tipo do usuário
+     */
+    getUserType() {
+        return this.tipo;
+    }
 }
 
 // Inicializar serviço globalmente

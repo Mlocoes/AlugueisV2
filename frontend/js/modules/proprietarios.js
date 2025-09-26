@@ -27,6 +27,7 @@ class ProprietariosModule {
         this.bindPageEvents();
         this.bindTableEvents();
         this.loadProprietarios();
+        this.updateAdminRestrictions();
     }
 
     async handleApiCall(apiCall, loadingMessage, errorMessagePrefix) {
@@ -42,7 +43,16 @@ class ProprietariosModule {
     }
 
     bindPageEvents() {
-        document.getElementById('btn-novo-proprietario')?.addEventListener('click', () => this.showNewModal());
+        const btnNovo = document.getElementById('btn-novo-proprietario');
+        if (btnNovo) {
+            if (window.authService && window.authService.isAdmin()) {
+                btnNovo.addEventListener('click', () => this.showNewModal());
+                btnNovo.disabled = false;
+            } else {
+                btnNovo.disabled = true;
+                btnNovo.title = 'Apenas administradores podem criar proprietários';
+            }
+        }
 
         const form = document.getElementById('form-proprietario');
         form?.addEventListener('submit', e => {
@@ -133,6 +143,11 @@ class ProprietariosModule {
 
         const fullName = `${prop.nome || ''} ${prop.sobrenome || ''}`.trim();
 
+        const isAdmin = window.authService && window.authService.isAdmin();
+        const disabledAttr = isAdmin ? '' : 'disabled';
+        const disabledClass = isAdmin ? '' : 'opacity-50';
+        const titleAttr = isAdmin ? '' : 'title="Apenas administradores podem editar/excluir proprietários"';
+
         return `
             <tr ${dataIdAttribute}>
                 <td>${sanitize(prop.id)}</td>
@@ -142,8 +157,8 @@ class ProprietariosModule {
                 <td>${sanitize(prop.email) || 'N/A'}</td>
                 <td>
                     <div class="d-flex justify-content-center">
-                        <button class="btn btn-sm btn-outline-primary me-2 edit-btn" ${dataIdAttribute ? '' : 'disabled'}><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-outline-danger delete-btn" ${dataIdAttribute ? '' : 'disabled'}><i class="fas fa-trash"></i></button>
+                        <button class="btn btn-sm btn-outline-primary me-2 edit-btn ${disabledClass}" ${dataIdAttribute ? '' : 'disabled'} ${disabledAttr} ${titleAttr}><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline-danger delete-btn ${disabledClass}" ${dataIdAttribute ? '' : 'disabled'} ${disabledAttr} ${titleAttr}><i class="fas fa-trash"></i></button>
                     </div>
                 </td>
             </tr>
@@ -229,6 +244,26 @@ class ProprietariosModule {
             this.proprietarios = this.proprietarios.filter(p => p.id !== id);
             this.renderTable();
             this.uiManager.showSuccessToast('Sucesso', 'Proprietário excluído com sucesso.');
+        }
+    }
+
+    updateAdminRestrictions() {
+        const isAdmin = window.authService && window.authService.isAdmin();
+        const btnNovo = document.getElementById('btn-novo-proprietario');
+        
+        if (btnNovo) {
+            if (isAdmin) {
+                btnNovo.disabled = false;
+                btnNovo.title = '';
+            } else {
+                btnNovo.disabled = true;
+                btnNovo.title = 'Apenas administradores podem criar proprietários';
+            }
+        }
+        
+        // Re-renderizar la tabla si ya está cargada
+        if (this.proprietarios && this.proprietarios.length > 0) {
+            this.renderTable();
         }
     }
 }

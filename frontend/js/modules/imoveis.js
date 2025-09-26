@@ -96,6 +96,7 @@ class ImoveisModule {
         // Garantir que os event listeners sejam configurados após o DOM estar pronto
         console.log('[Imoveis] Configurando event listeners específicos...');
         this.setupFormEventListeners();
+        this.updateAdminRestrictions();
 
         // Só carregar imóveis se o usuário estiver autenticado
         if (window.authService && window.authService.isAuthenticated()) {
@@ -115,11 +116,18 @@ class ImoveisModule {
             const btnNovoImovel = document.getElementById('btn-novo-imovel');
             console.log('[Imoveis] Elemento btn-novo-imovel encontrado:', btnNovoImovel);
             if (btnNovoImovel) {
-                btnNovoImovel.addEventListener('click', () => {
-                    console.log('[Imoveis] Botão Novo Imóvel clicado');
-                    this.showNewModal();
-                });
-                console.log('[Imoveis] Event listener configurado para btn-novo-imovel');
+                if (window.authService && window.authService.isAdmin()) {
+                    btnNovoImovel.addEventListener('click', () => {
+                        console.log('[Imoveis] Botão Novo Imóvel clicado');
+                        this.showNewModal();
+                    });
+                    btnNovoImovel.disabled = false;
+                    console.log('[Imoveis] Event listener configurado para btn-novo-imovel');
+                } else {
+                    btnNovoImovel.disabled = true;
+                    btnNovoImovel.title = 'Apenas administradores podem criar imóveis';
+                    console.log('[Imoveis] Botão Novo Imóvel desabilitado para usuário não-admin');
+                }
             } else {
                 console.log('[Imoveis] Botão btn-novo-imovel não encontrado (pode ser normal em outras vistas)');
             }
@@ -249,6 +257,12 @@ class ImoveisModule {
             const safeImovel = window.SecurityUtils.sanitizeData(imovel);
             const row = document.createElement('tr');
             const statusAlugado = imovel.alugado ? '<span class="badge bg-danger">Alugado</span>' : '<span class="badge bg-success">Disponível</span>';
+            const isAdmin = window.authService && window.authService.isAdmin();
+            const disabledAttr = isAdmin ? '' : 'disabled';
+            const disabledClass = isAdmin ? '' : 'opacity-50';
+            const titleAttr = isAdmin ? 'title="Editar"' : 'title="Apenas administradores podem editar imóveis"';
+            const deleteTitleAttr = isAdmin ? 'title="Excluir"' : 'title="Apenas administradores podem excluir imóveis"';
+            
             const rowTemplate = `
                 <td>
                     <strong>${safeImovel.nome || ''}</strong><br>
@@ -273,10 +287,10 @@ class ImoveisModule {
                 <td><small class="text-muted">${imovel.data_cadastro ? new Date(imovel.data_cadastro).toLocaleDateString() : ''}</small></td>
                 <td>
                     <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-warning admin-only" onclick="window.imoveisModule.editImovel(${imovel.id})" title="Editar">
+                        <button class="btn btn-outline-warning admin-only ${disabledClass}" onclick="window.imoveisModule.editImovel(${imovel.id})" ${disabledAttr} ${titleAttr}>
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-outline-danger admin-only" onclick="window.imoveisModule.deleteImovel(${imovel.id})" title="Excluir">
+                        <button class="btn btn-outline-danger admin-only ${disabledClass}" onclick="window.imoveisModule.deleteImovel(${imovel.id})" ${disabledAttr} ${deleteTitleAttr}>
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -411,6 +425,28 @@ class ImoveisModule {
             this.loadImoveis();
         } else {
             this.uiManager.showErrorToast('Erro ao excluir imóvel', 'Não foi possível excluir o imóvel');
+        }
+    }
+
+    updateAdminRestrictions() {
+        const isAdmin = window.authService && window.authService.isAdmin();
+        const btnNovo = document.getElementById('btn-novo-imovel');
+        
+        if (btnNovo) {
+            if (isAdmin) {
+                // Re-enable the event listener if it was disabled
+                btnNovo.disabled = false;
+                btnNovo.title = '';
+                btnNovo.addEventListener('click', () => this.showNewModal());
+            } else {
+                btnNovo.disabled = true;
+                btnNovo.title = 'Apenas administradores podem criar imóveis';
+            }
+        }
+        
+        // Re-renderizar la tabla si já está cargada
+        if (this.imoveis && this.imoveis.length > 0) {
+            this.loadImoveis();
         }
     }
 }

@@ -89,7 +89,8 @@ class ViewManager {
             title: 'Importar Dados',
             component: 'ImportarView',
             template: this.getImportarTemplate(),
-            requiredModules: ['importacao', 'usuarioManager', 'proprietarios', 'imoveis']
+            requiredModules: ['importacao', 'usuarioManager', 'proprietarios', 'imoveis'],
+            permission: 'admin'
         });
     }
 
@@ -556,7 +557,7 @@ class ViewManager {
         return `
             <div class="proprietarios-container">
                 <div class="d-flex justify-content-end mb-3">
-                    <button class="btn btn-primary" id="btn-novo-proprietario"><i class="fas fa-plus me-2"></i>Novo Proprietário</button>
+                    <button class="btn btn-primary admin-only" id="btn-novo-proprietario"><i class="fas fa-plus me-2"></i>Novo Proprietário</button>
                 </div>
                 <div class="card-responsive">
                     <div class="card-body-responsive">
@@ -623,7 +624,6 @@ class ViewManager {
                                     <div class="col-md-6 mb-1">
                                         <label for="proprietario-email" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.1rem;">Email</label>
                                         <input type="email" class="form-control form-control-sm" id="proprietario-email" name="email" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;">
-                                    </div>
                                 </div>
                                 <hr style="margin: 0.5rem 0;">
                                 <h6 style="font-size: 0.9rem; margin-bottom: 0.25rem;">Dados Bancários</h6>
@@ -667,7 +667,7 @@ class ViewManager {
         return `
             <div class="imoveis-container">
                 <div class="d-flex justify-content-end mb-3">
-                    <button class="btn btn-primary" id="btn-novo-imovel" onclick="console.log('[TESTE] Botão clicado inline'); if(window.imoveisModule) window.imoveisModule.showNewModal();"><i class="fas fa-plus me-2"></i>Novo Imóvel</button>
+                    <button class="btn btn-primary admin-only" id="btn-novo-imovel" onclick="console.log('[TESTE] Botão clicado inline'); if(window.imoveisModule) window.imoveisModule.showNewModal();"><i class="fas fa-plus me-2"></i>Novo Imóvel</button>
                 </div>
                 <div class="card-responsive">
                     <div class="card-body-responsive">

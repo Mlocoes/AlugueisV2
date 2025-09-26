@@ -168,7 +168,7 @@ class UnifiedNavigator {
                 id: 'importar',
                 label: 'Importar',
                 icon: 'fas fa-file-import',
-                permission: 'all'
+                permission: 'admin'
             }
         ];
 
