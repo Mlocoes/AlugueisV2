@@ -85,8 +85,8 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY deve ser definido no ambiente")
 
-# DEBUG verdadeiro por padrão apenas fora de produção
-DEBUG = (os.getenv("DEBUG").lower() == "true") if os.getenv("DEBUG") else (ENV != "production")
+# DEBUG é falso por padrão. Para habilitar, defina a variável de ambiente DEBUG="true"
+DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
 # Configurações de upload
 UPLOAD_DIR = "/tmp/uploads"

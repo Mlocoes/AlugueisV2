@@ -16,7 +16,7 @@ window.apiService = {
         
     },
 
-    // Función auxiliar para obtener headers con autenticación
+    // Función auxiliar para obtener headers
     getHeaders() {
         const headers = {
             'Content-Type': 'application/json'
@@ -25,27 +25,6 @@ window.apiService = {
         // Agregar CSRF token si existe
         if (this.csrfToken) {
             headers['X-CSRF-Token'] = this.csrfToken;
-        }
-
-        // Log de estado del authService
-        if (window.authService) {
-            console.log('🔍 AuthService status:', {
-                isAuthenticated: window.authService.isAuthenticated(),
-                hasToken: window.authService.hasToken(),
-                usuario: window.authService.getUsuario(),
-                authHeader: window.authService.getAuthHeader()
-            });
-
-            if (window.authService.isAuthenticated()) {
-                const authHeader = window.authService.getAuthHeader();
-                if (authHeader) {
-                    headers.Authorization = authHeader;
-                    // Remover logging de token completo por seguridad
-                    // console.log('🔑 Authorization header added:', authHeader.substring(0, 20) + '...');
-                }
-            }
-        } else {
-            console.warn('⚠️ AuthService not available or not authenticated');
         }
 
         return headers;
@@ -171,7 +150,10 @@ window.apiService = {
         try {
             console.log('🌐 API Request:', options.method, url);
 
-            const response = await fetch(url, options);
+            // Adicionar credentials: 'include' para enviar cookies
+            const finalOptions = { ...options, credentials: 'include' };
+
+            const response = await fetch(url, finalOptions);
             
             if (!response.ok) {
                 const errorData = await response.text();
