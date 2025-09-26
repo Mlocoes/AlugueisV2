@@ -24,14 +24,20 @@ from utils.error_handlers import global_exception_handler
 
 # Configuração CSRF
 class CsrfSettings(BaseModel):
-    secret_key: str = "your-secret-key-here-change-in-production"
+    secret_key: str
     cookie_samesite: str = "lax"
     token_location: str = "header"
     token_key: str = "X-CSRF-Token"
 
 @CsrfProtect.load_config
 def get_csrf_config():
-    return CsrfSettings()
+    from dotenv import load_dotenv
+    import os
+    load_dotenv()
+    csrf_secret = os.getenv("CSRF_SECRET_KEY")
+    if not csrf_secret:
+        raise RuntimeError("CSRF_SECRET_KEY must be set in the environment")
+    return CsrfSettings(secret_key=csrf_secret)
 
 # Configuração da aplicação
 
