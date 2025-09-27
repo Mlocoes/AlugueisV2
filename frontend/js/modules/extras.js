@@ -176,6 +176,13 @@ class ExtrasManager {
             this.initialized = true;
         }
 
+        // Verificar se o usuário é administrador antes de carregar dados
+        const isAdmin = window.authService && window.authService.isAdmin();
+        if (!isAdmin) {
+            console.log('⚠️ Usuário não-administrador tentou carregar módulo Extras - pulando carregamento de dados');
+            return;
+        }
+
         try {
             await this.loadProprietarios();
             await this.loadExtras();
@@ -191,6 +198,14 @@ class ExtrasManager {
      */
     async loadExtras() {
         try {
+            // Verificar se o usuário é administrador antes de fazer a chamada
+            const isAdmin = window.authService && window.authService.isAdmin();
+            if (!isAdmin) {
+                console.log('⚠️ Usuário não-administrador tentou carregar extras - pulando');
+                this.renderExtrasTable([]);
+                return;
+            }
+
             console.log(' Carregando extras...');
             
             const response = await this.apiService.get('/api/extras/?ativo=true');
@@ -216,6 +231,13 @@ class ExtrasManager {
      */
     async loadProprietarios() {
         try {
+            // Verificar se o usuário é administrador antes de fazer a chamada
+            const isAdmin = window.authService && window.authService.isAdmin();
+            if (!isAdmin) {
+                console.log('⚠️ Usuário não-administrador tentou carregar proprietários - pulando');
+                return;
+            }
+
             console.log('📥 Carregando proprietários...');
             
             const response = await this.apiService.get('/api/extras/proprietarios/disponiveis');
@@ -309,6 +331,14 @@ class ExtrasManager {
      */
     async loadTransferencias() {
         try {
+            // Verificar se o usuário é administrador antes de fazer a chamada
+            const isAdmin = window.authService && window.authService.isAdmin();
+            if (!isAdmin) {
+                console.log('⚠️ Usuário não-administrador tentou carregar transferências - pulando');
+                this.renderTransferenciasTable([]);
+                return;
+            }
+
             console.log('📄 Carregando transferências...');
             
             const response = await this.apiService.get('/api/transferencias/');

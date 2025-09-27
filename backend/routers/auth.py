@@ -151,7 +151,7 @@ def verify_token_flexible(
     return user
 
 # Dependências de autorização baseada em função (RBAC)
-def is_admin(current_user: Usuario = Depends(verify_token)):
+def is_admin(current_user: Usuario = Depends(verify_token_flexible)):
     """Verifica se o usuário atual é um administrador."""
     if current_user.tipo_de_usuario != "administrador":
         raise HTTPException(
@@ -160,7 +160,7 @@ def is_admin(current_user: Usuario = Depends(verify_token)):
         )
     return current_user
 
-def is_user_or_admin(current_user: Usuario = Depends(verify_token)):
+def is_user_or_admin(current_user: Usuario = Depends(verify_token_flexible)):
     """Verifica se o usuário atual é um usuário padrão ou administrador."""
     if current_user.tipo_de_usuario not in ["usuario", "administrador"]:
         raise HTTPException(
@@ -210,7 +210,7 @@ async def verify_token_endpoint(current_user: Usuario = Depends(verify_token_fle
     return {
         "valid": True,
         "usuario": current_user.usuario,
-        "tipo": current_user.tipo_de_usuario,
+        "tipo_usuario": current_user.tipo_de_usuario,
         "is_admin": current_user.tipo_de_usuario == "administrador"
     }
 
