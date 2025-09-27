@@ -52,7 +52,7 @@ class SistemaAlugueisApp {
 
             // Delegar gestión de autenticación y visibilidad a loginManager
             if (window.loginManager && typeof window.loginManager.init === 'function') {
-                window.loginManager.init();
+                await window.loginManager.init();
                 console.log('🔒 Gestión de login y visibilidad delegada a loginManager');
             } else {
                 console.warn('⚠️ LoginManager no disponible');

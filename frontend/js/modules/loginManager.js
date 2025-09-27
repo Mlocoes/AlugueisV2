@@ -13,8 +13,11 @@ class LoginManager {
     /**
      * Inicializar o gerenciador de login
      */
-    init() {
+    async init() {
         if (this.initialized) return;
+
+        // Aguardar Bootstrap estar disponível
+        await this.waitForBootstrap();
 
         // Obter elementos do DOM
         this.loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
@@ -27,6 +30,22 @@ class LoginManager {
         this.checkAuthentication();
 
         this.initialized = true;
+    }
+
+    /**
+     * Aguardar Bootstrap estar disponível
+     */
+    async waitForBootstrap() {
+        return new Promise((resolve) => {
+            const checkBootstrap = () => {
+                if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
+                    resolve();
+                } else {
+                    setTimeout(checkBootstrap, 50);
+                }
+            };
+            checkBootstrap();
+        });
     }
 
     /**
