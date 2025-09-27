@@ -438,6 +438,9 @@
                         window.deviceManager.setupResponsiveListeners();
                     }
 
+                    // Inicializar módulos necessários ANTES da verificação de autenticação
+                    await this.initializeModulesEarly();
+
                     // Verificar autenticação guardada
                     await this.checkSavedAuth();
 
@@ -562,6 +565,11 @@
                     console.log('✅ Módulo Proprietarios criado');
                 }
 
+                if (typeof ImoveisModule !== 'undefined') {
+                    window.imoveisModule = new ImoveisModule();
+                    console.log('✅ Módulo Imoveis criado');
+                }
+
                 if (typeof ParticipacoesModule !== 'undefined') {
                     window.participacoesModule = new ParticipacoesModule();
                     console.log('✅ Módulo Participacoes criado');
@@ -595,6 +603,29 @@
                 }
 
                 console.log('✅ Módulos inicializados');
+            }
+
+            async initializeModulesEarly() {
+                console.log('📦 Inicializando módulos essenciais antes do login...');
+
+                // Obtener CSRF token para proteção
+                if (window.apiService && typeof window.apiService.getCsrfToken === 'function') {
+                    await window.apiService.getCsrfToken();
+                }
+
+                // Instanciar DashboardModule ANTES do login (essencial)
+                if (typeof window.DashboardModule !== 'undefined') {
+                    window.dashboardModule = new window.DashboardModule();
+                    console.log('✅ Módulo Dashboard criado antes do login');
+                }
+
+                // Inicializar ImoveisModule (pode ser necessário para navegação)
+                if (typeof ImoveisModule !== 'undefined') {
+                    window.imoveisModule = new ImoveisModule();
+                    console.log('✅ Módulo Imoveis criado antes do login');
+                }
+
+                console.log('✅ Módulos essenciais inicializados');
             }
 
             setupEventListeners() {
