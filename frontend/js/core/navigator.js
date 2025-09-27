@@ -357,6 +357,25 @@ class UnifiedNavigator {
     }
 
     /**
+     * Força a reconstrução da navegação, útil após login.
+     */
+    rebuildNavigation() {
+        console.log('🔄 Reconstruindo a navegação com base nas permissões do usuário...');
+        this.setupNavigation();
+        // A vista ativa pode não existir mais para o novo tipo de usuário
+        // então navegamos para o dashboard como um padrão seguro.
+        const items = this.getNavigationItems();
+        const currentViewExists = items.some(item => item.id === this.currentView);
+
+        if (!currentViewExists) {
+            console.log(`⚠️ A vista atual '${this.currentView}' não é permitida. Redirecionando para o dashboard.`);
+            this.navigateTo('dashboard');
+        } else {
+            this.updateActiveStates(this.currentView);
+        }
+    }
+
+    /**
      * Obtener vista desde URL
      */
     getViewFromURL() {
@@ -368,17 +387,11 @@ class UnifiedNavigator {
      * Obtener tipo de usuario
      */
     getUserType() {
-        try {
-            const userDataString = localStorage.getItem('userData');
-            if (!userDataString || userDataString === 'undefined' || userDataString === 'null') {
-                return 'usuario';
-            }
-            const userData = JSON.parse(userDataString);
-            return userData.tipo || 'usuario';
-        } catch (error) {
-            console.warn('⚠️ Error parsing userData from localStorage:', error);
-            return 'usuario';
+        // Obter dados do usuário diretamente do serviço de autenticação
+        if (window.authService && window.authService.isAuthenticated()) {
+            return window.authService.getUserType() || 'usuario';
         }
+        return 'usuario'; // Padrão para não autenticado
     }
 
     /**

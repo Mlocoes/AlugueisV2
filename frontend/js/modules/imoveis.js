@@ -428,28 +428,6 @@ class ImoveisModule {
         }
     }
 
-    updateAdminRestrictions() {
-        const isAdmin = window.authService && window.authService.isAdmin();
-        const btnNovo = document.getElementById('btn-novo-imovel');
-        
-        if (btnNovo) {
-            if (isAdmin) {
-                // Re-enable the event listener if it was disabled
-                btnNovo.disabled = false;
-                btnNovo.title = '';
-                btnNovo.addEventListener('click', () => this.showNewModal());
-            } else {
-                btnNovo.disabled = true;
-                btnNovo.title = 'Apenas administradores podem criar imóveis';
-            }
-        }
-        
-        // Re-renderizar la tabela si já está cargada
-        if (this.imoveis && this.imoveis.length > 0) {
-            this.loadImoveis();
-        }
-    }
-
     /**
      * Aplicar permissões baseado no tipo de usuário
      */
@@ -460,11 +438,13 @@ class ImoveisModule {
         const btnNovo = document.getElementById('btn-novo-imovel');
         if (btnNovo) {
             btnNovo.disabled = !isAdmin;
-            btnNovo.title = isAdmin ? '' : 'Apenas administradores podem criar imóveis';
+            btnNovo.title = isAdmin ? 'Adicionar novo imóvel' : 'Apenas administradores podem criar imóveis';
         }
 
-        // Re-renderizar tabela com permissões atualizadas
-        this.loadImoveis();
+        // Re-renderizar tabela com permissões atualizadas para os botões de ação
+        if (this.imoveis && this.imoveis.length > 0) {
+            this.renderTable();
+        }
     }
 }
 

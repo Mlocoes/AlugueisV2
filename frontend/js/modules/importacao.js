@@ -119,6 +119,25 @@ class ImportacaoModule {
      */
     async load() {
         console.log('🔄 Carregando ImportacaoModule...');
+
+        // Medida de segurança: verificar permissões no carregamento da vista
+        if (!window.authService || !window.authService.isAdmin()) {
+            console.warn('⚠️ Tentativa de acesso não autorizado à página de importação.');
+            const mainContent = document.getElementById('main-content');
+            if (mainContent) {
+                // Ocultar o conteúdo da importação e mostrar uma mensagem de acesso negado.
+                SecurityUtils.setSafeHTML(mainContent, `
+                    <div class="container-fluid mt-4">
+                        <div class="alert alert-danger text-center">
+                            <h4 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Acesso Negado</h4>
+                            <p>Você não tem permissão para acessar esta página.</p>
+                        </div>
+                    </div>
+                `);
+            }
+            return; // Interromper o carregamento do módulo
+        }
+
         try {
             // Inicializar se ainda não foi inicializado
             if (!this.initialized) {
@@ -272,3 +291,31 @@ class ImportacaoModule {
 // Registrar módulo globalmente
 window.importacaoModule = new ImportacaoModule();
 
+// Adicionar método applyPermissions à classe ImportacaoModule
+ImportacaoModule.prototype.applyPermissions = function(isAdmin) {
+    console.log(`🔒 Aplicando permissões no módulo Importação: ${isAdmin ? 'ADMIN' : 'USUÁRIO'}`);
+
+    const formIds = [
+        'importar-form-proprietarios',
+        'importar-form-imoveis',
+        'importar-form-participacoes',
+        'importar-form-alugueis'
+    ];
+
+    formIds.forEach(formId => {
+        const form = document.getElementById(formId);
+        if (form) {
+            const fileInput = form.querySelector('input[type="file"]');
+            const submitButton = form.querySelector('button'); // Assumindo um botão por formulário
+
+            if (fileInput) {
+                fileInput.disabled = !isAdmin;
+                fileInput.title = isAdmin ? '' : 'Apenas administradores podem importar arquivos.';
+            }
+            if (submitButton) {
+                submitButton.disabled = !isAdmin;
+                submitButton.title = isAdmin ? '' : 'Apenas administradores podem importar dados.';
+            }
+        }
+    });
+};

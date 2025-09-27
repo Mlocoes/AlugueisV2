@@ -27,7 +27,6 @@ class ProprietariosModule {
         this.bindPageEvents();
         this.bindTableEvents();
         this.loadProprietarios();
-        this.updateAdminRestrictions();
     }
 
     async handleApiCall(apiCall, loadingMessage, errorMessagePrefix) {
@@ -45,13 +44,7 @@ class ProprietariosModule {
     bindPageEvents() {
         const btnNovo = document.getElementById('btn-novo-proprietario');
         if (btnNovo) {
-            if (window.authService && window.authService.isAdmin()) {
-                btnNovo.addEventListener('click', () => this.showNewModal());
-                btnNovo.disabled = false;
-            } else {
-                btnNovo.disabled = true;
-                btnNovo.title = 'Apenas administradores podem criar proprietários';
-            }
+            btnNovo.addEventListener('click', () => this.showNewModal());
         }
 
         const form = document.getElementById('form-proprietario');
@@ -247,26 +240,6 @@ class ProprietariosModule {
         }
     }
 
-    updateAdminRestrictions() {
-        const isAdmin = window.authService && window.authService.isAdmin();
-        const btnNovo = document.getElementById('btn-novo-proprietario');
-        
-        if (btnNovo) {
-            if (isAdmin) {
-                btnNovo.disabled = false;
-                btnNovo.title = '';
-            } else {
-                btnNovo.disabled = true;
-                btnNovo.title = 'Apenas administradores podem criar proprietários';
-            }
-        }
-        
-        // Re-renderizar la tabla si ya está cargada
-        if (this.proprietarios && this.proprietarios.length > 0) {
-            this.renderTable();
-        }
-    }
-
     /**
      * Aplicar permissões baseado no tipo de usuário
      */
@@ -277,11 +250,13 @@ class ProprietariosModule {
         const btnNovo = document.getElementById('btn-novo-proprietario');
         if (btnNovo) {
             btnNovo.disabled = !isAdmin;
-            btnNovo.title = isAdmin ? '' : 'Apenas administradores podem criar proprietários';
+            btnNovo.title = isAdmin ? 'Adicionar novo proprietário' : 'Apenas administradores podem criar proprietários';
         }
 
-        // Re-renderizar tabela com permissões atualizadas
-        this.renderProprietariosTable();
+        // Re-renderizar tabela com permissões atualizadas para os botões de ação
+        if (this.tableBody) {
+            this.renderTable();
+        }
     }
 }
 

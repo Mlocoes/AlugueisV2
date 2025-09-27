@@ -274,6 +274,13 @@ class ExtrasManager {
                     proprietariosText = 'Erro no formato';
                 }
             }
+
+            const isAdmin = window.authService && window.authService.isAdmin();
+            const disabledAttr = isAdmin ? '' : 'disabled';
+            const disabledClass = isAdmin ? '' : 'opacity-50';
+            const titleAttr = isAdmin ? 'title="Editar"' : 'title="Apenas administradores podem editar"';
+            const deleteTitleAttr = isAdmin ? 'title="Excluir"' : 'title="Apenas administradores podem excluir"';
+
             row.innerHTML = `
                 <td><strong>${extra.alias}</strong></td>
                 <td title="${proprietariosText}">
@@ -281,13 +288,13 @@ class ExtrasManager {
                 </td>
                 <td class="text-center">
                     <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary" onclick="window.extrasManager.editarAlias(${extra.id})" title="Editar">
+                        <button class="btn btn-outline-primary ${disabledClass}" onclick="window.extrasManager.editarAlias(${extra.id})" ${disabledAttr} ${titleAttr}>
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-outline-danger" 
+                        <button class="btn btn-outline-danger ${disabledClass}"
                                 onclick="window.extrasManager.confirmarExclusao('alias', ${extra.id}, '${extra.alias}')" 
                                 data-alias-id="${extra.id}"
-                                title="Excluir">
+                                ${disabledAttr} ${deleteTitleAttr}>
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -358,6 +365,12 @@ class ExtrasManager {
             const dataFimFormatada = transferencia.data_fim ? 
                 new Date(transferencia.data_fim).toLocaleDateString('pt-BR') : '-';
             
+            const isAdmin = window.authService && window.authService.isAdmin();
+            const disabledAttr = isAdmin ? '' : 'disabled';
+            const disabledClass = isAdmin ? '' : 'opacity-50';
+            const titleAttr = isAdmin ? 'title="Editar"' : 'title="Apenas administradores podem editar"';
+            const deleteTitleAttr = isAdmin ? 'title="Excluir"' : 'title="Apenas administradores podem excluir"';
+
             row.innerHTML = `
                 <td><strong>${transferencia.alias}</strong></td>
                 <td>${transferencia.nome_transferencia}</td>
@@ -365,13 +378,13 @@ class ExtrasManager {
                 <td class="text-center">${dataFimFormatada}</td>
                 <td class="text-center">
                     <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary" onclick="window.extrasManager.editarTransferencia(${transferencia.id})" title="Editar">
+                        <button class="btn btn-outline-primary ${disabledClass}" onclick="window.extrasManager.editarTransferencia(${transferencia.id})" ${disabledAttr} ${titleAttr}>
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-outline-danger" 
+                        <button class="btn btn-outline-danger ${disabledClass}"
                                 onclick="window.extrasManager.confirmarExclusao('transferencia', ${transferencia.id}, '${transferencia.nome_transferencia}')" 
                                 data-transferencia-id="${transferencia.id}"
-                                title="Excluir">
+                                ${disabledAttr} ${deleteTitleAttr}>
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -1152,9 +1165,23 @@ document.addEventListener('DOMContentLoaded', function() {
 ExtrasManager.prototype.applyPermissions = function(isAdmin) {
     console.log(`🔒 Aplicando permissões no módulo Extras: ${isAdmin ? 'ADMIN' : 'USUÁRIO'}`);
 
-    // O módulo extras só é acessível para admins (pela configuração do navigator)
-    // Não há controles específicos para desabilitar aqui, pois o acesso já é restrito
-    if (!isAdmin) {
-        console.warn('⚠️ Usuário não-administrador tentou acessar módulo extras');
+    const btnNovoAlias = document.getElementById('btn-novo-alias');
+    if (btnNovoAlias) {
+        btnNovoAlias.disabled = !isAdmin;
+        btnNovoAlias.title = isAdmin ? 'Criar novo alias' : 'Apenas administradores podem criar alias';
+    }
+
+    const btnNovasTransferencias = document.getElementById('btn-novas-transferencias');
+    if (btnNovasTransferencias) {
+        btnNovasTransferencias.disabled = !isAdmin;
+        btnNovasTransferencias.title = isAdmin ? 'Criar nova transferência' : 'Apenas administradores podem criar transferências';
+    }
+
+    // Re-renderizar tabelas para atualizar os botões de ação
+    if (this.allExtras) {
+        this.renderExtrasTable(this.allExtras);
+    }
+    if (this.allTransferencias) {
+        this.renderTransferenciasTable(this.allTransferencias);
     }
 };
