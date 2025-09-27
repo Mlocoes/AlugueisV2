@@ -400,15 +400,14 @@
     <!-- Inicialización automática de la app -->
     <script>
         // Aguardar que todos os scripts sejam carregados antes de inicializar
-        // COMENTADO: O UnifiedApp já faz toda a inicialização necessária
-        // window.addEventListener('load', function() {
-        //     if (typeof window.initApp === 'function') {
-        //         window.initApp();
-        //         console.log('🚀 window.initApp() chamado automaticamente após carregamento completo');
-        //     } else {
-        //         console.error('❌ window.initApp não está disponível após carregamento completo');
-        //     }
-        // });
+        window.addEventListener('load', function() {
+            if (typeof window.initApp === 'function') {
+                window.initApp();
+                console.log('🚀 window.initApp() chamado automaticamente após carregamento completo');
+            } else {
+                console.error('❌ window.initApp não está disponível após carregamento completo');
+            }
+        });
     </script>
 
     <!-- Main App Script -->
@@ -437,9 +436,6 @@
                         window.deviceManager.applyDeviceConfiguration();
                         window.deviceManager.setupResponsiveListeners();
                     }
-
-                    // Inicializar módulos necessários ANTES da verificação de autenticação
-                    await this.initializeModulesEarly();
 
                     // Verificar autenticação guardada
                     await this.checkSavedAuth();
@@ -487,14 +483,13 @@
                         this.currentUser = authService.getUserData();
                         console.log('✅ Sessão validada com sucesso via cookie.');
                         return true;
-                    } else {
-                        console.log('🔄 Nenhuma sessão válida encontrada. Exigindo login.');
-                        return false;
                     }
                 } catch (error) {
                     console.warn('⚠️ Erro ao verificar a sessão salva:', error);
-                    return false; // Garantir que retorna false em caso de erro
                 }
+
+                console.log('🔄 Nenhuma sessão válida encontrada. Exigindo login.');
+                return false;
             }
 
             showLogin() {
@@ -533,11 +528,6 @@
                     // Inicializar navegador
                     if (window.unifiedNavigator) {
                         window.unifiedNavigator.init();
-                        
-                        // Atualizar navegação baseada no tipo de usuário após inicialização
-                        if (window.unifiedNavigator.updateNavigationForUser) {
-                            window.unifiedNavigator.updateNavigationForUser();
-                        }
                     }
 
                     // Inicializar view manager
@@ -568,11 +558,6 @@
                 if (typeof ProprietariosModule !== 'undefined') {
                     window.proprietariosModule = new ProprietariosModule();
                     console.log('✅ Módulo Proprietarios criado');
-                }
-
-                if (typeof ImoveisModule !== 'undefined') {
-                    window.imoveisModule = new ImoveisModule();
-                    console.log('✅ Módulo Imoveis criado');
                 }
 
                 if (typeof ParticipacoesModule !== 'undefined') {
@@ -610,29 +595,6 @@
                 console.log('✅ Módulos inicializados');
             }
 
-            async initializeModulesEarly() {
-                console.log('📦 Inicializando módulos essenciais antes do login...');
-
-                // Obtener CSRF token para proteção
-                if (window.apiService && typeof window.apiService.getCsrfToken === 'function') {
-                    await window.apiService.getCsrfToken();
-                }
-
-                // Instanciar DashboardModule ANTES do login (essencial)
-                if (typeof window.DashboardModule !== 'undefined') {
-                    window.dashboardModule = new window.DashboardModule();
-                    console.log('✅ Módulo Dashboard criado antes do login');
-                }
-
-                // Inicializar ImoveisModule (pode ser necessário para navegação)
-                if (typeof ImoveisModule !== 'undefined') {
-                    window.imoveisModule = new ImoveisModule();
-                    console.log('✅ Módulo Imoveis criado antes do login');
-                }
-
-                console.log('✅ Módulos essenciais inicializados');
-            }
-
             setupEventListeners() {
                 // Login form
                 const loginForm = document.getElementById('login-form');
@@ -656,7 +618,7 @@
                 if (menuToggle) {
                     menuToggle.addEventListener('click', () => {
                         if (window.unifiedNavigator) {
-                            window.unifiedNavigator.toggleMobileMenu();
+                            window.unifiedNavigator.toggleSidebar();
                         }
                     });
                 }
@@ -742,7 +704,7 @@
                     window.unifiedNavigator.updateUserInfo(this.currentUser);
                 }
             }
-        };
+        }
 
         // Inicializar aplicación cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', () => {
