@@ -365,14 +365,14 @@ class UnifiedNavigator {
      */
     getUserType() {
         try {
-            const userDataString = localStorage.getItem('userData');
-            if (!userDataString || userDataString === 'undefined' || userDataString === 'null') {
-                return 'usuario';
+            // Usar authService em vez de localStorage
+            if (window.authService && window.authService.getUserData) {
+                const userData = window.authService.getUserData();
+                return userData ? userData.tipo : 'usuario';
             }
-            const userData = JSON.parse(userDataString);
-            return userData.tipo || 'usuario';
+            return 'usuario';
         } catch (error) {
-            console.warn('⚠️ Error parsing userData from localStorage:', error);
+            console.warn('⚠️ Error getting user type from authService:', error);
             return 'usuario';
         }
     }
@@ -388,6 +388,21 @@ class UnifiedNavigator {
                 ${SecurityUtils.escapeHtml(userData.usuario)} (${SecurityUtils.escapeHtml(userData.tipo)})
             `;
         }
+        
+        // Atualizar navegação baseada no tipo de usuário
+        this.updateNavigationForUser();
+    }
+
+    /**
+     * Atualizar navegação baseada no tipo de usuário (mostrar/ocultar itens admin)
+     */
+    updateNavigationForUser() {
+        const container = document.getElementById('navigation-container');
+        if (!container) return;
+
+        // Recriar navegação com os itens corretos baseados no tipo de usuário
+        this.setupNavigation();
+        console.log('🔄 Navegação atualizada baseada no tipo de usuário');
     }
 
     /**
