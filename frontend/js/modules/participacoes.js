@@ -82,33 +82,31 @@ class ParticipacoesModule {
         });
     }
 
-    async loadParticipacoes() {
+    async loadParticipacoes(dataId = null) {
         try {
             this.uiManager.showLoading('Carregando participações...');
+            console.log('🔧 Carregando participações para dataId:', dataId);
             
-            let participacoes;
-            
-            try {
-                // Carregar a versão selecionada (ativa ou histórica)
-                const response = await this.apiService.get(`/api/participacoes/historico/${this.selectedData}`);
-                participacoes = response.success ? (Array.isArray(response.data) ? response.data : response.data.data || []) : [];
-            } catch (error) {
-                console.warn('Erro ao carregar participações:', error);
-                participacoes = [];
-                this.uiManager.showAlert('Não foi possível carregar participações. Dados podem estar indisponíveis.', 'warning');
-            }
-            
-            const [proprietarios, imoveis] = await Promise.all([
+            const [participacoes, proprietarios, imoveis] = await Promise.all([
+                this.apiService.getParticipacoes(dataId),
                 this.apiService.getProprietarios(),
                 this.apiService.getImoveis()
             ]);
+            
+            console.log('🔧 Dados carregados:', {
+                participacoes: participacoes?.length || 0,
+                proprietarios: proprietarios?.length || 0,
+                imoveis: imoveis?.length || 0
+            });
             
             this.uiManager.hideLoading();
             this.participacoes = participacoes || [];
             this.proprietarios = proprietarios || [];
             this.imoveis = imoveis || [];
+            console.log('🔧 Chamando renderTable...');
             this.renderTable();
         } catch (error) {
+            console.error('🔧 Erro ao carregar participações:', error);
             this.uiManager.showAlert('Erro ao carregar participações: ' + error.message, 'error');
             this.uiManager.hideLoading();
         }
@@ -150,6 +148,7 @@ class ParticipacoesModule {
             headHtml += `<th>${prop.nome}</th>`;
         }
         headHtml += '<th>Total</th><th width="120">Ações</th></tr>';
+        console.log('🔧 Head HTML:', headHtml);
         SecurityUtils.setSafeHTML(tableHead, headHtml);
         let bodyHtml = '';
         for (const imovel of this.imoveis) {
@@ -178,7 +177,10 @@ class ParticipacoesModule {
                 </div>
             </td></tr>`;
         }
+        console.log('🔧 Body HTML:', bodyHtml);
+        console.log('🔧 Aplicando HTML ao DOM...');
         SecurityUtils.setSafeHTML(tableBody, bodyHtml);
+        console.log('🔧 HTML aplicado com sucesso');
     }
 
     async novaVersao(imovelId) {

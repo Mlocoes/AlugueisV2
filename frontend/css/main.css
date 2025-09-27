@@ -513,9 +513,10 @@ body {
     text-align: center;
     vertical-align: middle;
     border: 1px solid #dee2e6;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal !important;
+    overflow: visible !important;
+    word-wrap: break-word !important;
+    text-overflow: clip !important;
 }
 
 .matriz-table th {
@@ -614,7 +615,7 @@ body {
     }
 }
 
-/* === ESTILOS IMPORTACIÓN === */
+/* === ESTILOS IMPORTAÇÃO === */
 
 /* Upload Area */
 .upload-area {
@@ -753,7 +754,7 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Estilos para Aliases en combos de filtro */
+/* Estilos para Aliases em combos de filtro */
 .alias-option {
     background-color: #e3f2fd !important;
     color: #1976d2 !important;
