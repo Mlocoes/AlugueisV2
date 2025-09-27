@@ -22,7 +22,7 @@ class SistemaAlugueisApp {
             console.log('✅ Bootstrap carregado e disponível');
 
             // Configurar acessibilidade
-            this.setupAccessibility();
+            this.setupGlobalAccessibilityInterceptor();
             console.log('✅ Sistema de accesibilidad simplificado iniciado');
 
             // Verificar dependências
@@ -83,7 +83,7 @@ class SistemaAlugueisApp {
     }
 
     /**
-     * Configurar interceptor global para prevenir problemas de accesibilidad
+     * Configurar interceptor global para prevenir problemas de accesibilidade
      */
     setupGlobalAccessibilityInterceptor() {
         // Solución simple: solo loggear para debug
