@@ -15,17 +15,23 @@ class SistemaAlugueisApp {
      */
     async init() {
         try {
-            console.log(`🚀 Inicializando Sistema de Aluguéis V${this.version}...`);
+            console.log('🚀 Inicializando Sistema de Aluguéis V2.1.0...');
 
-            // Inicializar configuração de rede
-            await this.initializeNetwork();
+            // Aguardar Bootstrap estar disponível
+            await this.waitForBootstrap();
+            console.log('✅ Bootstrap carregado e disponível');
 
-                        // Configurar interceptor global para accesibilidad
-            this.setupGlobalAccessibilityInterceptor();
+            // Configurar acessibilidade
+            this.setupAccessibility();
+            console.log('✅ Sistema de accesibilidad simplificado iniciado');
 
-            // Verificar dependências requeridas
-            if (!this.checkDependencies()) {
-                throw new Error('Faltam dependências requeridas');
+            // Verificar dependências
+            this.checkDependencies();
+            console.log('✅ Todas as dependências verificadas');
+
+            // Verificar Chart.js
+            if (typeof Chart !== 'undefined') {
+                console.log('📊 Chart.js versão:', Chart.version);
             }
 
             // Verificar conexão com o backend
@@ -49,19 +55,31 @@ class SistemaAlugueisApp {
                 window.loginManager.init();
                 console.log('🔒 Gestión de login y visibilidad delegada a loginManager');
             } else {
-                // Fallback: mostrar login si no existe loginManager
-                document.getElementById('app-container').style.display = 'none';
-                document.getElementById('login-screen').style.display = 'block';
-                console.warn('⚠️ loginManager no disponible, mostrando login por fallback');
+                console.warn('⚠️ LoginManager no disponible');
             }
 
-            this.initialized = true;
             console.log('✅ Sistema de Aluguéis inicializado corretamente');
 
         } catch (error) {
             console.error('❌ Erro inicializando a aplicação:', error);
-            this.showError('Erro crítico ao inicializar o sistema', error);
+            this.showError('Erro ao inicializar a aplicação: ' + error.message);
         }
+    }
+
+    /**
+     * Aguardar Bootstrap estar disponível
+     */
+    async waitForBootstrap() {
+        return new Promise((resolve) => {
+            const checkBootstrap = () => {
+                if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
+                    resolve();
+                } else {
+                    setTimeout(checkBootstrap, 50);
+                }
+            };
+            checkBootstrap();
+        });
     }
 
     /**
