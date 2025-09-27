@@ -50,8 +50,6 @@ def get_csrf_config():
 
 app = FastAPI(**APP_CONFIG)
 app.add_middleware(CORSMiddleware, **CORS_CONFIG)
-# Adiciona o middleware CSRF, que é ativado pela configuração acima
-app.add_middleware(CsrfProtect)
 
 
 # Configuração de Rate Limiting para prevenir ataques de força bruta
