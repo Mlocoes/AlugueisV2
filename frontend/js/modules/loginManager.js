@@ -210,10 +210,16 @@ class LoginManager {
                 await new Promise(res => setTimeout(res, 100));
                 retries++;
             }
+            
+            // Verificar se o usuário é administrador
+            const isAdmin = window.authService && window.authService.isAdmin && window.authService.isAdmin();
+            const targetView = isAdmin ? 'importar' : 'dashboard';
+            
             if (window.dashboardModule && typeof window.dashboardModule.load === 'function') {
                 await window.dashboardModule.load();
                 if (window.viewManager && typeof window.viewManager.showView === 'function') {
-                    await window.viewManager.showView('dashboard');
+                    await window.viewManager.showView(targetView);
+                    console.log(`✅ Redirecionado para ${targetView} após login ${isAdmin ? '(administrador)' : '(usuário regular)'}`);
                 }
             } else {
                 console.error('❌ No se pudo inicializar dashboardModule tras login');
@@ -232,15 +238,13 @@ class LoginManager {
             }
         }
 
-        // ...existing code...
-        
-            // Limpiar instancia de dashboard al cerrar sesión
-            window.addEventListener('logout', () => {
-                if (window.dashboardModule) {
-                    window.dashboardModule = null;
-                    console.log('🧹 DashboardModule eliminado tras logout');
-                }
-            });
+        // Limpiar instancia de dashboard al cerrar sesión
+        window.addEventListener('logout', () => {
+            if (window.dashboardModule) {
+                window.dashboardModule = null;
+                console.log('🧹 DashboardModule eliminado tras logout');
+            }
+        });
 
         // Permitir inicialização da aplicação
         this.enableApplication();
