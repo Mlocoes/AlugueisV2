@@ -96,7 +96,7 @@ class ImoveisModule {
         // Garantir que os event listeners sejam configurados após o DOM estar pronto
         console.log('[Imoveis] Configurando event listeners específicos...');
         this.setupFormEventListeners();
-        this.updateAdminRestrictions();
+        this.applyPermissions(window.authService && window.authService.isAdmin());
 
         // Só carregar imóveis se o usuário estiver autenticado
         if (window.authService && window.authService.isAuthenticated()) {
