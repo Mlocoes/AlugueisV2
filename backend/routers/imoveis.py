@@ -6,12 +6,12 @@ import traceback
 from datetime import datetime
 from models_final import Imovel, AluguelSimples, Usuario, Participacao
 from config import get_db
-from .auth import verify_token
+from .auth import verify_token_flexible
 
 router = APIRouter(prefix="/api/imoveis", tags=["imoveis"])
 
 @router.get("/")
-def listar_imoveis(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+def listar_imoveis(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Lista todos os imóveis em ordem alfabética."""
     try:
         imoveis = db.query(Imovel).order_by(Imovel.nome).all()
@@ -20,7 +20,7 @@ def listar_imoveis(db: Session = Depends(get_db), current_user: Usuario = Depend
         raise HTTPException(status_code=500, detail=f"Erro ao listar imóveis: {str(e)}")
 
 @router.get("/{imovel_id}")
-def obter_imovel(imovel_id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+def obter_imovel(imovel_id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Obtém um imóvel específico pelo seu ID."""
     imovel = db.query(Imovel).filter(Imovel.id == imovel_id).first()
     if not imovel:
@@ -28,7 +28,7 @@ def obter_imovel(imovel_id: int, db: Session = Depends(get_db), current_user: Us
     return {"success": True, "data": imovel.to_dict()}
 
 @router.post("/")
-def criar_imovel(dados: Dict, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+def criar_imovel(dados: Dict, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Cria um novo imóvel a partir de um dicionário de dados."""
     try:
         novo_imovel = Imovel(**dados)
@@ -41,7 +41,7 @@ def criar_imovel(dados: Dict, db: Session = Depends(get_db), current_user: Usuar
         raise HTTPException(status_code=500, detail=f"Erro ao criar imóvel: {str(e)}")
 
 @router.put("/{imovel_id}", response_model=Dict)
-def atualizar_imovel(imovel_id: int, dados: Dict, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+def atualizar_imovel(imovel_id: int, dados: Dict, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Atualiza os dados de um imóvel existente."""
     imovel = db.query(Imovel).filter(Imovel.id == imovel_id).first()
     if not imovel:
@@ -58,7 +58,7 @@ def atualizar_imovel(imovel_id: int, dados: Dict, db: Session = Depends(get_db),
     return imovel.to_dict()
 
 @router.delete("/{imovel_id}")
-def excluir_imovel(imovel_id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+def excluir_imovel(imovel_id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Exclui um imóvel, se não tiver aluguéis ou participações ativas associados."""
     import traceback
     from sqlalchemy.exc import SQLAlchemyError
@@ -111,7 +111,7 @@ def excluir_imovel(imovel_id: int, db: Session = Depends(get_db), current_user: 
         raise HTTPException(status_code=500, detail="Erro interno do servidor ao excluir imóvel")
 
 @router.get("/disponiveis/", response_model=List[Dict])
-def listar_imoveis_disponiveis(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+def listar_imoveis_disponiveis(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Lista todos os imóveis disponíveis (não alugados)."""
     try:
         imoveis = db.query(Imovel).filter(Imovel.alugado == False).order_by(Imovel.nome).all()

@@ -16,6 +16,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Sistema Aluguéis">
     
+    <!-- Forçar no-cache para desenvolvimento -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
     <!-- PWA Icons -->
     <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
@@ -359,47 +364,50 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 
     <!-- Core Scripts -->
-    <script src="js/utils/security.js"></script>
-    <script src="js/core/config.js"></script>
-    <script src="js/core/network-config.js"></script>
-    <script src="js/core/device-manager.js"></script>
-    <script src="js/core/navigator.js"></script>
-    <script src="js/core/view-manager.js"></script>
-    <script src="js/core/table-manager.js"></script>
+    <script src="js/utils/security.js?v=1758968682"></script>
+    <script src="js/core/config.js?v=1758968682"></script>
+    <script src="js/core/network-config.js?v=1758968682"></script>
+    <script src="js/core/device-manager.js?v=1758968682"></script>
+    <script src="js/core/navigator.js?v=1758968682"></script>
+    <script src="js/core/view-manager.js?v=1758968682"></script>
+    <script src="js/core/table-manager.js?v=1758968682"></script>
     
     <!-- Services Scripts -->
-    <script src="js/apiService.js"></script>
-    <script src="js/services/authService.js"></script>
-    <script src="js/core/ui-manager.js"></script>
-    <script src="js/core/modal-manager.js"></script>
+    <script src="js/apiService.js?v=1758968682"></script>
+    <script src="js/services/authService.js?v=1758968682"></script>
+    <script src="js/core/ui-manager.js?v=1758968682"></script>
+    <script src="js/core/modal-manager.js?v=1758968682"></script>
     
 
     <!-- Module Scripts: dashboard debe ir antes de app.js -->
-    <script src="js/modules/dashboard.js"></script>
+    <script src="js/modules/dashboard.js?v=1758968682"></script>
 
     <!-- Main App Script -->
-    <script src="js/app.js"></script>
+    <script src="js/app.js?v=1758968682"></script>
 
     <!-- Resto de módulos -->
-    <script src="js/modules/loginManager.js"></script>
-    <script src="js/modules/proprietarios.js"></script>
-    <script src="js/modules/imoveis.js"></script>
-    <script src="js/modules/participacoes.js"></script>
-    <script src="js/modules/alugueis.js"></script>
-    <script src="js/modules/relatorios.js"></script>
-    <script src="js/modules/extras.js"></script>
+    <script src="js/modules/loginManager.js?v=1758968682"></script>
+    <script src="js/modules/proprietarios.js?v=1758968682"></script>
+    <script src="js/modules/imoveis.js?v=1758968682"></script>
+    <script src="js/modules/participacoes.js?v=1758968682"></script>
+    <script src="js/modules/alugueis.js?v=1758968682"></script>
+    <script src="js/modules/relatorios.js?v=1758968682"></script>
+    <script src="js/modules/extras.js?v=1758968682"></script>
 
-    <script src="js/modules/importacao.js"></script>
-    <script src="js/modules/usuarioManager.js"></script>
+    <script src="js/modules/importacao.js?v=1758968682"></script>
+    <script src="js/modules/usuarioManager.js?v=1758968682"></script>
 
     <!-- Inicialización automática de la app -->
     <script>
-        if (typeof window.initApp === 'function') {
-            window.initApp();
-            console.log('🚀 window.initApp() llamado automáticamente al final de index.html');
-        } else {
-            console.error('❌ window.initApp no está disponible al final de index.html');
-        }
+        // Aguardar que todos os scripts sejam carregados antes de inicializar
+        window.addEventListener('load', function() {
+            if (typeof window.initApp === 'function') {
+                window.initApp();
+                console.log('🚀 window.initApp() chamado automaticamente após carregamento completo');
+            } else {
+                console.error('❌ window.initApp não está disponível após carregamento completo');
+            }
+        });
     </script>
 
     <!-- Main App Script -->
@@ -420,7 +428,7 @@
                 console.log('🚀 Inicializando aplicação unificada...');
 
                 try {
-                    // Limpiar localStorage corrupto al inicio
+                    // Limpar localStorage corrupto al inicio
                     this.cleanupLocalStorage();
 
                     // Inicializar device manager
@@ -432,7 +440,7 @@
                     // Verificar autenticação guardada
                     await this.checkSavedAuth();
 
-                    // Si no está autenticado, mostrar login
+                    // Si não está autenticado, mostrar login
                     if (!this.isAuthenticated) {
                         this.showLogin();
                     } else {
@@ -702,13 +710,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             window.unifiedApp = new UnifiedApp();
             window.unifiedApp.init();
-        });
-    </script>
-
-    <script>
-        console.log('[TESTE] JavaScript carregado e executando');
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('[TESTE] DOM completamente carregado');
         });
     </script>
 </body>

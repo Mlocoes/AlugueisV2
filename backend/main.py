@@ -3,7 +3,7 @@ FastAPI Backend para Sistema de Aluguéis V2 - Estrutura Modular
 Implementação refatorizada com estrutura organizada por módulos
 """
 from datetime import datetime
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_csrf_protect import CsrfProtect
 from pydantic import BaseModel
@@ -21,22 +21,6 @@ from routers import alugueis, estadisticas, upload, auth
 from routers import proprietarios, imoveis, participacoes, reportes, extras, transferencias, dashboard, health
 from routers.auth import verify_token
 from utils.error_handlers import global_exception_handler
-
-# Configuração CSRF - TEMPORARIAMENTE DESABILITADA
-# @CsrfProtect.load_config
-# def get_csrf_config():
-#     from dotenv import load_dotenv
-#     import os
-#     load_dotenv()
-#     csrf_secret = os.getenv("CSRF_SECRET_KEY")
-#     if not csrf_secret:
-#         raise RuntimeError("CSRF_SECRET_KEY must be set in the environment")
-#     return [
-#         ('secret_key', csrf_secret),
-#         ('cookie_samesite', 'lax'),
-#         ('token_location', 'header'),
-#         ('token_key', 'X-CSRF-Token')
-#     ]
 
 # Configuração da aplicação
 
@@ -140,12 +124,35 @@ async def api_health_check(db: Session = Depends(get_db)):
 # Usar los routers específicos en /api/ en su lugar
 # =====================================================
 
+# Configuração CSRF
+from pydantic_settings import BaseSettings
+
+class CsrfSettings(BaseSettings):
+    secret_key: str
+    cookie_samesite: str = "lax"
+    token_location: str = "header"
+    token_key: str = "X-CSRF-Token"
+
+@CsrfProtect.load_config
+def get_csrf_config():
+    from dotenv import load_dotenv
+    import os
+    load_dotenv()
+    csrf_secret = os.getenv("CSRF_SECRET_KEY")
+    if not csrf_secret:
+        raise RuntimeError("CSRF_SECRET_KEY must be set in the environment")
+    return [
+        ('secret_key', csrf_secret),
+        ('cookie_samesite', 'lax'),
+        ('token_location', 'header'),
+        ('token_key', 'X-CSRF-Token')
+    ]
+
 # CSRF Protection endpoints
 @app.get("/api/csrf-token")
 def get_csrf_token(csrf_protect: CsrfProtect = Depends()):
-    response = JSONResponse(content={"csrf_token": csrf_protect.generate_csrf()})
-    csrf_protect.set_csrf_cookie(response)
-    return response
+    token, secret = csrf_protect.generate_csrf_tokens()
+    return {"csrf_token": token}
 
 # Middleware para verificar CSRF em rutas POST/PUT/DELETE
 @app.middleware("http")
@@ -160,7 +167,7 @@ async def csrf_middleware(request, call_next):
                     status_code=403,
                     content={"detail": "CSRF token missing"}
                 )
-            # Aqui se podria verificar el token, pero fastapi-csrf-protect lo maneja
+            # Aqui se podria verificar el token, mas fastapi-csrf-protect lo maneja
     response = await call_next(request)
     return response
 

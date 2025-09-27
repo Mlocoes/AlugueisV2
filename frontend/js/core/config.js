@@ -6,7 +6,7 @@
 const AppConfig = {
     // API Configuration - Detección automática de entorno
     api: {
-        baseUrl: '', // Se configurará automáticamente
+        baseUrl: '', // Se configurará automaticamente
         port: '8000',
         endpoints: {
             auth: '/api/auth/',
@@ -22,7 +22,7 @@ const AppConfig = {
         }
     },
 
-        // Método para detectar entorno y configurar URL base
+    // Método para detectar entorno y configurar URL base
     async initNetwork() {
         // Para el entorno Docker con proxy NGINX, siempre usamos una URL base relativa.
         // NGINX se encarga de redirigir las llamadas /api/ al backend.
@@ -48,52 +48,29 @@ const AppConfig = {
         defaultTab: 'dashboard',
         animations: {
             fadeIn: 300,
-            fadeOut: 200
+            slideIn: 200,
+            fadeOut: 150
         },
-        pagination: {
-            itemsPerPage: 10
+        modals: {
+            backdrop: 'static',
+            keyboard: false,
+            focus: true
         },
-        alerts: {
-            autoHideDelay: 5000
+        tables: {
+            pageSize: 10,
+            maxPages: 5
         }
-    },
-
-    // Módulos disponíveis
-    modules: {
-        dashboard: true,
-        proprietarios: true,
-        imoveis: true,
-        participacoes: true,
-        alugueis: true,
-        distribuicoes: true,
-        relatorios: true
-    },
-
-    // Chart Configuration
-    charts: {
-        colors: [
-            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
-            '#FF9F40', '#C9CBCF', '#4BC0C0', '#FF6384', '#FFCE56'
-        ],
-        defaultType: 'line',
-        responsive: true
-    },
-
-    // Debug mode
-    debug: true,
-
-    // Version
-    version: '2.1.0',
-
-    // Método para actualizar dinámicamente la URL base
-    updateBaseURL(newBaseURL) {
-        this.api.baseUrl = newBaseURL;
-        console.log(`🔄 URL base actualizada: ${this.api.baseUrl}`);
     },
 
     // Método para obtener la URL base actual
     getBaseURL() {
         return this.api.baseUrl; // Retorna cadena vacía para uso con proxy nginx
+    },
+
+    // Método para actualizar la URL base (para compatibilidade)
+    updateBaseURL(newBaseURL) {
+        this.api.baseUrl = newBaseURL;
+        console.log(`🔄 URL base actualizada: ${this.api.baseUrl}`);
     }
 };
 

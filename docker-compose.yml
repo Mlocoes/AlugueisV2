@@ -55,6 +55,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       SECRET_KEY: ${SECRET_KEY}
+      CSRF_SECRET_KEY: csrf_secret_key_for_alugueis_v2_system_2025
       DEBUG: ${DEBUG}
     # Elimina esta línea:
     # CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}

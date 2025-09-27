@@ -3,18 +3,23 @@ Router para autenticação de usuários
 Sistema de Aluguéis V2
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+# from fastapi_csrf_protect import CsrfProtect
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from typing import Optional
 import jwt
 from passlib.context import CryptContext
-from config import get_db, SECRET_KEY
+from config import get_db, SECRET_KEY, ENV
 from models_final import Usuario
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 security = HTTPBearer()
+
+# CSRF protection
+# csrf_protect = CsrfProtect()
 
 # Importar rate limiter
 from slowapi import Limiter
@@ -187,8 +192,8 @@ async def login(request: Request, response: Response, login_data: LoginRequest, 
         key="access_token",
         value=access_token,
         httponly=True,
-        samesite="lax",
-        secure=True,
+        samesite="none" if ENV != "production" else "lax",  # Mais permisivo em desenvolvimento
+        secure=(ENV == "production"),  # Solo HTTPS em produção
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
 
@@ -440,3 +445,10 @@ async def excluir_usuario(
         "success": True,
         "message": message
     }
+
+# @router.get("/csrf-token")
+# def get_csrf_token(csrf_protect: CsrfProtect = Depends()):
+#     """Obter token CSRF para proteção contra ataques CSRF."""
+#     response = JSONResponse({"csrf_token": csrf_protect.generate_csrf()})
+#     csrf_protect.set_csrf_cookie(response)
+#     return response

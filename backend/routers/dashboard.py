@@ -4,12 +4,12 @@ from sqlalchemy import func, extract, String
 from datetime import datetime, timedelta
 from models_final import Proprietario, Imovel, AluguelSimples, Usuario
 from config import get_db
-from .auth import verify_token
+from .auth import verify_token_flexible
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
 @router.get("/summary")
-def get_dashboard_summary(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+def get_dashboard_summary(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Retorna um resumo de dados agregados para o dashboard."""
     
     # 1. Contagens totais

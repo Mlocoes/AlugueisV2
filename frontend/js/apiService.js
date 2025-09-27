@@ -5,15 +5,8 @@ window.apiService = {
 
     // Función auxiliar para obtener la URL base
     getBaseUrl() {
-        // La configuración de AppConfig es la única fuente de verdad.
-        // initNetwork() en config.js se encarga de la detección y el fallback.
-        if (window.AppConfig && typeof window.AppConfig.getBaseURL === 'function') {
-            return window.AppConfig.getBaseURL();
-        }
-        // Fallback muy simple si AppConfig no está listo, para evitar errores.
-        return ''; 
-        
-        
+        // Forzar URL relativa para desenvolvimento local (desabilitar Traefik)
+        return '';
     },
 
     // Función auxiliar para obtener headers
@@ -34,8 +27,8 @@ window.apiService = {
     async getCsrfToken() {
         try {
             const response = await this.get('/api/csrf-token');
-            if (response && response.data && response.data.csrf_token) {
-                this.csrfToken = response.data.csrf_token;
+            if (response && response.csrf_token) {
+                this.csrfToken = response.csrf_token;
                 console.log('🔒 CSRF token obtained');
                 return this.csrfToken;
             }
@@ -165,7 +158,14 @@ window.apiService = {
                     errorMessage = `HTTP error! status: ${response.status}`;
                 }
                 
-                console.error('❌ Error en la requisición:', `Error: HTTP error! status: ${response.status}, message: ${errorData}`);
+                // Para 401 em endpoints de auth durante inicialização, usar log em vez de error
+                if (response.status === 401 && url.includes('/api/auth/')) {
+                    console.log('🔍 Verificación de sesión inicial:', `No hay sesión activa (401)`);
+                } else if (response.status === 401) {
+                    console.warn('⚠️ Autenticación requerida:', `HTTP ${response.status}, message: ${errorData}`);
+                } else {
+                    console.error('❌ Error en la requisición:', `Error: HTTP error! status: ${response.status}, message: ${errorData}`);
+                }
                 throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
             }
 
@@ -190,7 +190,10 @@ window.apiService = {
             };
 
         } catch (error) {
-            console.error('❌ Error en la requisición:', error);
+            // Evitar logs duplicados para errores ya manejados específicamente
+            if (!error.message.includes('HTTP error! status: 401') || !url.includes('/api/auth/')) {
+                console.error('❌ Error en la requisición:', error);
+            }
             throw error;
         }
     },
@@ -419,6 +422,6 @@ window.apiService = {
     }
 };
 
-// Log de inicialización
+// Log de inicialização
 console.log('🔗 ApiService inicializado con métodos:', Object.keys(window.apiService));
 console.log('🌐 Base URL configurada:', window.apiService.getBaseUrl());

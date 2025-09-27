@@ -131,7 +131,14 @@ class AuthService {
                 return false;
             }
         } catch (error) {
-            console.warn('⚠️ Erro ao validar a sessão, provavelmente expirada ou problema de rede.', error);
+            // Verificar se é erro 401 (não autorizado) - caso normal quando não há sessão
+            if (error.message.includes('status: 401')) {
+                console.log('🔒 Nenhuma sessão ativa encontrada (401 Unauthorized) - usuário precisa fazer login.');
+                this.clearSession();
+                return false;
+            }
+            
+            console.warn('⚠️ Erro ao validar a sessão, provavelmente problema de rede.', error);
             this.clearSession();
             return false;
         }

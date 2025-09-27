@@ -7,7 +7,7 @@ import traceback
 import io
 from models_final import Proprietario, Usuario, ProprietarioUpdateSchema, ProprietarioCreateSchema
 from config import get_db
-from .auth import verify_token, is_admin
+from .auth import verify_token_flexible, is_admin
 
 router = APIRouter(prefix="/api/proprietarios", tags=["proprietarios"])
 
@@ -30,7 +30,7 @@ def get_proprietario_or_404(proprietario_id: int, db: Session = Depends(get_db))
 # ===========================================
 
 @router.get("/", response_model=List[Dict])
-def listar_proprietarios(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+def listar_proprietarios(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Lista todos os proprietários em ordem alfabética."""
     try:
         proprietarios = db.query(Proprietario).order_by(Proprietario.nome).all()
@@ -61,7 +61,7 @@ def criar_proprietario(dados: ProprietarioCreateSchema, db: Session = Depends(ge
         raise HTTPException(status_code=500, detail=f"Erro interno ao criar proprietário.")
 
 @router.get("/{proprietario_id}", response_model=Dict)
-def obter_proprietario(proprietario: Proprietario = Depends(get_proprietario_or_404), current_user: Usuario = Depends(verify_token)):
+def obter_proprietario(proprietario: Proprietario = Depends(get_proprietario_or_404), current_user: Usuario = Depends(verify_token_flexible)):
     """Obtém um proprietário específico pelo seu ID."""
     return proprietario.to_dict()
 

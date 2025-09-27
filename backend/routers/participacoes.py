@@ -8,12 +8,12 @@ import uuid
 from datetime import datetime, timedelta
 from models_final import Participacao, Proprietario, Imovel, Usuario, HistoricoParticipacao
 from config import get_db
-from .auth import verify_token, is_admin
+from .auth import verify_token_flexible, is_admin
 
 router = APIRouter(prefix="/api/participacoes", tags=["participacoes"])
 
 @router.get("/datas", response_model=Dict)
-def listar_datas_participacoes(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+def listar_datas_participacoes(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Lista todas as datas de conjuntos de participações disponíveis (incluindo histórico)."""
     # Buscar versões do histórico - uma por versao_id com a data mais recente
     from sqlalchemy import func
@@ -66,7 +66,7 @@ def listar_datas_participacoes(db: Session = Depends(get_db), current_user: Usua
     return {"success": True, "datas": datas_list}
 
 @router.get("/", response_model=Dict)
-def listar_participacoes(data_registro: str = None, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+def listar_participacoes(data_registro: str = None, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Lista participações do conjunto mais recente ou de uma data específica."""
     try:
         query = db.query(Participacao)
@@ -90,7 +90,7 @@ def listar_participacoes(data_registro: str = None, db: Session = Depends(get_db
         raise HTTPException(status_code=500, detail=f"Erro ao listar participações: {str(e)}")
 
 @router.post("/")
-def criar_participacao(dados: Dict, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+def criar_participacao(dados: Dict, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Cria uma nova participação."""
     try:
         if not all(k in dados for k in ["imovel_id", "proprietario_id", "porcentagem"]):
@@ -143,7 +143,7 @@ def criar_participacao(dados: Dict, db: Session = Depends(get_db), current_user:
         raise HTTPException(status_code=500, detail=f"Erro ao criar participação: {str(e)}")
 
 @router.get("/{participacao_id}", response_model=Dict)
-def obter_participacao(participacao_id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+def obter_participacao(participacao_id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Obtém uma participação específica pelo ID."""
     participacao = db.query(Participacao).filter(Participacao.id == participacao_id).first()
     if not participacao:
@@ -151,7 +151,7 @@ def obter_participacao(participacao_id: int, db: Session = Depends(get_db), curr
     return participacao.to_dict()
 
 @router.put("/{participacao_id}", response_model=Dict)
-def atualizar_participacao(participacao_id: int, dados: Dict, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+def atualizar_participacao(participacao_id: int, dados: Dict, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Atualiza uma participação existente."""
     participacao = db.query(Participacao).filter(Participacao.id == participacao_id).first()
     if not participacao:
@@ -198,7 +198,7 @@ def atualizar_participacao(participacao_id: int, dados: Dict, db: Session = Depe
     return participacao_editada.to_dict()
 
 @router.delete("/{participacao_id}")
-def excluir_participacao(participacao_id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+def excluir_participacao(participacao_id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Exclui uma participação."""
     participacao = db.query(Participacao).filter(Participacao.id == participacao_id).first()
     if not participacao:
@@ -322,7 +322,7 @@ def criar_nova_versao_participacoes(payload: Dict, db: Session = Depends(get_db)
 # ============================================
 
 @router.get("/historico/versoes")
-async def get_versoes_historico(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+async def get_versoes_historico(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """
     Retorna lista de todas as versões históricas disponíveis
     """
@@ -353,7 +353,7 @@ async def get_historico_por_versao(
     versao_id: str,
     imovel_id: int = None,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(verify_token)
+    current_user: Usuario = Depends(verify_token_flexible)
 ):
     """
     Retorna as participações de uma versão específica do histórico ou ativas
@@ -391,7 +391,7 @@ async def get_historico_por_versao(
 async def get_historico_por_imovel(
     imovel_id: int,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(verify_token)
+    current_user: Usuario = Depends(verify_token_flexible)
 ):
     """
     Retorna todo o histórico de participações para um imóvel específico
@@ -435,7 +435,7 @@ async def get_historico_por_imovel(
     }
 
 @router.post("/criar-versao")
-async def criar_nova_versao_participacoes(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+async def criar_nova_versao_participacoes(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """
     Cria uma nova versão das participações atuais no histórico
     """

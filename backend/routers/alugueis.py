@@ -8,7 +8,7 @@ from typing import Optional
 from datetime import datetime
 from models_final import Imovel, Proprietario, AluguelSimples, Usuario
 from sqlalchemy import asc, desc, func
-from .auth import verify_token
+from .auth import verify_token_flexible
 import calendar
 # Assuming CalculoService is in this path
 from services.calculo_service import CalculoService
@@ -36,7 +36,7 @@ async def listar_alugueis(
     proprietario_id: Optional[int] = Query(None, description="Filtrar por ID do proprietário"),
     ordem: str = Query("desc", description="Ordem: 'asc' ou 'desc'"),
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(verify_token)
+    current_user: Usuario = Depends(verify_token_flexible)
 ):
     """Listar aluguéis com filtros e paginação"""
     try:
@@ -71,7 +71,7 @@ async def listar_alugueis(
         raise HTTPException(status_code=500, detail=f"Erro ao listar aluguéis: {str(e)}")
 
 @router.get("/obter/{aluguel_id}")
-async def obter_aluguel(aluguel_id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+async def obter_aluguel(aluguel_id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Obter um aluguel específico por ID"""
     try:
         aluguel = db.query(AluguelSimples).filter(AluguelSimples.id == aluguel_id).first()
@@ -97,7 +97,7 @@ async def criar_aluguel(
     valor: float = Form(...),
     descricao: str = Form(None),
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(verify_token)
+    current_user: Usuario = Depends(verify_token_flexible)
 ):
     """Criar um novo aluguel"""
     try:
@@ -135,7 +135,7 @@ async def criar_aluguel(
         raise HTTPException(status_code=500, detail=f"Erro ao criar aluguel: {str(e)}")
 
 @router.get("/anos-disponiveis/")
-async def obter_anos_disponiveis(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+async def obter_anos_disponiveis(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Obter lista de anos que têm dados de aluguéis"""
     try:
         anos = db.query(AluguelSimples.ano).distinct().order_by(desc(AluguelSimples.ano)).all()
@@ -151,7 +151,7 @@ async def obter_totais_por_imovel(
     ano: Optional[int] = Query(None, description="Filtrar por ano (por padrão último ano com dados)"),
     mes: Optional[int] = Query(None, ge=1, le=12, description="Filtrar por mês (por padrão último mês com dados)"),
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(verify_token)
+    current_user: Usuario = Depends(verify_token_flexible)
 ):
     """Obter totais de aluguéis por imóvel para o último mês ou período especificado"""
     try:
@@ -213,7 +213,7 @@ async def obter_totais_por_imovel(
 async def obter_totais_por_mes(
     limite_meses: Optional[int] = Query(12, ge=1, le=24, description="Número de meses a incluir (máximo 24)"),
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(verify_token)
+    current_user: Usuario = Depends(verify_token_flexible)
 ):
     """Obter totais de aluguéis agrupados por mês para o gráfico de tendências"""
     try:
@@ -265,7 +265,7 @@ async def obter_distribuicao_matriz(
     proprietario_id: Optional[int] = Query(None, description="Filtrar por ID de proprietário específico"),
     agregacao: Optional[str] = Query("mes_especifico", description="Tipo de agregação: 'mes_especifico', 'ano_completo', 'completo'"),
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(verify_token)
+    current_user: Usuario = Depends(verify_token_flexible)
 ):
     """Obter distribuição de aluguéis em formato matriz (proprietários vs imóveis) com agregação segundo filtros"""
     try:
@@ -401,7 +401,7 @@ async def obter_distribuicao_matriz(
         raise HTTPException(status_code=500, detail=f"Erro ao obter distribuição matriz: {str(e)}")
 
 @router.get("/aluguel/{aluguel_id}")
-async def obter_aluguel_por_id(aluguel_id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+async def obter_aluguel_por_id(aluguel_id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Obter um aluguel específico por ID"""
     aluguel = db.query(AluguelSimples).filter(AluguelSimples.id == aluguel_id).first()
     if not aluguel:
@@ -410,7 +410,7 @@ async def obter_aluguel_por_id(aluguel_id: int, db: Session = Depends(get_db), c
     return aluguel.to_dict()
 
 @router.post("/")
-async def criar_aluguel_dict(aluguel_data: dict, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+async def criar_aluguel_dict(aluguel_data: dict, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Criar um novo registro de aluguel"""
     try:
         # Criar objeto diretamente
@@ -430,7 +430,7 @@ async def criar_aluguel_dict(aluguel_data: dict, db: Session = Depends(get_db), 
         raise HTTPException(status_code=500, detail=f"Erro ao criar aluguel: {str(e)}")
 
 @router.put("/{aluguel_id}")
-async def atualizar_aluguel(aluguel_id: int, aluguel_data: dict, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+async def atualizar_aluguel(aluguel_id: int, aluguel_data: dict, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Atualizar um aluguel existente"""
     try:
         aluguel = db.query(AluguelSimples).filter(AluguelSimples.id == aluguel_id).first()
@@ -455,7 +455,7 @@ async def atualizar_aluguel(aluguel_id: int, aluguel_data: dict, db: Session = D
         raise HTTPException(status_code=500, detail=f"Erro ao atualizar aluguel: {str(e)}")
 
 @router.delete("/{aluguel_id}")
-async def excluir_aluguel(aluguel_id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+async def excluir_aluguel(aluguel_id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Excluir um aluguel"""
     try:
         aluguel = db.query(AluguelSimples).filter(AluguelSimples.id == aluguel_id).first()
@@ -472,7 +472,7 @@ async def excluir_aluguel(aluguel_id: int, db: Session = Depends(get_db), curren
         raise HTTPException(status_code=500, detail=f"Erro ao excluir aluguel: {str(e)}")
 
 @router.post("/recalcular-taxas/")
-async def recalcular_todas_as_taxas(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+async def recalcular_todas_as_taxas(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Recalcula todas as taxas de administração por proprietário aplicando corretamente as participações"""
     try:
         resultado = CalculoService.recalcular_todas_as_taxas(db)
@@ -487,7 +487,7 @@ async def recalcular_todas_as_taxas(db: Session = Depends(get_db), current_user:
         raise HTTPException(status_code=500, detail=f"Erro ao recalcular taxas: {str(e)}")
 
 @router.get("/ultimo-periodo/")
-async def obter_ultimo_periodo(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+async def obter_ultimo_periodo(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Obter o último ano e mês disponível na base de dados"""
     try:
         ultimo_periodo = db.query(
@@ -516,7 +516,7 @@ async def obter_ultimo_periodo(db: Session = Depends(get_db), current_user: Usua
 async def obter_distribuicao_todos_meses(
     ano: int = Query(..., description="Ano para obter soma de todos os meses"),
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(verify_token)
+    current_user: Usuario = Depends(verify_token_flexible)
 ):
     """Obter distribuição matriz de aluguéis com soma de todos os meses do ano especificado"""
     try:

@@ -8,12 +8,12 @@ from sqlalchemy import func, desc
 
 from config import get_db
 from models_final import AluguelSimples, LogImportacao, ResumenCalculator, Imovel as Inmueble, Usuario
-from .auth import verify_token
+from .auth import verify_token_flexible
 
 router = APIRouter(prefix="/api/estadisticas", tags=["estadísticas"])
 
 @router.get("/generales")
-async def estadisticas_generales(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+async def estadisticas_generales(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Obtener estadísticas generales del sistema"""
     try:
         # Consultas agregadas
@@ -52,7 +52,7 @@ async def resumen_por_propiedad(
     ano: Optional[int] = Query(None, description="Año para el resumen"),
     mes: Optional[int] = Query(None, ge=1, le=12, description="Mes para el resumen"),
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(verify_token)
+    current_user: Usuario = Depends(verify_token_flexible)
 ):
     """Obtener resumen agrupado por propiedad"""
     try:
@@ -92,7 +92,7 @@ async def resumen_por_propietario(
     ano: Optional[int] = Query(None, description="Año para el resumen"),
     mes: Optional[int] = Query(None, ge=1, le=12, description="Mes para el resumen"),
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(verify_token)
+    current_user: Usuario = Depends(verify_token_flexible)
 ):
     """Obtener resumen agrupado por propietario"""
     try:
@@ -128,7 +128,7 @@ async def resumen_por_propietario(
         raise HTTPException(status_code=500, detail=f"Error al generar resumen: {str(e)}")
 
 @router.get("/resumen-mensual")
-async def resumen_mensual(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+async def resumen_mensual(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Obtener resumen del último mes con métricas detalladas"""
     try:
         from datetime import datetime, timedelta
@@ -237,7 +237,7 @@ async def resumen_mensual(db: Session = Depends(get_db), current_user: Usuario =
         raise HTTPException(status_code=500, detail=f"Error al obtener resumen mensual: {str(e)}")
 
 @router.get("/debug/mes")
-async def debug_mes(mes: int = 7, ano: int = 2025, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+async def debug_mes(mes: int = 7, ano: int = 2025, db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Debug: verificar datos de un mes específico"""
     
     # Contar registros
@@ -269,7 +269,7 @@ async def debug_mes(mes: int = 7, ano: int = 2025, db: Session = Depends(get_db)
 
 # Endpoint de compatibilidad
 @router.get("/")
-async def estadisticas_compatibilidad(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token)):
+async def estadisticas_compatibilidad(db: Session = Depends(get_db), current_user: Usuario = Depends(verify_token_flexible)):
     """Endpoint de compatibilidad para el frontend"""
     # This endpoint calls an already secured function, but it's good practice
     # to secure the entry point as well.
