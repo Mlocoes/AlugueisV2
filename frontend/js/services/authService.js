@@ -6,6 +6,8 @@ class AuthService {
     constructor() {
         this.usuario = null;
         this.tipo = null;
+        // Garantir que começa limpo após refresh
+        this.clearSession();
         console.log('🔐 AuthService inicializado para autenticação baseada em cookie.');
     }
 
@@ -159,5 +161,5 @@ class AuthService {
     }
 }
 
-// Inicializar serviço globalmente
+// Crear instancia global del AuthService
 window.authService = new AuthService();
