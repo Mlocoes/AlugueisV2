@@ -5,8 +5,30 @@ window.apiService = {
 
     // Función auxiliar para obtener la URL base
     getBaseUrl() {
-        // Forzar URL relativa para desenvolvimento local (desabilitar Traefik)
-        return '';
+        const hostname = window.location.hostname;
+        const port = window.location.port;
+        
+        // Detectar ambiente de desenvolvimento
+        const isLocalDevelopment = 
+            hostname === 'localhost' || 
+            hostname === '127.0.0.1' ||
+            hostname === '' ||
+            hostname.startsWith('192.168.') ||
+            hostname.startsWith('10.') ||
+            hostname.startsWith('172.');
+        
+        console.log('🌐 Detectando URL base - Hostname:', hostname, 'Port:', port, 'isLocalDevelopment:', isLocalDevelopment);
+        
+        if (isLocalDevelopment) {
+            const url = 'http://localhost:8000';
+            console.log('✅ Usando URL localhost para desenvolvimento:', url);
+            return url;
+        }
+        
+        // Para produção, usar URL relativa (proxy)
+        const url = '';
+        console.log('🏭 Usando URL relativa para produção:', url);
+        return url;
     },
 
     // Función auxiliar para obtener headers
@@ -160,7 +182,7 @@ window.apiService = {
                 
                 // Para 401 em endpoints de auth durante inicialização, usar log em vez de error
                 if (response.status === 401 && url.includes('/api/auth/')) {
-                    console.log('🔍 Verificación de sesión inicial:', `No hay sesión activa (401)`);
+                    console.log('🔍 Verificação de sessão inicial:', `No hay sesión activa (401)`);
                 } else if (response.status === 401) {
                     console.warn('⚠️ Autenticación requerida:', `HTTP ${response.status}, message: ${errorData}`);
                 } else {

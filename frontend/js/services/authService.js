@@ -122,7 +122,7 @@ class AuthService {
             if (response.success && response.data.valid) {
                 // Sincronizar dados do usuário caso tenham mudado
                 this.usuario = response.data.usuario;
-                this.tipo = response.data.tipo;
+                this.tipo = response.data.tipo_usuario;
                 console.log('✅ Sessão válida. Usuário:', this.usuario);
                 return true;
             } else {

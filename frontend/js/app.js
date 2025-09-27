@@ -17,6 +17,13 @@ class SistemaAlugueisApp {
         try {
             console.log('🚀 Inicializando Sistema de Aluguéis V2.1.0...');
 
+            // Esconder loading screen imediatamente
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen) {
+                loadingScreen.style.display = 'none';
+                console.log('✅ Loading screen escondido');
+            }
+
             // Aguardar Bootstrap estar disponível
             await this.waitForBootstrap();
             console.log('✅ Bootstrap carregado e disponível');

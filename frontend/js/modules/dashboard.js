@@ -158,3 +158,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.dashboardModule.init();
     }
 });
+
+// Exportar classe globalmente para o app.js
+window.DashboardModule = DashboardModule;

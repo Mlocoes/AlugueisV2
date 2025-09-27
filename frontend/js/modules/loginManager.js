@@ -14,22 +14,35 @@ class LoginManager {
      * Inicializar o gerenciador de login
      */
     async init() {
-        if (this.initialized) return;
-
-        // Aguardar Bootstrap estar disponível
+        // Aguardar Bootstrap
         await this.waitForBootstrap();
 
-        // Obter elementos do DOM
-        this.loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+        // Aguardar DOM estar pronto
+        if (document.readyState !== 'complete') {
+            await new Promise(resolve => {
+                window.addEventListener('load', resolve);
+            });
+        }
+
+        // Obter elementos
+        this.loginModal = document.getElementById('loginModal');
         this.loginForm = document.getElementById('loginForm');
 
-        // Configurar eventos
+        if (!this.loginModal) {
+            console.error('Modal de login não encontrado');
+            return;
+        }
+
+        if (!this.loginForm) {
+            console.error('Formulário de login não encontrado');
+            return;
+        }
+
+        // Configurar event listeners
         this.setupEvents();
 
-        // Verificar se o usuário já está autenticado
-        this.checkAuthentication();
-
-        this.initialized = true;
+        // Não verificar autenticação aqui - deixar para o UnifiedApp
+        console.log('LoginManager inicializado - aguardando chamadas externas');
     }
 
     /**
@@ -59,7 +72,7 @@ class LoginManager {
             });
         }
 
-        // Evento para Enter no formulário
+        // Evento para Enter no campo de senha
         const senhaField = document.getElementById('senha');
         if (senhaField) {
             senhaField.addEventListener('keypress', (e) => {
@@ -69,14 +82,19 @@ class LoginManager {
             });
         }
 
-        // Evento de abertura do modal para garantir limpeza
-        const modalElement = document.getElementById('loginModal');
-        if (modalElement) {
-            modalElement.addEventListener('shown.bs.modal', () => {
-                console.log('🔧 Modal aberto, forçando limpeza dos campos');
-                this.clearLoginForm();
-                document.getElementById('usuario').focus();
-            });
+        // Evento de abertura do modal
+        if (this.loginModal) {
+            // Usar o elemento HTML diretamente em vez de _element
+            const modalElement = document.getElementById('loginModal');
+            if (modalElement) {
+                modalElement.addEventListener('shown.bs.modal', () => {
+                    this.clearLoginForm();
+                    const usuarioField = document.getElementById('usuario');
+                    if (usuarioField) {
+                        usuarioField.focus();
+                    }
+                });
+            }
         }
     }
 
@@ -84,19 +102,31 @@ class LoginManager {
      * Verificar se o usuário está autenticado
      */
     async checkAuthentication() {
-        console.log('🔐 Iniciando verificação de autenticação...');
+        try {
+            // Verificar se authService está disponível
+            if (!window.authService) {
+                console.warn('AuthService não disponível, mostrando modal de login');
+                this.showLoginModal();
+                return;
+            }
 
-        // Sempre limpar formulário e dados ao recarregar a página
-        this.clearAllData();
+            // Verificar se há uma sessão válida
+            const isValid = await window.authService.validateSession();
+            if (isValid) {
+                console.log('Sessão válida encontrada');
+                return; // Não mostrar modal se já estiver autenticado
+            }
+        } catch (error) {
+            console.warn('Erro ao verificar sessão:', error);
+        }
 
-        // SEMPRE solicitar login, independente de tokens salvos
-        console.log('🔐 Forçando novo login (política de segurança)');
+        // Se chegou aqui, não há sessão válida - mostrar modal de login
+        console.log('Nenhuma sessão válida - mostrando modal de login');
         this.showLoginModal();
     }    /**
      * Limpar todos os dados de autenticação
      */
     clearAllData() {
-        console.log('🧹 Limpando todos os dados de autenticação');
         if (window.authService) {
             window.authService.clearStorage();
         }
@@ -105,16 +135,11 @@ class LoginManager {
      * Mostrar modal de login
      */
     showLoginModal() {
-        // Sempre limpar os campos antes de mostrar o modal
+        // Limpar os campos antes de mostrar o modal
         this.clearLoginForm();
 
         if (this.loginModal) {
             this.loginModal.show();
-
-            // Focar no campo usuário após um delay para garantir que o modal esteja visível
-            setTimeout(() => {
-                document.getElementById('usuario').focus();
-            }, 500);
         }
     }
 
@@ -135,52 +160,50 @@ class LoginManager {
         if (errorDiv) {
             errorDiv.classList.add('d-none');
         }
-
-        console.log('🧹 Campos de login limpos');
     }
 
     /**
      * Esconder modal de login
      */
     hideLoginModal() {
-        if (this.loginModal) {
-            this.loginModal.hide();
+        const modal = document.getElementById('loginModal');
+        if (modal) {
+            const bsModal = bootstrap.Modal.getInstance(modal);
+            if (bsModal) {
+                bsModal.hide();
+            }
         }
     }
 
     /**
-     * Processar tentativa de login
+     * Manipular login
      */
     async handleLogin() {
         const usuario = document.getElementById('usuario').value.trim();
-        const senha = document.getElementById('senha').value;
-        const errorDiv = document.getElementById('loginError');
-        const submitBtn = this.loginForm.querySelector('button[type="submit"]');
+        const senha = document.getElementById('senha').value.trim();
 
-        // Validar campos
         if (!usuario || !senha) {
-            this.showError('Por favor, preencha todos os campos');
+            this.showError('Por favor, preencha todos os campos.');
             return;
         }
 
-        // Mostrar loading
         this.setLoading(true);
-        this.hideError();
 
         try {
-            // Realizar login
+            // Usar authService em vez de fetch direto
             const result = await window.authService.login(usuario, senha);
 
             if (result.success) {
-                // Login bem-sucedido
-                this.onLoginSuccess();
+                this.hideLoginModal();
+                this.clearLoginForm();
+                // Recarregar página para atualizar estado de autenticação
+                window.location.reload();
             } else {
-                // Erro no login
-                this.showError(result.error || 'Erro desconhecido');
+                this.showError('Erro no login');
             }
         } catch (error) {
             console.error('Erro no login:', error);
-            this.showError('Erro de conexão com o servidor');
+            this.showError('Erro de conexão. Tente novamente.');
         } finally {
             this.setLoading(false);
         }
@@ -297,20 +320,22 @@ class LoginManager {
     }
 
     /**
-     * Configurar estado de loading
+     * Definir estado de carregamento
+     * @param {boolean} loading - Se está carregando
      */
     setLoading(loading) {
-        const submitBtn = this.loginForm.querySelector('button[type="submit"]');
-        const inputs = this.loginForm.querySelectorAll('input');
+        const loginBtn = document.getElementById('loginBtn');
+        const loadingSpinner = document.getElementById('loadingSpinner');
 
-        if (loading) {
-            submitBtn.disabled = true;
-            SecurityUtils.setSafeHTML(submitBtn, '<i class="fas fa-spinner fa-spin me-2"></i>Entrando...');
-            inputs.forEach(input => input.disabled = true);
-        } else {
-            submitBtn.disabled = false;
-            SecurityUtils.setSafeHTML(submitBtn, '<i class="fas fa-sign-in-alt me-2"></i>Entrar');
-            inputs.forEach(input => input.disabled = false);
+        if (loginBtn) {
+            loginBtn.disabled = loading;
+        }
+        if (loadingSpinner) {
+            if (loading) {
+                loadingSpinner.classList.remove('d-none');
+            } else {
+                loadingSpinner.classList.add('d-none');
+            }
         }
     }
 }

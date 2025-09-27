@@ -516,13 +516,20 @@
             }
 
             async checkSavedAuth() {
-                try {
-                    const authService = window.authService;
-                    if (!authService) {
-                        console.warn('AuthService não disponível para verificação de sessão.');
-                        return false;
-                    }
+                // Aguardar authService estar disponível
+                let attempts = 0;
+                while (!window.authService && attempts < 10) {
+                    console.log('Aguardando authService...');
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
 
+                if (!window.authService) {
+                    console.warn('AuthService não ficou disponível após 10 tentativas.');
+                    return false;
+                }
+
+                try {
                     const isValid = await authService.validateSession();
                     if (isValid) {
                         this.isAuthenticated = true;
