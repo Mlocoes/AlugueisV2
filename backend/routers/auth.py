@@ -192,8 +192,8 @@ async def login(request: Request, response: Response, login_data: LoginRequest, 
         key="access_token",
         value=access_token,
         httponly=True,
-        samesite="none" if ENV != "production" else "lax",  # Mais permisivo em desenvolvimento
-        secure=(ENV == "production"),  # Solo HTTPS em produção
+        samesite="lax",  # Usar lax para desenvolvimento com domínios externos via HTTP
+        secure=False,    # False para desenvolvimento HTTP
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
 

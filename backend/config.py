@@ -43,7 +43,7 @@ APP_CONFIG = {
 
 import logging
 # Configuração CORS mais segura - SEM WILDCARD por padrão
-raw_origins = os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+raw_origins = os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,http://zeus.kronos.cloudns.ph:3000")
 
 # Em produção, forçar origens específicas e não aceitar wildcard
 if ENV == "production":
