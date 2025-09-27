@@ -667,18 +667,18 @@ class RelatoriosManager {
     applyPermissions(isAdmin) {
         console.log(`🔒 Aplicando permissões no módulo Relatórios: ${isAdmin ? 'ADMIN' : 'USUÁRIO'}`);
 
+        // Checkbox de transferências (se existir)
         const transferenciasCheck = document.getElementById('relatorios-transferencias-check');
         if (transferenciasCheck) {
             transferenciasCheck.disabled = !isAdmin;
-            // Se não for admin, o checkbox é sempre desmarcado.
             if (!isAdmin) {
                 transferenciasCheck.checked = false;
             }
             transferenciasCheck.title = isAdmin ? 'Incluir/Excluir valores de transferências' : 'Apenas administradores podem incluir transferências';
         }
 
-        // Re-renderizar a tabela para que a mudança no checkbox seja refletida
-        if (this.currentData && this.currentData.length > 0) {
+        // Re-renderizar a tabela apenas se os elementos DOM existirem
+        if (this.currentData && this.currentData.length > 0 && document.getElementById('relatorios-table-body')) {
             this.updateTable();
         }
     }
