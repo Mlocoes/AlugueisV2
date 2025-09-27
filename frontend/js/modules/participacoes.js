@@ -323,6 +323,26 @@ class ParticipacoesModule {
             this.uiManager.showError('Erro na preparação da nova versão: ' + e.message);
         }
     }
+
+    /**
+     * Aplicar permissões baseado no tipo de usuário
+     */
+    applyPermissions(isAdmin) {
+        console.log(`🔒 Aplicando permissões no módulo Participações: ${isAdmin ? 'ADMIN' : 'USUÁRIO'}`);
+
+        // Botões de nova versão (apenas admin)
+        const novaVersaoButtons = document.querySelectorAll('.admin-only[onclick*="novaVersao"]');
+        novaVersaoButtons.forEach(button => {
+            button.disabled = !isAdmin;
+            button.title = isAdmin ? 'Nova versão' : 'Apenas administradores podem criar nova versão';
+            button.style.opacity = isAdmin ? '1' : '0.5';
+        });
+
+        // Re-renderizar tabela se necessário
+        if (this.imoveis && this.imoveis.length > 0) {
+            this.renderTable();
+        }
+    }
 }
 
 // Inicializar módulo cuando el DOM esté listo

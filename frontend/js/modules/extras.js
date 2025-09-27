@@ -1147,3 +1147,14 @@ document.addEventListener('DOMContentLoaded', function() {
     window.extrasModule = window.extrasManager;
     console.log('✅ ExtrasManager inicializado');
 });
+
+// Adicionar método applyPermissions à classe ExtrasManager
+ExtrasManager.prototype.applyPermissions = function(isAdmin) {
+    console.log(`🔒 Aplicando permissões no módulo Extras: ${isAdmin ? 'ADMIN' : 'USUÁRIO'}`);
+
+    // O módulo extras só é acessível para admins (pela configuração do navigator)
+    // Não há controles específicos para desabilitar aqui, pois o acesso já é restrito
+    if (!isAdmin) {
+        console.warn('⚠️ Usuário não-administrador tentou acessar módulo extras');
+    }
+};

@@ -477,20 +477,14 @@
                     // Limpar localStorage corrupto al inicio
                     this.cleanupLocalStorage();
 
-                    // Inicializar device manager
+                    // Para desenvolvimento: sempre começar com login (F5 sempre volta ao início)
+                    console.log('🔄 Sempre iniciando com tela de login (F5 = reset)');
+                    this.showLogin();
+
+                    // Configurar device manager
                     if (window.deviceManager) {
                         window.deviceManager.applyDeviceConfiguration();
                         window.deviceManager.setupResponsiveListeners();
-                    }
-
-                    // Verificar autenticação guardada
-                    await this.checkSavedAuth();
-
-                    // Si não está autenticado, mostrar login
-                    if (!this.isAuthenticated) {
-                        this.showLogin();
-                    } else {
-                        this.showApp();
                     }
 
                     this.setupEventListeners();
@@ -509,40 +503,10 @@
                     localStorage.removeItem('userData');
                     localStorage.removeItem('sistema_alquileres_token');
                     localStorage.removeItem('sistema_alquileres_user');
-                    console.log('🧹 Limpeza de chaves antigas do localStorage concluída.');
+                    console.log('🧹 Limpeza de localStorage concluída.');
                 } catch (error) {
                     console.warn('⚠️ Erro ao limpar o localStorage antigo:', error);
                 }
-            }
-
-            async checkSavedAuth() {
-                // Aguardar authService estar disponível
-                let attempts = 0;
-                while (!window.authService && attempts < 10) {
-                    console.log('Aguardando authService...');
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    attempts++;
-                }
-
-                if (!window.authService) {
-                    console.warn('AuthService não ficou disponível após 10 tentativas.');
-                    return false;
-                }
-
-                try {
-                    const isValid = await authService.validateSession();
-                    if (isValid) {
-                        this.isAuthenticated = true;
-                        this.currentUser = authService.getUserData();
-                        console.log('✅ Sessão validada com sucesso via cookie.');
-                        return true;
-                    }
-                } catch (error) {
-                    console.warn('⚠️ Erro ao verificar a sessão salva:', error);
-                }
-
-                console.log('🔄 Nenhuma sessão válida encontrada. Exigindo login.');
-                return false;
             }
 
             showLogin() {
@@ -556,7 +520,7 @@
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('app-container').style.display = 'flex';
 
-                // Inicializar componentes de la aplicación
+                // Inicializar componentes de la aplicação
                 this.initializeAppComponents();
             }
 
@@ -710,6 +674,8 @@
                         console.log('Login bem-sucedido, o cookie foi definido pelo servidor.');
 
                         this.showApp();
+                        // Aplicar permissões baseado no tipo de usuário
+                        this.applyUserPermissions();
                     } else {
                         throw new Error(response.message || 'Credenciais inválidas');
                     }
@@ -756,6 +722,72 @@
                 if (window.unifiedNavigator) {
                     window.unifiedNavigator.updateUserInfo(this.currentUser);
                 }
+            }
+
+            /**
+             * Aplicar permissões baseado no tipo de usuário
+             */
+            applyUserPermissions() {
+                const isAdmin = this.currentUser && this.currentUser.tipo === 'administrador';
+                console.log(`🔒 Aplicando permissões para usuário ${isAdmin ? 'ADMIN' : 'USUÁRIO'}`);
+
+                // Aplicar permissões em todos os módulos
+                this.applyModulePermissions(isAdmin);
+
+                // Configurar elementos específicos da interface
+                this.applyInterfacePermissions(isAdmin);
+            }
+
+            /**
+             * Aplicar permissões nos módulos
+             */
+            applyModulePermissions(isAdmin) {
+                // Proprietários
+                if (window.proprietariosModule && typeof window.proprietariosModule.applyPermissions === 'function') {
+                    window.proprietariosModule.applyPermissions(isAdmin);
+                }
+
+                // Imóveis
+                if (window.imoveisModule && typeof window.imoveisModule.applyPermissions === 'function') {
+                    window.imoveisModule.applyPermissions(isAdmin);
+                }
+
+                // Participações
+                if (window.participacoesModule && typeof window.participacoesModule.applyPermissions === 'function') {
+                    window.participacoesModule.applyPermissions(isAdmin);
+                }
+
+                // Aluguéis
+                if (window.alugueisModule && typeof window.alugueisModule.applyPermissions === 'function') {
+                    window.alugueisModule.applyPermissions(isAdmin);
+                }
+
+                // Relatórios - flag de transferências
+                if (window.relatoriosModule && typeof window.relatoriosModule.applyPermissions === 'function') {
+                    window.relatoriosModule.applyPermissions(isAdmin);
+                }
+
+                // Extras
+                if (window.extrasModule && typeof window.extrasModule.applyPermissions === 'function') {
+                    window.extrasModule.applyPermissions(isAdmin);
+                }
+            }
+
+            /**
+             * Aplicar permissões na interface geral
+             */
+            applyInterfacePermissions(isAdmin) {
+                // Adicionar classe CSS para identificar tipo de usuário
+                document.body.classList.toggle('user-admin', isAdmin);
+                document.body.classList.toggle('user-regular', !isAdmin);
+
+                // Configurar tooltips e mensagens para elementos desabilitados
+                const disabledElements = document.querySelectorAll('[disabled].admin-only');
+                disabledElements.forEach(element => {
+                    if (!element.hasAttribute('title')) {
+                        element.setAttribute('title', 'Apenas administradores podem usar esta função');
+                    }
+                });
             }
         }
 

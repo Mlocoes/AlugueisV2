@@ -1,5 +1,3 @@
-
-
 class AlugueisModule {
     constructor() {
         this.apiService = window.apiService;
@@ -646,12 +644,32 @@ class AlugueisModule {
         
         SecurityUtils.setSafeHTML(tableBody, bodyHtml);
 
-        // Actualizar visibilidad de botones admin-only después de renderizar
+        // Actualizar visibilidade de botões admin-only depois de renderizar
         if (window.uiManager && typeof window.uiManager.updateActionButtonsVisibility === 'function') {
             window.uiManager.updateActionButtonsVisibility();
         }
         
         console.log('✅ Matriz renderizada com sucesso');
+    }
+
+    /**
+     * Aplicar permissões baseado no tipo de usuário
+     */
+    applyPermissions(isAdmin) {
+        console.log(`🔒 Aplicando permissões no módulo Aluguéis: ${isAdmin ? 'ADMIN' : 'USUÁRIO'}`);
+
+        // Botões admin-only (editar/excluir)
+        const adminButtons = document.querySelectorAll('.admin-only');
+        adminButtons.forEach(button => {
+            button.disabled = !isAdmin;
+            button.title = isAdmin ? button.getAttribute('title') || '' : 'Apenas administradores podem usar esta função';
+            button.style.opacity = isAdmin ? '1' : '0.5';
+        });
+
+        // Re-renderizar se necessário
+        if (this.alugueisData && this.alugueisData.length > 0) {
+            this.renderMatriz();
+        }
     }
 }
 

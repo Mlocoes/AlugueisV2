@@ -663,6 +663,28 @@ class RelatoriosManager {
             }
         }, 5000);
     }
+
+    applyPermissions(isAdmin) {
+        console.log(`🔒 Aplicando permissões no módulo Relatórios: ${isAdmin ? 'ADMIN' : 'USUÁRIO'}`);
+
+        // Checkbox de transferências (se existir)
+        const transferenciasCheck = document.getElementById('relatorios-transferencias-check');
+        if (transferenciasCheck) {
+            transferenciasCheck.disabled = !isAdmin;
+            transferenciasCheck.checked = isAdmin ? transferenciasCheck.checked : false;
+            transferenciasCheck.title = isAdmin ? '' : 'Apenas administradores podem alterar o modo de transferências';
+        }
+
+        // Qualquer outro controle relacionado a transferências
+        const transferenciasControls = document.querySelectorAll('[data-transferencias-control]');
+        transferenciasControls.forEach(control => {
+            control.disabled = !isAdmin;
+            if (control.type === 'checkbox') {
+                control.checked = isAdmin ? control.checked : false;
+            }
+            control.title = isAdmin ? '' : 'Apenas administradores podem usar esta função';
+        });
+    }
 }
 
 // Inicializar quando o DOM estiver pronto

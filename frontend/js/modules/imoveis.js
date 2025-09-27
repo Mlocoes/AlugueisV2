@@ -164,7 +164,7 @@ class ImoveisModule {
         console.log('[Imoveis] handleCreateData called', data);
 
         try {
-            // Adaptar campos según modelo Imovel actualizado
+            // Adaptar campos según modelo Imovel atualizado
             const nullableFields = ['tipo_imovel', 'area_total', 'area_construida', 'valor_cadastral', 'valor_mercado', 'iptu_mensal', 'condominio_mensal', 'numero_quartos', 'numero_banheiros', 'numero_vagas_garagem', 'alugado'];
             const payload = { ...data };
             console.log('[Imoveis] Payload inicial:', payload);
@@ -444,10 +444,27 @@ class ImoveisModule {
             }
         }
         
-        // Re-renderizar la tabla si já está cargada
+        // Re-renderizar la tabela si já está cargada
         if (this.imoveis && this.imoveis.length > 0) {
             this.loadImoveis();
         }
+    }
+
+    /**
+     * Aplicar permissões baseado no tipo de usuário
+     */
+    applyPermissions(isAdmin) {
+        console.log(`🔒 Aplicando permissões no módulo Imóveis: ${isAdmin ? 'ADMIN' : 'USUÁRIO'}`);
+
+        // Botão novo imóvel
+        const btnNovo = document.getElementById('btn-novo-imovel');
+        if (btnNovo) {
+            btnNovo.disabled = !isAdmin;
+            btnNovo.title = isAdmin ? '' : 'Apenas administradores podem criar imóveis';
+        }
+
+        // Re-renderizar tabela com permissões atualizadas
+        this.loadImoveis();
     }
 }
 

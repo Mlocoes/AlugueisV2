@@ -266,6 +266,23 @@ class ProprietariosModule {
             this.renderTable();
         }
     }
+
+    /**
+     * Aplicar permissões baseado no tipo de usuário
+     */
+    applyPermissions(isAdmin) {
+        console.log(`🔒 Aplicando permissões no módulo Proprietários: ${isAdmin ? 'ADMIN' : 'USUÁRIO'}`);
+
+        // Botão novo proprietário
+        const btnNovo = document.getElementById('btn-novo-proprietario');
+        if (btnNovo) {
+            btnNovo.disabled = !isAdmin;
+            btnNovo.title = isAdmin ? '' : 'Apenas administradores podem criar proprietários';
+        }
+
+        // Re-renderizar tabela com permissões atualizadas
+        this.renderProprietariosTable();
+    }
 }
 
 // Create a single instance of the module and attach it to the window.
