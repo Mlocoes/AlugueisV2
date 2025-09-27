@@ -533,6 +533,11 @@
                     // Inicializar navegador
                     if (window.unifiedNavigator) {
                         window.unifiedNavigator.init();
+                        
+                        // Atualizar navegação baseada no tipo de usuário após inicialização
+                        if (window.unifiedNavigator.updateNavigationForUser) {
+                            window.unifiedNavigator.updateNavigationForUser();
+                        }
                     }
 
                     // Inicializar view manager
@@ -651,7 +656,7 @@
                 if (menuToggle) {
                     menuToggle.addEventListener('click', () => {
                         if (window.unifiedNavigator) {
-                            window.unifiedNavigator.toggleSidebar();
+                            window.unifiedNavigator.toggleMobileMenu();
                         }
                     });
                 }
@@ -737,7 +742,7 @@
                     window.unifiedNavigator.updateUserInfo(this.currentUser);
                 }
             }
-        }
+        };
 
         // Inicializar aplicación cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', () => {
