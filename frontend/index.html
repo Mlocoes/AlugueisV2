@@ -400,14 +400,15 @@
     <!-- Inicialización automática de la app -->
     <script>
         // Aguardar que todos os scripts sejam carregados antes de inicializar
-        window.addEventListener('load', function() {
-            if (typeof window.initApp === 'function') {
-                window.initApp();
-                console.log('🚀 window.initApp() chamado automaticamente após carregamento completo');
-            } else {
-                console.error('❌ window.initApp não está disponível após carregamento completo');
-            }
-        });
+        // COMENTADO: O UnifiedApp já faz toda a inicialização necessária
+        // window.addEventListener('load', function() {
+        //     if (typeof window.initApp === 'function') {
+        //         window.initApp();
+        //         console.log('🚀 window.initApp() chamado automaticamente após carregamento completo');
+        //     } else {
+        //         console.error('❌ window.initApp não está disponível após carregamento completo');
+        //     }
+        // });
     </script>
 
     <!-- Main App Script -->
@@ -483,13 +484,14 @@
                         this.currentUser = authService.getUserData();
                         console.log('✅ Sessão validada com sucesso via cookie.');
                         return true;
+                    } else {
+                        console.log('🔄 Nenhuma sessão válida encontrada. Exigindo login.');
+                        return false;
                     }
                 } catch (error) {
                     console.warn('⚠️ Erro ao verificar a sessão salva:', error);
+                    return false; // Garantir que retorna false em caso de erro
                 }
-
-                console.log('🔄 Nenhuma sessão válida encontrada. Exigindo login.');
-                return false;
             }
 
             showLogin() {
