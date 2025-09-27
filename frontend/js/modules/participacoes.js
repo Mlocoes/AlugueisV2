@@ -164,9 +164,15 @@ class ParticipacoesModule {
                 bodyHtml += `<td>${val !== '' ? val + ' %' : '-'}</td>`;
             }
             bodyHtml += `<td><strong>${Math.round(total)}%</strong></td>`;
+
+            const isAdmin = window.authService && window.authService.isAdmin();
+            const disabledAttr = isAdmin ? '' : 'disabled';
+            const disabledClass = isAdmin ? '' : 'opacity-50';
+            const titleAttr = isAdmin ? 'title="Nova versão"' : 'title="Apenas administradores podem criar nova versão"';
+
             bodyHtml += `<td>
                 <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-primary admin-only" title="Nova versão" onclick="window.participacoesModule.novaVersao('${imovel.id}')">
+                    <button class="btn btn-outline-primary admin-only ${disabledClass}" ${disabledAttr} ${titleAttr} onclick="window.participacoesModule.novaVersao('${imovel.id}')">
                         <i class="fas fa-copy"></i>
                     </button>
                 </div>
@@ -330,15 +336,8 @@ class ParticipacoesModule {
     applyPermissions(isAdmin) {
         console.log(`🔒 Aplicando permissões no módulo Participações: ${isAdmin ? 'ADMIN' : 'USUÁRIO'}`);
 
-        // Botões de nova versão (apenas admin)
-        const novaVersaoButtons = document.querySelectorAll('.admin-only[onclick*="novaVersao"]');
-        novaVersaoButtons.forEach(button => {
-            button.disabled = !isAdmin;
-            button.title = isAdmin ? 'Nova versão' : 'Apenas administradores podem criar nova versão';
-            button.style.opacity = isAdmin ? '1' : '0.5';
-        });
-
-        // Re-renderizar tabela se necessário
+        // A lógica de desabilitar botões agora está no método renderTable.
+        // Apenas precisamos re-renderizar a tabela para aplicar as permissões visuais.
         if (this.imoveis && this.imoveis.length > 0) {
             this.renderTable();
         }

@@ -658,16 +658,13 @@ class AlugueisModule {
     applyPermissions(isAdmin) {
         console.log(`🔒 Aplicando permissões no módulo Aluguéis: ${isAdmin ? 'ADMIN' : 'USUÁRIO'}`);
 
-        // Botões admin-only (editar/excluir)
-        const adminButtons = document.querySelectorAll('.admin-only');
-        adminButtons.forEach(button => {
-            button.disabled = !isAdmin;
-            button.title = isAdmin ? button.getAttribute('title') || '' : 'Apenas administradores podem usar esta função';
-            button.style.opacity = isAdmin ? '1' : '0.5';
-        });
+        // Atualmente, a tela de aluguéis é apenas para visualização,
+        // mas mantemos a função para consistência e futuras implementações.
+        // Se botões de ação forem adicionados, eles devem ser controlados aqui.
 
-        // Re-renderizar se necessário
-        if (this.alugueisData && this.alugueisData.length > 0) {
+        // Re-renderiza a matriz para garantir que quaisquer elementos condicionais
+        // (que possam ser adicionados no futuro) sejam atualizados.
+        if (this.matriz && this.matriz.length > 0) {
             this.renderMatriz();
         }
     }

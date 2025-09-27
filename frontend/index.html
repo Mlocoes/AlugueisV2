@@ -731,10 +731,15 @@
                 const isAdmin = this.currentUser && this.currentUser.tipo === 'administrador';
                 console.log(`🔒 Aplicando permissões para usuário ${isAdmin ? 'ADMIN' : 'USUÁRIO'}`);
 
-                // Aplicar permissões em todos os módulos
+                // 1. Reconstruir a navegação com base nas novas permissões
+                if (window.unifiedNavigator) {
+                    window.unifiedNavigator.rebuildNavigation();
+                }
+
+                // 2. Aplicar permissões em todos os módulos
                 this.applyModulePermissions(isAdmin);
 
-                // Configurar elementos específicos da interface
+                // 3. Configurar elementos específicos da interface
                 this.applyInterfacePermissions(isAdmin);
             }
 
