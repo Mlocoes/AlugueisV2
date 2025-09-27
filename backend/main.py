@@ -22,10 +22,37 @@ from routers import proprietarios, imoveis, participacoes, reportes, extras, tra
 from routers.auth import verify_token
 from utils.error_handlers import global_exception_handler
 
+# Configuração CSRF
+from pydantic_settings import BaseSettings
+
+class CsrfSettings(BaseSettings):
+    secret_key: str
+    cookie_samesite: str = "lax"
+    token_location: str = "header"
+    token_key: str = "X-CSRF-Token"
+
+@CsrfProtect.load_config
+def get_csrf_config():
+    from dotenv import load_dotenv
+    import os
+    load_dotenv()
+    csrf_secret = os.getenv("CSRF_SECRET_KEY")
+    if not csrf_secret:
+        raise RuntimeError("CSRF_SECRET_KEY must be set in the environment")
+    return [
+        ('secret_key', csrf_secret),
+        ('cookie_samesite', 'lax'),
+        ('token_location', 'header'),
+        ('token_key', 'X-CSRF-Token')
+    ]
+
 # Configuração da aplicação
 
 app = FastAPI(**APP_CONFIG)
 app.add_middleware(CORSMiddleware, **CORS_CONFIG)
+# Adiciona o middleware CSRF, que é ativado pela configuração acima
+app.add_middleware(CsrfProtect)
+
 
 # Configuração de Rate Limiting para prevenir ataques de força bruta
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -124,52 +151,14 @@ async def api_health_check(db: Session = Depends(get_db)):
 # Usar los routers específicos en /api/ en su lugar
 # =====================================================
 
-# Configuração CSRF
-from pydantic_settings import BaseSettings
-
-class CsrfSettings(BaseSettings):
-    secret_key: str
-    cookie_samesite: str = "lax"
-    token_location: str = "header"
-    token_key: str = "X-CSRF-Token"
-
-@CsrfProtect.load_config
-def get_csrf_config():
-    from dotenv import load_dotenv
-    import os
-    load_dotenv()
-    csrf_secret = os.getenv("CSRF_SECRET_KEY")
-    if not csrf_secret:
-        raise RuntimeError("CSRF_SECRET_KEY must be set in the environment")
-    return [
-        ('secret_key', csrf_secret),
-        ('cookie_samesite', 'lax'),
-        ('token_location', 'header'),
-        ('token_key', 'X-CSRF-Token')
-    ]
-
 # CSRF Protection endpoints
 @app.get("/api/csrf-token")
 def get_csrf_token(csrf_protect: CsrfProtect = Depends()):
     token, secret = csrf_protect.generate_csrf_tokens()
     return {"csrf_token": token}
 
-# Middleware para verificar CSRF em rutas POST/PUT/DELETE
-@app.middleware("http")
-async def csrf_middleware(request, call_next):
-    if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
-        # Skip CSRF for auth endpoints and health check
-        if not request.url.path.startswith("/api/auth/") and request.url.path != "/api/health":
-            # Verificar CSRF token
-            csrf_token = request.headers.get("X-CSRF-Token")
-            if not csrf_token:
-                return JSONResponse(
-                    status_code=403,
-                    content={"detail": "CSRF token missing"}
-                )
-            # Aqui se podria verificar el token, mas fastapi-csrf-protect lo maneja
-    response = await call_next(request)
-    return response
+# O middleware fastapi-csrf-protect agora lida com a verificação de CSRF.
+# O middleware manual foi removido.
 
 if __name__ == "__main__":
     import uvicorn
