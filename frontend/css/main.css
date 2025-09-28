@@ -799,3 +799,15 @@ option[disabled] {
 .alias-option:hover {
     background-color: #bbdefb !important;
 }
+
+/* Debug temporário para tabela de participações */
+#participacoes-matrix-table tr {
+    display: table-row !important;
+}
+
+#participacoes-matrix-table td,
+#participacoes-matrix-table th {
+    display: table-cell !important;
+    white-space: normal !important;
+    overflow: visible !important;
+}

@@ -119,6 +119,13 @@ class ParticipacoesModule {
             imoveis: this.imoveis?.length || 0
         });
         
+        // 🔍 Diagnóstico detalhado dos dados
+        console.log('🔍 Dados detalhados:', {
+            imoveis: this.imoveis,
+            proprietarios: this.proprietarios,
+            participacoes: this.participacoes
+        });
+        
         const tableHead = document.getElementById('participacoes-matrix-head');
         const tableBody = document.getElementById('participacoes-matrix-body');
         const tableContainer = document.getElementById('participacoes-table-container');
@@ -181,6 +188,32 @@ class ParticipacoesModule {
         console.log('🔧 Aplicando HTML ao DOM...');
         SecurityUtils.setSafeHTML(tableBody, bodyHtml);
         console.log('🔧 HTML aplicado com sucesso');
+        
+        // 🔍 Diagnóstico completo final
+        console.log('🔍 === DIAGNÓSTICO COMPLETO ===');
+        console.log('HTML final gerado:', bodyHtml);
+        console.log('Número de <tr> no HTML:', (bodyHtml.match(/<tr>/g) || []).length);
+        console.log('Número de </tr> no HTML:', (bodyHtml.match(/<\/tr>/g) || []).length);
+        console.log('DOM após aplicação:', tableBody.innerHTML);
+        console.log('Número de linhas no DOM:', tableBody.querySelectorAll('tr').length);
+        
+        // Verificar se cada linha tem as colunas esperadas
+        tableBody.querySelectorAll('tr').forEach((row, index) => {
+            const cells = row.querySelectorAll('td');
+            console.log(`Linha ${index + 1}:`, cells.length, 'colunas');
+            if (cells.length > 0) {
+                console.log(`  Conteúdo da linha ${index + 1}:`, Array.from(cells).map(cell => cell.textContent.trim()));
+            }
+        });
+        
+        // Verificar estrutura da tabela
+        const table = document.getElementById('participacoes-matrix-table');
+        if (table) {
+            console.log('Estrutura da tabela:', {
+                display: window.getComputedStyle(table).display,
+                tableLayout: window.getComputedStyle(table).tableLayout
+            });
+        }
     }
 
     async novaVersao(imovelId) {
