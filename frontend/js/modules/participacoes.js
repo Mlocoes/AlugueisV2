@@ -150,50 +150,110 @@ class ParticipacoesModule {
         }
         
         console.log('🔧 Renderizando tabela com dados');
-        let headHtml = '<tr><th>Imóvel</th>';
+        let headHtml = '<tr><th width="80">Imóvel</th>';
         for (const prop of this.proprietarios) {
             headHtml += `<th>${prop.nome}</th>`;
         }
         headHtml += '<th>Total</th><th width="120">Ações</th></tr>';
         console.log('🔧 Head HTML:', headHtml);
         SecurityUtils.setSafeHTML(tableHead, headHtml);
-        let bodyHtml = '';
+        
+        // Criar linhas da tabela via DOM (mais seguro que innerHTML)
+        tableBody.innerHTML = ''; // Limpar primeiro
+        
         for (const imovel of this.imoveis) {
-            bodyHtml += `<tr><td>${imovel.nome}</td>`;
+            const row = document.createElement('tr');
+            
+            // Célula do imóvel
+            const cellImovel = document.createElement('td');
+            cellImovel.textContent = imovel.nome;
+            cellImovel.style.width = '80px';
+            cellImovel.style.minWidth = '80px';
+            cellImovel.style.maxWidth = '80px';
+            cellImovel.style.wordWrap = 'break-word';
+            cellImovel.style.whiteSpace = 'normal';
+            row.appendChild(cellImovel);
+            
             let total = 0;
+            // Células dos proprietários
             for (const prop of this.proprietarios) {
                 const part = this.participacoes.find(p => p.imovel_id === imovel.id && p.proprietario_id === prop.id);
                 let val = part ? part.porcentagem : '';
                 if (val !== '' && val < 1) val = (val * 100).toFixed(2);
                 if (val !== '' && val >= 1) val = Number(val).toFixed(2);
                 total += part ? (part.porcentagem < 1 ? part.porcentagem * 100 : part.porcentagem) : 0;
-                bodyHtml += `<td>${val !== '' ? val + ' %' : '-'}</td>`;
+                
+                const cellProp = document.createElement('td');
+                cellProp.textContent = val !== '' ? val + ' %' : '-';
+                row.appendChild(cellProp);
             }
-            bodyHtml += `<td><strong>${Math.round(total)}%</strong></td>`;
-
+            
+            // Célula do total
+            const cellTotal = document.createElement('td');
+            cellTotal.innerHTML = `<strong>${Math.round(total)}%</strong>`;
+            row.appendChild(cellTotal);
+            
+            // Célula de ações
+            const cellActions = document.createElement('td');
             const isAdmin = window.authService && window.authService.isAdmin();
             const disabledAttr = isAdmin ? '' : 'disabled';
             const disabledClass = isAdmin ? '' : 'opacity-50';
-            const titleAttr = isAdmin ? 'title="Nova versão"' : 'title="Apenas administradores podem criar nova versão"';
-
-            bodyHtml += `<td>
+            const titleAttr = isAdmin ? 'Nova versão' : 'Apenas administradores podem criar nova versão';
+            
+            cellActions.innerHTML = `
                 <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-primary admin-only ${disabledClass}" ${disabledAttr} ${titleAttr} onclick="window.participacoesModule.novaVersao('${imovel.id}')">
+                    <button class="btn btn-outline-primary admin-only ${disabledClass}" ${disabledAttr ? 'disabled' : ''} title="${titleAttr}" onclick="window.participacoesModule.novaVersao('${imovel.id}')">
                         <i class="fas fa-copy"></i>
                     </button>
                 </div>
-            </td></tr>`;
+            `;
+            row.appendChild(cellActions);
+            
+            tableBody.appendChild(row);
         }
-        console.log('🔧 Body HTML:', bodyHtml);
+        
+        // Força estilos da tabela via CSS inline
+        console.log('🔧 Aplicando estilos da tabela...');
+        
+        // Força estilos da tabela
+        const tableElement = document.getElementById('participacoes-matrix-table');
+        if (tableElement) {
+            tableElement.style.tableLayout = 'fixed';
+            tableElement.style.width = '100%';
+            
+            // Aplica estilos às células da primeira coluna
+            const applyColumnStyles = () => {
+                const firstCells = tableElement.querySelectorAll('th:first-child, td:first-child');
+                firstCells.forEach(cell => {
+                    cell.style.cssText = `
+                        width: 80px !important;
+                        min-width: 80px !important;
+                        max-width: 80px !important;
+                        word-wrap: break-word !important;
+                        white-space: normal !important;
+                        font-size: 0.7rem !important;
+                        padding: 0.25rem 0.5rem !important;
+                        text-align: left !important;
+                        overflow-wrap: break-word !important;
+                        box-sizing: border-box !important;
+                    `;
+                });
+            };
+            
+            // Aplica imediatamente
+            applyColumnStyles();
+            
+            // Aplica novamente após um pequeno delay (para garantir)
+            setTimeout(applyColumnStyles, 100);
+        }
+        
+        console.log('🔧 Estilos aplicados');
+        
         console.log('🔧 Aplicando HTML ao DOM...');
-        SecurityUtils.setSafeHTML(tableBody, bodyHtml);
         console.log('🔧 HTML aplicado com sucesso');
         
         // 🔍 Diagnóstico completo final
         console.log('🔍 === DIAGNÓSTICO COMPLETO ===');
-        console.log('HTML final gerado:', bodyHtml);
-        console.log('Número de <tr> no HTML:', (bodyHtml.match(/<tr>/g) || []).length);
-        console.log('Número de </tr> no HTML:', (bodyHtml.match(/<\/tr>/g) || []).length);
         console.log('DOM após aplicação:', tableBody.innerHTML);
         console.log('Número de linhas no DOM:', tableBody.querySelectorAll('tr').length);
         
