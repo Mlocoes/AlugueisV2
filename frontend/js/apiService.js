@@ -188,7 +188,7 @@ window.apiService = {
                 } else {
                     console.error('❌ Error en la requisición:', `Error: HTTP error! status: ${response.status}, message: ${errorData}`);
                 }
-                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
+                throw new Error(errorMessage);
             }
 
             const responseData = await response.json();

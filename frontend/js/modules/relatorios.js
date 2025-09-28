@@ -672,9 +672,12 @@ class RelatoriosManager {
         if (transferenciasCheck) {
             transferenciasCheck.disabled = !isAdmin;
             if (!isAdmin) {
-                transferenciasCheck.checked = false;
+                // Para não-administradores, o checkbox deve estar sempre flegado e desabilitado
+                transferenciasCheck.checked = true;
+                transferenciasCheck.title = 'A inclusão de transferências é sempre aplicada para este perfil.';
+            } else {
+                transferenciasCheck.title = 'Incluir/Excluir valores de transferências';
             }
-            transferenciasCheck.title = isAdmin ? 'Incluir/Excluir valores de transferências' : 'Apenas administradores podem incluir transferências';
         }
 
         // Re-renderizar a tabela apenas se os elementos DOM existirem
