@@ -1,0 +1,153 @@
+/* Estilos para a interface móvel */
+
+/* ==========================================================================
+   Mobile Dashboard
+   ========================================================================== */
+body.device-mobile .mobile-dashboard {
+    padding: 1rem;
+    background-color: #f4f7f9;
+}
+
+body.device-mobile .stats-container {
+    display: flex;
+    justify-content: space-around;
+    background-color: #fff;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+}
+
+body.device-mobile .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+body.device-mobile .stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+body.device-mobile .stat-label {
+    font-size: 0.8rem;
+    color: #666;
+    text-transform: uppercase;
+}
+
+body.device-mobile .nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 1rem;
+}
+
+body.device-mobile .nav-grid-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    text-decoration: none;
+    color: #333;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+body.device-mobile .nav-grid-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+body.device-mobile .nav-grid-item-icon {
+    margin-bottom: 0.5rem;
+    color: #0d6efd;
+}
+
+body.device-mobile .nav-grid-item-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+
+/* ==========================================================================
+   Responsive Tables
+   ========================================================================== */
+
+/* Ocultar a header da tabela em dispositivos móveis */
+body.device-mobile .table-responsive-custom thead {
+    display: none;
+}
+
+/* Transformar a tabela e suas partes em blocos */
+body.device-mobile .table-responsive-custom,
+body.device-mobile .table-responsive-custom tbody,
+body.device-mobile .table-responsive-custom tr,
+body.device-mobile .table-responsive-custom td {
+    display: block;
+    width: 100%;
+}
+
+/* Estilizar as linhas como "cards" */
+body.device-mobile .table-responsive-custom tr {
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Adicionar os labels dos cabeçalhos antes de cada célula */
+body.device-mobile .table-responsive-custom td {
+    padding-left: 50%;
+    position: relative;
+    text-align: right;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+body.device-mobile .table-responsive-custom td:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+body.device-mobile .table-responsive-custom td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 0;
+    width: 45%;
+    padding-left: 1rem;
+    font-weight: bold;
+    text-align: left;
+    white-space: nowrap;
+}
+
+/* ==========================================================================
+   Ajustes Gerais para Mobile
+   ========================================================================== */
+
+/* Reduzir o padding geral do conteúdo */
+body.device-mobile .main-body {
+    padding: 0.5rem;
+}
+
+/* Aumentar o tamanho da fonte para melhor legibilidade */
+body.device-mobile {
+    font-size: 16px;
+}
+
+/* Garantir que os modais ocupem mais da tela */
+body.device-mobile .modal-dialog {
+    max-width: 95%;
+    margin: 1.75rem auto;
+}
+
+/* Estilos para botões para serem mais fáceis de tocar */
+body.device-mobile .btn {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+}

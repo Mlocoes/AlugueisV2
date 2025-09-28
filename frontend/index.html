@@ -28,6 +28,7 @@
     <!-- Custom CSS Unificado -->
     <link href="css/responsive.css" rel="stylesheet">
     <link href="css/animations.css" rel="stylesheet">
+    <link href="css/mobile.css" rel="stylesheet">
 
     <!-- Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -466,6 +467,7 @@
     <script src="js/core/navigator.js?v=1758968682"></script>
     <script src="js/core/view-manager.js?v=1758968682"></script>
     <script src="js/core/table-manager.js?v=1758968682"></script>
+    <script src="js/core/mobile-ui-manager.js?v=1758968682"></script>
     
     <!-- Services Scripts -->
     <script src="js/apiService.js?v=1758968682"></script>
@@ -534,6 +536,11 @@
                     if (window.deviceManager) {
                         window.deviceManager.applyDeviceConfiguration();
                         window.deviceManager.setupResponsiveListeners();
+                    }
+
+                    // Inicializar o Mobile UI Manager se existir
+                    if (window.mobileUIManager) {
+                        window.mobileUIManager.init();
                     }
 
                     this.setupEventListeners();
