@@ -728,6 +728,11 @@
                         this.showApp();
                         // Aplicar permissões baseado no tipo de usuário
                         this.applyUserPermissions();
+
+                        // Forçar a navegação para o dashboard após o login
+                        if (window.unifiedNavigator) {
+                            window.unifiedNavigator.navigateTo('dashboard');
+                        }
                     } else {
                         throw new Error(response.message || 'Credenciais inválidas');
                     }
