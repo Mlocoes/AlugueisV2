@@ -27,6 +27,11 @@ class ProprietariosModule {
         this.bindPageEvents();
         this.bindTableEvents();
         this.loadProprietarios();
+
+        // Garante que as permissões para elementos de nível de página sejam aplicadas
+        // sempre que a view for carregada.
+        const isAdmin = window.authService && window.authService.isAdmin();
+        this.applyPermissions(isAdmin);
     }
 
     async handleApiCall(apiCall, loadingMessage, errorMessagePrefix) {
@@ -253,10 +258,9 @@ class ProprietariosModule {
             btnNovo.title = isAdmin ? 'Adicionar novo proprietário' : 'Apenas administradores podem criar proprietários';
         }
 
-        // Re-renderizar tabela com permissões atualizadas para os botões de ação
-        if (this.tableBody) {
-            this.renderTable();
-        }
+        // A renderização da tabela já lida com as permissões de nível de linha.
+        // A chamada a `applyPermissions` no `load` da view garante que o botão
+        // "Novo Proprietário" tenha a permissão correta aplicada.
     }
 }
 
