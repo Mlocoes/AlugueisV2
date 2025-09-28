@@ -89,9 +89,19 @@ def collect_user_input():
         "🌐 Deseja configurar acesso via internet com Traefik (requer um domínio)?", default=True
     )
     config["USE_TRAEFIK"] = use_traefik
+    
+    # Sempre perguntar pelos domínios, mesmo sem Traefik
+    config["FRONTEND_DOMAIN"] = Prompt.ask(
+        "🌐 Domínio do Frontend (ex: alugueis.meusite.com ou localhost)", 
+        default="localhost"
+    )
+    config["BACKEND_DOMAIN"] = Prompt.ask(
+        "🌐 Domínio do Backend API (ex: api.alugueis.meusite.com ou localhost)", 
+        default="localhost"
+    )
+    
     if use_traefik:
-        config["FRONTEND_DOMAIN"] = Prompt.ask("dominio do Frontend (ex: alugueis.meusite.com)")
-        config["BACKEND_DOMAIN"] = Prompt.ask("dominio do Backend API (ex: api.alugueis.meusite.com)")
+        console.print("✅ Configuração Traefik ativada - certifique-se de que os domínios apontam para este servidor.")
     else:
         host_ip = "127.0.0.1"
         try:
@@ -139,6 +149,11 @@ POSTGRES_USER={config['POSTGRES_USER']}
 POSTGRES_PASSWORD={config['POSTGRES_PASSWORD']}
 ADMIN_USER={config['ADMIN_USER']}
 ADMIN_PASS={config['ADMIN_PASS']}
+DATABASE_URL=postgresql://{config['POSTGRES_USER']}:{config['POSTGRES_PASSWORD']}@postgres_v2:5432/{config['POSTGRES_DB']}
+SECRET_KEY={secret_key}
+DEBUG=false
+FRONTEND_DOMAIN={config.get('FRONTEND_DOMAIN', 'localhost')}
+BACKEND_DOMAIN={config.get('BACKEND_DOMAIN', 'localhost')}
 """.strip()
 
     if config["USE_TRAEFIK"]:
