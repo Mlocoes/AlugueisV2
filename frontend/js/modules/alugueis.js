@@ -240,7 +240,7 @@ class AlugueisModule {
                 if (ano === '' || ano === null || ano === undefined) {
                     this.anoSelecionado = null;
                 } else {
-                    // Si es un objeto serializado, usar primer año disponible
+                    // Si es un objeto serializado, usar primer ano disponible
                     if (typeof ano === 'string' && ano.includes('[object')) {
                         console.warn('⚠️ Valor ano corrompido, usando primeiro ano disponível');
                         ano = this.anosDisponiveis.length > 0 ? this.anosDisponiveis[0].toString() : '';
@@ -587,7 +587,7 @@ class AlugueisModule {
         }
 
         // Cabeçalho: Imóvel | Proprietário1 | Proprietário2 | ... | Total
-        let headHtml = `<tr><th>Imóvel${tituloFiltro}</th>`;
+        let headHtml = `<tr><th width="80">Imóvel${tituloFiltro}</th>`;
         for (const prop of this.proprietarios) {
             headHtml += `<th>${prop.nome}</th>`;
         }
@@ -595,9 +595,21 @@ class AlugueisModule {
         SecurityUtils.setSafeHTML(tableHead, headHtml);
 
         // Corpo: para cada imóvel, uma linha
-        let bodyHtml = '';
+        tableBody.innerHTML = ''; // Limpar primeiro
+        
         for (const imovel of this.imoveis) {
-            bodyHtml += `<tr><td><strong>${imovel.nome}</strong></td>`;
+            const row = document.createElement('tr');
+            
+            // Célula do imóvel
+            const cellImovel = document.createElement('td');
+            cellImovel.innerHTML = `<strong>${imovel.nome}</strong>`;
+            cellImovel.style.width = '80px';
+            cellImovel.style.minWidth = '80px';
+            cellImovel.style.maxWidth = '80px';
+            cellImovel.style.wordWrap = 'break-word';
+            cellImovel.style.whiteSpace = 'normal';
+            row.appendChild(cellImovel);
+            
             let total = 0;
             
             for (const prop of this.proprietarios) {
@@ -615,14 +627,33 @@ class AlugueisModule {
                 
                 // Formatação com indicação se é valor filtrado
                 const valorFormatado = valor ? `R$ ${valor.toFixed(2)}` : '-';
-                bodyHtml += `<td class="text-end">${valorFormatado}</td>`;
+                const cellProp = document.createElement('td');
+                cellProp.className = 'text-end';
+                cellProp.textContent = valorFormatado;
+                row.appendChild(cellProp);
             }
             
-            bodyHtml += `<td class="text-end"><strong>R$ ${total.toFixed(2)}</strong></td></tr>`;
+            const cellTotal = document.createElement('td');
+            cellTotal.className = 'text-end';
+            cellTotal.innerHTML = `<strong>R$ ${total.toFixed(2)}</strong>`;
+            row.appendChild(cellTotal);
+            
+            tableBody.appendChild(row);
         }
         
         // Adicionar linha de totais por proprietário
-        bodyHtml += '<tr class="table-secondary"><td><strong>Total por Proprietário</strong></td>';
+        const totalRow = document.createElement('tr');
+        totalRow.className = 'table-secondary';
+        
+        const totalCellImovel = document.createElement('td');
+        totalCellImovel.innerHTML = '<strong>Total por Proprietário</strong>';
+        totalCellImovel.style.width = '80px';
+        totalCellImovel.style.minWidth = '80px';
+        totalCellImovel.style.maxWidth = '80px';
+        totalCellImovel.style.wordWrap = 'break-word';
+        totalCellImovel.style.whiteSpace = 'normal';
+        totalRow.appendChild(totalCellImovel);
+        
         let granTotal = 0;
         
         for (const prop of this.proprietarios) {
@@ -637,12 +668,55 @@ class AlugueisModule {
                 }
             }
             granTotal += totalProp;
-            bodyHtml += `<td class="text-end"><strong>R$ ${totalProp.toFixed(2)}</strong></td>`;
+            const cellTotalProp = document.createElement('td');
+            cellTotalProp.className = 'text-end';
+            cellTotalProp.innerHTML = `<strong>R$ ${totalProp.toFixed(2)}</strong>`;
+            totalRow.appendChild(cellTotalProp);
         }
         
-        bodyHtml += `<td class="text-end"><strong style="color: #0d6efd;">R$ ${granTotal.toFixed(2)}</strong></td></tr>`;
+        const cellGranTotal = document.createElement('td');
+        cellGranTotal.className = 'text-end';
+        cellGranTotal.innerHTML = `<strong style="color: #0d6efd;">R$ ${granTotal.toFixed(2)}</strong>`;
+        totalRow.appendChild(cellGranTotal);
         
-        SecurityUtils.setSafeHTML(tableBody, bodyHtml);
+        tableBody.appendChild(totalRow);
+
+        // Força estilos da tabela via CSS inline
+        console.log('🔧 Aplicando estilos da tabela de aluguéis...');
+        
+        // Força estilos da tabela
+        const tableElement = document.getElementById('alugueis-matrix-table');
+        if (tableElement) {
+            tableElement.style.tableLayout = 'fixed';
+            tableElement.style.width = '100%';
+            
+            // Aplica estilos às células da primeira coluna
+            const applyColumnStyles = () => {
+                const firstCells = tableElement.querySelectorAll('th:first-child, td:first-child');
+                firstCells.forEach(cell => {
+                    cell.style.cssText = `
+                        width: 80px !important;
+                        min-width: 80px !important;
+                        max-width: 80px !important;
+                        word-wrap: break-word !important;
+                        white-space: normal !important;
+                        font-size: 0.7rem !important;
+                        padding: 0.25rem 0.5rem !important;
+                        text-align: left !important;
+                        overflow-wrap: break-word !important;
+                        box-sizing: border-box !important;
+                    `;
+                });
+            };
+            
+            // Aplica imediatamente
+            applyColumnStyles();
+            
+            // Aplica novamente após um pequeno delay (para garantir)
+            setTimeout(applyColumnStyles, 100);
+        }
+        
+        console.log('🔧 Estilos aplicados');
 
         // Actualizar visibilidade de botões admin-only depois de renderizar
         if (window.uiManager && typeof window.uiManager.updateActionButtonsVisibility === 'function') {
