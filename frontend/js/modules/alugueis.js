@@ -587,12 +587,12 @@ class AlugueisModule {
         }
 
         // Cabeçalho: Imóvel | Proprietário1 | Proprietário2 | ... | Total
-        let headHtml = `<tr><th width="80">Imóvel${tituloFiltro}</th>`;
-        for (const prop of this.proprietarios) {
-            headHtml += `<th>${prop.nome}</th>`;
-        }
-        headHtml += '<th>Total</th></tr>';
-        SecurityUtils.setSafeHTML(tableHead, headHtml);
+        //let headHtml = `<tr><th width="80">Imóvel${tituloFiltro}</th>`;
+        //for (const prop of this.proprietarios) {
+        //    headHtml += `<th>${prop.nome}</th>`;
+        //}
+        //headHtml += '<th>Total</th></tr>';
+        //SecurityUtils.setSafeHTML(tableHead, headHtml);
 
         // Corpo: para cada imóvel, uma linha
         tableBody.innerHTML = ''; // Limpar primeiro
