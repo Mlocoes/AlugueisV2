@@ -94,10 +94,13 @@ AlugueisV2/
 
 ### Pré-requisitos
 
-- **Docker** & **Docker Compose** instalados
+- **Python 3.7+** e `pip`
+- **Docker** & **Docker Compose** (Plugin V2)
 - **Git** para clonagem do repositório
 
-### Instalação Rápida
+### Instalação Interativa
+
+O sistema agora conta com um script de instalação interativo que cuida de toda a configuração para você.
 
 1. **Clone o repositório**
    ```bash
@@ -105,21 +108,21 @@ AlugueisV2/
    cd AlugueisV2
    ```
 
-2. **Inicie o sistema completo**
+2. **Instale as dependências do script**
    ```bash
-   docker-compose up -d --build
+   pip install rich
    ```
+   *Este passo é necessário para a interface bonita do instalador.*
 
-3. **Acesse a aplicação**
-   - 🌐 **Frontend Desktop**: [http://192.168.0.7:3000](http://192.168.0.7:3000)
-   - 📱 **Versão Mobile**: [http://192.168.0.7:3000/mobile](http://192.168.0.7:3000/mobile)
-   - 📚 **Documentação API**: [http://192.168.0.7:8000/docs](http://192.168.0.7:8000/docs)
-   - 💚 **Health Check**: [http://192.168.0.7:8000/health](http://192.168.0.7:8000/health)
+3. **Execute o script de instalação**
+   O script irá verificar os pré-requisitos, solicitar as configurações necessárias (usuário admin, banco de dados, domínios, etc.) e configurar o sistema automaticamente.
+   ```bash
+   python3 scripts/install.py
+   ```
+   *Se o comando `python3` não for encontrado, tente usar `python`.*
 
-### Usuário Padrão
-
-- **Usuário**: `admin`
-- **Senha**: `admin`
+4. **Acesse a aplicação**
+   Ao final da instalação, o script exibirá um resumo com todos os URLs de acesso para o frontend, backend e o painel de gerenciamento do banco de dados, junto com as credenciais do usuário administrador que você configurou.
 
 ---
 
