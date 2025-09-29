@@ -1,15 +1,3 @@
-// Utilidad para guardar logs en localStorage
-function logToLocalStorage(message, data) {
-    try {
-        const logs = JSON.parse(localStorage.getItem('debugLogs') || '[]');
-        const entry = { timestamp: new Date().toISOString(), message, data };
-        logs.push(entry);
-        localStorage.setItem('debugLogs', JSON.stringify(logs));
-    } catch (e) {
-        // Si localStorage falla, ignorar
-    }
-}
-
 class ProprietariosModule {
     constructor() {
         this.apiService = window.apiService;
@@ -17,19 +5,24 @@ class ProprietariosModule {
         this.modalManager = null;
         this.proprietarios = [];
         this.currentEditId = null;
+        this.isMobile = window.deviceManager && window.deviceManager.deviceType === 'mobile';
     }
 
     load() {
-        this.tableBody = document.getElementById('proprietarios-table-body');
-        if (!this.tableBody) return;
+        this.container = this.isMobile
+            ? document.getElementById('proprietarios-list-mobile')
+            : document.getElementById('proprietarios-table-body');
+
+        if (!this.container) {
+            console.warn("Container for ProprietariosModule not found.");
+            return;
+        }
         
         this.modalManager = new ModalManager('proprietario-modal');
         this.bindPageEvents();
-        this.bindTableEvents();
+        this.bindContainerEvents();
         this.loadProprietarios();
 
-        // Garante que as permissões para elementos de nível de página sejam aplicadas
-        // sempre que a view for carregada.
         const isAdmin = window.authService && window.authService.isAdmin();
         this.applyPermissions(isAdmin);
     }
@@ -39,7 +32,7 @@ class ProprietariosModule {
         try {
             return await apiCall();
         } catch (error) {
-            this.uiManager.showError(`${errorMessagePrefix}. Por favor, tente novamente.`);
+            this.uiManager.showError(`${errorMessagePrefix}. Please try again.`);
             return null;
         } finally {
             this.uiManager.hideLoading();
@@ -55,9 +48,6 @@ class ProprietariosModule {
         const form = document.getElementById('form-proprietario');
         form?.addEventListener('submit', e => {
             e.preventDefault();
-            if (!this.validateForm(form)) {
-                return;
-            }
             const data = Object.fromEntries(new FormData(form).entries());
             if (this.currentEditId) {
                 this.handleUpdate(data);
@@ -67,44 +57,19 @@ class ProprietariosModule {
         });
     }
 
-    validateForm(form) {
-        const nome = form.querySelector('[name="nome"]').value.trim();
-        const email = form.querySelector('[name="email"]').value.trim();
-        const telefone = form.querySelector('[name="telefone"]').value.trim();
-
-        if (!nome) {
-            this.uiManager.showError('O campo Nome é obrigatório.');
-            return false;
-        }
-
-        if (email && !/^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$/.test(email)) {
-            this.uiManager.showError('Por favor, insira um email válido.');
-            return false;
-        }
-
-        if (telefone && !/^[\+0-9\s\-\(\)]+$/.test(telefone)) {
-            this.uiManager.showError('Por favor, insira um telefone válido.');
-            return false;
-        }
-
-        return true;
-    }
-
-    bindTableEvents() {
-        this.tableBody.addEventListener('click', e => {
+    bindContainerEvents() {
+        if (!this.container) return;
+        this.container.addEventListener('click', e => {
             const editButton = e.target.closest('.edit-btn');
             const deleteButton = e.target.closest('.delete-btn');
-            const row = e.target.closest('tr[data-id]');
-            if (!row) return;
 
-            const id = parseInt(row.dataset.id, 10);
+            const itemElement = e.target.closest('[data-id]');
+            if (!itemElement) return;
 
-            if (editButton) {
-                this.editProprietario(id);
-            }
-            if (deleteButton) {
-                this.deleteProprietario(id);
-            }
+            const id = parseInt(itemElement.dataset.id, 10);
+
+            if (editButton) this.editProprietario(id);
+            if (deleteButton) this.deleteProprietario(id);
         });
     }
 
@@ -116,35 +81,63 @@ class ProprietariosModule {
         );
         if (result && Array.isArray(result)) {
             this.proprietarios = result;
-            this.renderTable();
+            this.render();
         } else {
-            // Reset proprietarios array on failure to avoid inconsistent state
             this.proprietarios = [];
-            this.renderTable();
+            this.render();
             this.uiManager.showError('Dados de proprietários inválidos recebidos do servidor.');
         }
     }
 
-    renderTable() {
-        if (!this.tableBody) return;
+    render() {
+        if (!this.container) return;
         if (this.proprietarios.length === 0) {
-            this.tableBody.innerHTML = `<tr><td colspan="6" class="text-center">Nenhum proprietário encontrado.</td></tr>`;
+            this.container.innerHTML = this.isMobile
+                ? `<div class="text-center p-4">Nenhum proprietário encontrado.</div>`
+                : `<tr><td colspan="6" class="text-center">Nenhum proprietário encontrado.</td></tr>`;
             return;
         }
-        this.tableBody.innerHTML = this.proprietarios.map(prop => this.renderProprietarioRow(prop)).join('');
+
+        if (this.isMobile) {
+            this.container.innerHTML = this.proprietarios.map(prop => this.renderMobileCard(prop)).join('');
+        } else {
+            this.container.innerHTML = this.proprietarios.map(prop => this.renderProprietarioRow(prop)).join('');
+        }
+    }
+
+    renderMobileCard(prop) {
+        const sanitize = (str) => str ? String(str).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;','/':'&#x2F;'})[c]) : '';
+        const dataIdAttribute = `data-id="${prop.id}"`;
+        const fullName = `${prop.nome || ''} ${prop.sobrenome || ''}`.trim();
+        const isAdmin = window.authService && window.authService.isAdmin();
+        const disabledAttr = isAdmin ? '' : 'disabled';
+
+        return `
+            <div class="card mobile-card mb-2" ${dataIdAttribute}>
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h5 class="card-title mb-1">${sanitize(fullName)}</h5>
+                        <div class="mobile-card-actions">
+                            <button class="btn btn-sm btn-outline-primary edit-btn" ${disabledAttr}><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-outline-danger delete-btn" ${disabledAttr}><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-text small">
+                        <p class="mb-1"><strong>Doc:</strong> ${sanitize(prop.documento) || 'N/A'}</p>
+                        <p class="mb-1"><strong>Tel:</strong> ${sanitize(prop.telefone) || 'N/A'}</p>
+                        <p class="mb-0"><strong>Email:</strong> ${sanitize(prop.email) || 'N/A'}</p>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     renderProprietarioRow(prop) {
         const sanitize = (str) => str ? String(str).replace(/[<>&"'/]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;','/':'&#x2F;'})[c]) : '';
-
-        const dataIdAttribute = (typeof prop.id === 'number' && !isNaN(prop.id)) ? `data-id="${prop.id}"` : '';
-
+        const dataIdAttribute = `data-id="${prop.id}"`;
         const fullName = `${prop.nome || ''} ${prop.sobrenome || ''}`.trim();
-
         const isAdmin = window.authService && window.authService.isAdmin();
         const disabledAttr = isAdmin ? '' : 'disabled';
-        const disabledClass = isAdmin ? '' : 'opacity-50';
-        const titleAttr = isAdmin ? '' : 'title="Apenas administradores podem editar/excluir proprietários"';
 
         return `
             <tr ${dataIdAttribute}>
@@ -153,11 +146,9 @@ class ProprietariosModule {
                 <td>${sanitize(prop.documento) || 'N/A'}</td>
                 <td>${sanitize(prop.telefone) || 'N/A'}</td>
                 <td>${sanitize(prop.email) || 'N/A'}</td>
-                <td>
-                    <div class="d-flex justify-content-center">
-                        <button class="btn btn-sm btn-outline-primary me-2 edit-btn ${disabledClass}" ${dataIdAttribute ? '' : 'disabled'} ${disabledAttr} ${titleAttr}><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-outline-danger delete-btn ${disabledClass}" ${dataIdAttribute ? '' : 'disabled'} ${disabledAttr} ${titleAttr}><i class="fas fa-trash"></i></button>
-                    </div>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-primary edit-btn me-2" ${disabledAttr}><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-outline-danger delete-btn" ${disabledAttr}><i class="fas fa-trash"></i></button>
                 </td>
             </tr>
         `;
@@ -180,7 +171,6 @@ class ProprietariosModule {
         if (result) {
             this.modalManager.hide();
             formElement.reset();
-            this.proprietarios = []; // Force reload
             this.loadProprietarios();
             this.uiManager.showSuccessToast('Sucesso', 'Proprietário criado com sucesso.');
         }
@@ -219,7 +209,6 @@ class ProprietariosModule {
 
         if (result) {
             this.modalManager.hide();
-            this.proprietarios = []; // Force reload
             this.loadProprietarios();
             this.uiManager.showSuccessToast('Sucesso', 'Proprietário atualizado com sucesso.');
         }
@@ -229,7 +218,7 @@ class ProprietariosModule {
         const proprietario = this.proprietarios.find(p => p.id === id);
         if (!proprietario) return;
 
-        const confirmed = await this.uiManager.showConfirm('Excluir Proprietário', `Tem certeza que deseja excluir ${proprietario.nome_completo}?`, 'danger');
+        const confirmed = await this.uiManager.showConfirm('Excluir Proprietário', `Tem certeza que deseja excluir ${proprietario.nome}?`, 'danger');
         if (!confirmed) return;
 
         const response = await this.handleApiCall(
@@ -239,31 +228,18 @@ class ProprietariosModule {
         );
 
         if (response) {
-            this.proprietarios = this.proprietarios.filter(p => p.id !== id);
-            this.renderTable();
+            this.loadProprietarios();
             this.uiManager.showSuccessToast('Sucesso', 'Proprietário excluído com sucesso.');
         }
     }
 
-    /**
-     * Aplicar permissões baseado no tipo de usuário
-     */
     applyPermissions(isAdmin) {
-        console.log(`🔒 Aplicando permissões no módulo Proprietários: ${isAdmin ? 'ADMIN' : 'USUÁRIO'}`);
-
-        // Botão novo proprietário
         const btnNovo = document.getElementById('btn-novo-proprietario');
         if (btnNovo) {
-            btnNovo.disabled = !isAdmin;
-            btnNovo.title = isAdmin ? 'Adicionar novo proprietário' : 'Apenas administradores podem criar proprietários';
+            btnNovo.style.display = isAdmin ? 'block' : 'none';
         }
-
-        // A renderização da tabela já lida com as permissões de nível de linha.
-        // A chamada a `applyPermissions` no `load` da view garante que o botão
-        // "Novo Proprietário" tenha a permissão correta aplicada.
+        this.render();
     }
 }
 
-// Create a single instance of the module and attach it to the window.
-const proprietariosModule = new ProprietariosModule();
-window.proprietariosModule = proprietariosModule;
+window.proprietariosModule = new ProprietariosModule();

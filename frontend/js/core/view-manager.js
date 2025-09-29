@@ -161,6 +161,11 @@ class ViewManager {
 
             // Actualizar contenido
             this.updateContent(view);
+
+            // Se for o dashboard em um dispositivo móvel, carregar os dados do dashboard móvel
+            if (view.id === 'dashboard' && window.mobileUIManager && window.mobileUIManager.isMobile) {
+                window.mobileUIManager.loadDashboardData();
+            }
             
             // Actualizar título
             this.updateTitle(view.title);
@@ -291,6 +296,31 @@ class ViewManager {
      */
     getResponsiveTemplate(view) {
         const deviceType = window.deviceManager.deviceType;
+
+        if (deviceType === 'mobile') {
+            if (view.id === 'dashboard' && window.mobileUIManager) {
+                return window.mobileUIManager.getMobileDashboardHTML();
+            }
+            if (view.id === 'proprietarios') {
+                return this.getProprietariosMobileTemplate();
+            }
+            if (view.id === 'imoveis') {
+                return this.getImoveisMobileTemplate();
+            }
+            if (view.id === 'participacoes') {
+                return this.getParticipacoesMobileTemplate();
+            }
+            if (view.id === 'alugueis') {
+                return this.getAlugueisMobileTemplate();
+            }
+            if (view.id === 'relatorios') {
+                return this.getRelatoriosMobileTemplate();
+            }
+            if (view.id === 'importar') {
+                return this.getImportarMobileTemplate();
+            }
+        }
+
         const template = view.template;
         
         // Aplicar clases responsivas
@@ -494,6 +524,139 @@ class ViewManager {
 
     // TEMPLATES DE VISTAS (métodos que retornan HTML)
     
+    getProprietariosMobileTemplate() {
+        return `
+            <div class="proprietarios-container-mobile">
+                <div class="d-flex justify-content-end mb-3">
+                    <button class="btn btn-primary admin-only" id="btn-novo-proprietario"><i class="fas fa-plus me-2"></i>Novo Proprietário</button>
+                </div>
+                <div id="proprietarios-list-mobile">
+                    <!-- Mobile cards will be inserted here -->
+                </div>
+            </div>
+        `;
+    }
+
+    getImportarMobileTemplate() {
+        return `
+            <div class="importar-container-mobile p-3">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-upload me-2"></i>Importar Arquivos Excel</h5>
+                        <form id="importar-form-proprietarios-mobile" class="mb-3" enctype="multipart/form-data">
+                            <label for="arquivo-proprietarios-mobile" class="form-label">Proprietários</label>
+                            <div class="input-group">
+                                <input type="file" class="form-control" id="arquivo-proprietarios-mobile" accept=".xlsx,.xls" required>
+                                <button class="btn btn-primary" type="submit"><i class="fas fa-users"></i></button>
+                            </div>
+                        </form>
+                        <form id="importar-form-imoveis-mobile" class="mb-3" enctype="multipart/form-data">
+                            <label for="arquivo-imoveis-mobile" class="form-label">Imóveis</label>
+                            <div class="input-group">
+                                <input type="file" class="form-control" id="arquivo-imoveis-mobile" accept=".xlsx,.xls" required>
+                                <button class="btn btn-primary" type="submit"><i class="fas fa-building"></i></button>
+                            </div>
+                        </form>
+                        <form id="importar-form-participacoes-mobile" class="mb-3" enctype="multipart/form-data">
+                            <label for="arquivo-participacoes-mobile" class="form-label">Participações</label>
+                            <div class="input-group">
+                                <input type="file" class="form-control" id="arquivo-participacoes-mobile" accept=".xlsx,.xls" required>
+                                <button class="btn btn-primary" type="submit"><i class="fas fa-chart-pie"></i></button>
+                            </div>
+                        </form>
+                        <form id="importar-form-alugueis-mobile" enctype="multipart/form-data">
+                            <label for="arquivo-alugueis-mobile" class="form-label">Aluguéis</label>
+                            <div class="input-group">
+                                <input type="file" class="form-control" id="arquivo-alugueis-mobile" accept=".xlsx,.xls" required>
+                                <button class="btn btn-primary" type="submit"><i class="fas fa-calendar-alt"></i></button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div id="validation-results-container-mobile" class="mt-3"></div>
+            </div>
+        `;
+    }
+
+    getRelatoriosMobileTemplate() {
+        return `
+            <div class="relatorios-container-mobile">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <label for="relatorios-ano-select-mobile" class="form-label">Ano</label>
+                                <select id="relatorios-ano-select-mobile" class="form-select"></select>
+                            </div>
+                            <div class="col-12">
+                                <label for="relatorios-mes-select-mobile" class="form-label">Mês</label>
+                                <select id="relatorios-mes-select-mobile" class="form-select"></select>
+                            </div>
+                            <div class="col-12">
+                                <label for="relatorios-proprietario-select-mobile" class="form-label">Proprietário</label>
+                                <select id="relatorios-proprietario-select-mobile" class="form-select"></select>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="relatorios-transferencias-check-mobile">
+                                    <label class="form-check-label" for="relatorios-transferencias-check-mobile">
+                                        Transferências
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="relatorios-list-mobile">
+                    <!-- Mobile cards will be inserted here -->
+                </div>
+            </div>
+        `;
+    }
+
+    getAlugueisMobileTemplate() {
+        return `
+            <div class="alugueis-container-mobile">
+                <div class="row mb-3 align-items-center">
+                    <div class="col-6">
+                        <label for="alugueis-ano-select-mobile" class="form-label">Ano</label>
+                        <select id="alugueis-ano-select-mobile" class="form-select"></select>
+                    </div>
+                    <div class="col-6">
+                        <label for="alugueis-mes-select-mobile" class="form-label">Mês</label>
+                        <select id="alugueis-mes-select-mobile" class="form-select" disabled></select>
+                    </div>
+                </div>
+                <div id="alugueis-list-mobile">
+                    <!-- Mobile cards will be inserted here -->
+                </div>
+            </div>
+        `;
+    }
+
+    getParticipacoesMobileTemplate() {
+        return `
+            <div class="participacoes-container-mobile">
+                <div id="participacoes-list-mobile">
+                    <!-- Mobile cards will be inserted here -->
+                </div>
+            </div>
+        `;
+    }
+
+    getImoveisMobileTemplate() {
+        return `
+            <div class="imoveis-container-mobile">
+                <div class="d-flex justify-content-end mb-3">
+                    <button class="btn btn-primary admin-only" id="btn-novo-imovel"><i class="fas fa-plus me-2"></i>Novo Imóvel</button>
+                </div>
+                <div id="imoveis-list-mobile">
+                    <!-- Mobile cards will be inserted here -->
+                </div>
+            </div>
+        `;
+    }
+
     getDashboardTemplate() {
         return `
             <div class="dashboard-container">
@@ -1074,6 +1237,7 @@ class ViewManager {
                                         <button class="btn btn-primary" type="submit" style="width: 260px;"><i class="fas fa-calendar-alt me-2"></i> Importar Aluguéis</button>
                                     </div>
                                 </form>
+                                <div id="validation-results-container" class="mt-4" style="display: none;"></div>
                             </div>
                         </div>
                     </div>
