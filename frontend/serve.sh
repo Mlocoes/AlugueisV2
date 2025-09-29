@@ -20,8 +20,8 @@ echo "🌐 Servidor: http://192.168.0.7:3000"
 echo "⚡ Presiona Ctrl+C para detener el servidor"
 echo ""
 
-# Iniciar servidor HTTP
-python3 -m http.server 3000
+# Iniciar servidor HTTP com no-cache
+python3 serve.py
 
 echo ""
 echo "🛑 Servidor detenido"

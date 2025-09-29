@@ -83,7 +83,7 @@ class UnifiedNavigator {
      * Criar navegação inferior (móvil)
      */
     createBottomNavigation(container) {
-        const navItems = this.getNavigationItems().slice(0, this.navigationConfig.maxItems);
+        const navItems = this.getNavigationItems();
         
         const bottomNavHTML = `
             <div class="bottom-nav" id="bottom-nav">

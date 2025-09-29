@@ -527,51 +527,46 @@ class ViewManager {
     getProprietariosMobileTemplate() {
         return `
             <div class="proprietarios-container-mobile">
-                <div class="d-flex justify-content-end mb-3">
-                    <button class="btn btn-primary admin-only" id="btn-novo-proprietario"><i class="fas fa-plus me-2"></i>Novo Proprietário</button>
-                </div>
                 <div id="proprietarios-list-mobile">
                     <!-- Mobile cards will be inserted here -->
                 </div>
+                <!-- Floating Action Button for adding new owner -->
+                <button class="btn btn-primary btn-fab admin-only" id="btn-novo-proprietario" title="Adicionar Novo Proprietário">
+                    <i class="fas fa-plus"></i>
+                </button>
             </div>
         `;
     }
 
     getImportarMobileTemplate() {
-        return `
-            <div class="importar-container-mobile p-3">
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-upload me-2"></i>Importar Arquivos Excel</h5>
-                        <form id="importar-form-proprietarios-mobile" class="mb-3" enctype="multipart/form-data">
-                            <label for="arquivo-proprietarios-mobile" class="form-label">Proprietários</label>
+        const accordionId = "importar-accordion-mobile";
+        const createAccordionItem = (type, title, icon) => `
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading-${type}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${type}" aria-expanded="false" aria-controls="collapse-${type}">
+                        <i class="fas ${icon} me-2"></i>${title}
+                    </button>
+                </h2>
+                <div id="collapse-${type}" class="accordion-collapse collapse" aria-labelledby="heading-${type}" data-bs-parent="#${accordionId}">
+                    <div class="accordion-body">
+                        <form id="importar-form-${type}-mobile" enctype="multipart/form-data">
                             <div class="input-group">
-                                <input type="file" class="form-control" id="arquivo-proprietarios-mobile" accept=".xlsx,.xls" required>
-                                <button class="btn btn-primary" type="submit"><i class="fas fa-users"></i></button>
-                            </div>
-                        </form>
-                        <form id="importar-form-imoveis-mobile" class="mb-3" enctype="multipart/form-data">
-                            <label for="arquivo-imoveis-mobile" class="form-label">Imóveis</label>
-                            <div class="input-group">
-                                <input type="file" class="form-control" id="arquivo-imoveis-mobile" accept=".xlsx,.xls" required>
-                                <button class="btn btn-primary" type="submit"><i class="fas fa-building"></i></button>
-                            </div>
-                        </form>
-                        <form id="importar-form-participacoes-mobile" class="mb-3" enctype="multipart/form-data">
-                            <label for="arquivo-participacoes-mobile" class="form-label">Participações</label>
-                            <div class="input-group">
-                                <input type="file" class="form-control" id="arquivo-participacoes-mobile" accept=".xlsx,.xls" required>
-                                <button class="btn btn-primary" type="submit"><i class="fas fa-chart-pie"></i></button>
-                            </div>
-                        </form>
-                        <form id="importar-form-alugueis-mobile" enctype="multipart/form-data">
-                            <label for="arquivo-alugueis-mobile" class="form-label">Aluguéis</label>
-                            <div class="input-group">
-                                <input type="file" class="form-control" id="arquivo-alugueis-mobile" accept=".xlsx,.xls" required>
-                                <button class="btn btn-primary" type="submit"><i class="fas fa-calendar-alt"></i></button>
+                                <input type="file" class="form-control" id="arquivo-${type}-mobile" accept=".xlsx,.xls" required>
+                                <button class="btn btn-primary" type="submit">Importar</button>
                             </div>
                         </form>
                     </div>
+                </div>
+            </div>
+        `;
+
+        return `
+            <div class="importar-container-mobile p-3">
+                <div class="accordion" id="${accordionId}">
+                    ${createAccordionItem('proprietarios', 'Proprietários', 'fa-users')}
+                    ${createAccordionItem('imoveis', 'Imóveis', 'fa-building')}
+                    ${createAccordionItem('participacoes', 'Participações', 'fa-chart-pie')}
+                    ${createAccordionItem('alugueis', 'Aluguéis', 'fa-calendar-alt')}
                 </div>
                 <div id="validation-results-container-mobile" class="mt-3"></div>
             </div>
@@ -616,15 +611,19 @@ class ViewManager {
 
     getAlugueisMobileTemplate() {
         return `
-            <div class="alugueis-container-mobile">
-                <div class="row mb-3 align-items-center">
-                    <div class="col-6">
-                        <label for="alugueis-ano-select-mobile" class="form-label">Ano</label>
-                        <select id="alugueis-ano-select-mobile" class="form-select"></select>
-                    </div>
-                    <div class="col-6">
-                        <label for="alugueis-mes-select-mobile" class="form-label">Mês</label>
-                        <select id="alugueis-mes-select-mobile" class="form-select" disabled></select>
+            <div class="alugueis-container-mobile p-3">
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <label for="alugueis-ano-select-mobile" class="form-label">Ano</label>
+                                <select id="alugueis-ano-select-mobile" class="form-select"></select>
+                            </div>
+                            <div class="col-12">
+                                <label for="alugueis-mes-select-mobile" class="form-label">Mês</label>
+                                <select id="alugueis-mes-select-mobile" class="form-select" disabled></select>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div id="alugueis-list-mobile">
@@ -647,12 +646,13 @@ class ViewManager {
     getImoveisMobileTemplate() {
         return `
             <div class="imoveis-container-mobile">
-                <div class="d-flex justify-content-end mb-3">
-                    <button class="btn btn-primary admin-only" id="btn-novo-imovel"><i class="fas fa-plus me-2"></i>Novo Imóvel</button>
-                </div>
                 <div id="imoveis-list-mobile">
                     <!-- Mobile cards will be inserted here -->
                 </div>
+                <!-- Floating Action Button for adding new property -->
+                <button class="btn btn-primary btn-fab admin-only" id="btn-novo-imovel" title="Adicionar Novo Imóvel">
+                    <i class="fas fa-plus"></i>
+                </button>
             </div>
         `;
     }

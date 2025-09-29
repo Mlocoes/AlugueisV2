@@ -185,14 +185,17 @@ class RelatoriosModule {
             const valorLiquido = somaAlugueis - somaTaxas;
 
             cardsHtml += `
-                <div class="card mobile-card mb-3">
-                    <div class="card-header bg-light">
+                <div class="card mobile-card mb-3 shadow-sm">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">${SecurityUtils.escapeHtml(item.nome_proprietario)}</h5>
                         <small class="text-muted">${item.mes}/${item.ano}</small>
                     </div>
-                    <div class="card-body p-3">
-                        <div class="d-flex justify-content-between py-1"><span>Valor Líquido:</span><strong class="text-success">R$ ${valorLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></div>
-                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Valor Líquido
+                            <span class="badge bg-success rounded-pill">R$ ${valorLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        </li>
+                    </ul>
                 </div>
             `;
         }

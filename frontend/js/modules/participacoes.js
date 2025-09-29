@@ -127,21 +127,29 @@ class ParticipacoesModule {
             const participacoesDoImovel = this.participacoes.filter(p => p.imovel_id === imovel.id && p.porcentagem > 0);
             if (participacoesDoImovel.length === 0) return '';
 
+            // Using list-group for a cleaner look
             const participantsHtml = participacoesDoImovel.map(part => {
                 const proprietario = this.proprietarios.find(prop => prop.id === part.proprietario_id);
                 const percentage = (part.porcentagem < 1 ? part.porcentagem * 100 : part.porcentagem).toFixed(2);
-                return `<div class="d-flex justify-content-between py-1"><span>${proprietario ? SecurityUtils.escapeHtml(proprietario.nome) : 'Desconhecido'}</span><strong>${percentage}%</strong></div>`;
+                return `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        ${proprietario ? SecurityUtils.escapeHtml(proprietario.nome) : 'Desconhecido'}
+                        <span class="badge bg-primary rounded-pill">${percentage}%</span>
+                    </li>
+                `;
             }).join('');
 
             const actionButton = isAdmin ? `<button class="btn btn-sm btn-outline-primary nova-versao-btn" data-imovel-id="${imovel.id}"><i class="fas fa-edit me-1"></i>Editar</button>` : '';
 
             return `
-                <div class="card mobile-card mb-3">
+                <div class="card mobile-card mb-3 shadow-sm">
                     <div class="card-header bg-light d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">${SecurityUtils.escapeHtml(imovel.nome)}</h5>
                         ${actionButton}
                     </div>
-                    <div class="card-body p-3">${participantsHtml}</div>
+                    <ul class="list-group list-group-flush">
+                        ${participantsHtml}
+                    </ul>
                 </div>`;
         }).join('');
         this.container.innerHTML = cardsHtml || `<div class="text-center p-4">Nenhuma participação encontrada.</div>`;
@@ -236,102 +244,8 @@ class ParticipacoesModule {
         `;
         document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-// feature/mobile-interface
         const modalInstance = document.getElementById(modalId);
         const totalEl = modalInstance.querySelector('#total-percent');
-
-            const body = modalEl.querySelector('#nv-body');
-            const im = this.imoveis.find(i => String(i.id) === String(imovelId));
-            body.innerHTML = ''; // Limpar conteúdo existente
-
-            const tr = document.createElement('tr');
-            tr.dataset.imovel = im.id;
-
-            const imovelCell = document.createElement('td');
-            imovelCell.textContent = im.nome;
-            tr.appendChild(imovelCell);
-
-            this.proprietarios.forEach(p => {
-                const value = porImovel[im.id][p.id];
-                const cell = document.createElement('td');
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.step = '0.01';
-                input.min = '0';
-                input.max = '100';
-                input.dataset.prop = p.id;
-                input.className = 'form-control form-control-sm';
-                input.style.fontSize = '0.80rem';
-                input.value = value;
-                cell.appendChild(input);
-                tr.appendChild(cell);
-            });
-
-            const totalCell = document.createElement('td');
-            totalCell.className = 'nv-total';
-            totalCell.textContent = '0%';
-            tr.appendChild(totalCell);
-
-            body.appendChild(tr);
-
-            const recalc = () => {
-                let soma = 0;
-                body.querySelectorAll('input[data-prop]').forEach(inp => { soma += Number(inp.value || 0); });
-                const somaRounded = Math.round(soma);
-                modalEl.querySelector('.nv-total').textContent = somaRounded + '%';
-                return { soma, somaRounded };
-            };
-            body.addEventListener('input', recalc);
-            recalc();
-
-            const salvar = async () => {
-                // Normalizar apenas o imóvel editado
-                const edited = {};
-                body.querySelectorAll('input[data-prop]').forEach(inp => {
-                    const pid = Number(inp.getAttribute('data-prop'));
-                    edited[pid] = Number(inp.value || 0);
-                });
-                // Construir payload: copiar conjunto atual, substituindo apenas o imóvel editado
-                const payload = { participacoes: [] };
-                for (const imovel of this.imoveis) {
-                    for (const prop of this.proprietarios) {
-                        let val;
-                        if (imovel.id === im.id && edited[prop.id] != null) {
-                            val = edited[prop.id];
-                        } else {
-                            const part = this.participacoes.find(p => p.imovel_id === imovel.id && p.proprietario_id === prop.id);
-                            val = part ? (part.porcentagem < 1 ? part.porcentagem * 100 : part.porcentagem) : 0;
-                        }
-                        payload.participacoes.push({ imovel_id: imovel.id, proprietario_id: prop.id, porcentagem: val });
-                    }
-                }
-                // Enviar ao backend
-                try {
-                    this.uiManager.showLoading('Salvando nova versão...');
-                    const resp = await this.apiService.createNovaVersaoParticipacoes(payload);
-                    this.uiManager.hideLoading();
-                    if (resp && (resp.success || resp.mensagem || resp.message)) {
-                        this.uiManager.showSuccess('Nova versão criada com sucesso');
-                        // Aplicar focus management antes de cerrar modal exitosamente
-                        if (document.activeElement) document.activeElement.blur();
-                        document.body.focus();
-                        if (window.bootstrap && window.bootstrap.Modal) {
-                            const bs = bootstrap.Modal.getOrCreateInstance(modalEl);
-                            bs.hide();
-                        } else {
-                            modalEl.style.display = 'none'; modalEl.classList.remove('show');
-                        }
-                        // Recarregar dados após sucesso
-                        await this.load();
-                    } else {
-                        this.uiManager.showError('Erro ao criar nova versão: Resposta inesperada do servidor');
-                    }
-                } catch (error) {
-                    this.uiManager.showError('Erro ao criar nova versão: ' + error.message);
-                    this.uiManager.hideLoading();
-                }
-            };
-// main
 
         const updateTotal = () => {
             let total = 0;
