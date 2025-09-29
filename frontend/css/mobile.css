@@ -151,3 +151,35 @@ body.device-mobile .btn {
     padding: 0.75rem 1rem;
     font-size: 1rem;
 }
+
+/* ==========================================================================
+   Bottom Navigation Bar
+   ========================================================================== */
+body.device-mobile .bottom-nav-item {
+    padding: 0.25rem;
+    font-size: 0.65rem; /* Reduz o tamanho da fonte para caber mais itens */
+}
+
+body.device-mobile .bottom-nav-item i {
+    font-size: 1.2em; /* Ajusta o tamanho do ícone */
+}
+
+body.device-mobile .bottom-nav-items {
+    justify-content: space-around; /* Garante espaçamento uniforme */
+}
+
+/* Floating Action Button (FAB) */
+.btn-fab {
+    position: fixed;
+    bottom: 80px; /* Adjust to be above the bottom nav bar */
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1050; /* Ensure it's above other content but below modals */
+}

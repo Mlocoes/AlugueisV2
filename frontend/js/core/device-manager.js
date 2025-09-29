@@ -185,8 +185,8 @@ class DeviceManager {
                 return {
                     type: 'bottom-nav',
                     collapsible: true,
-                    showLabels: false,
-                    maxItems: 5
+                    showLabels: true,
+                    maxItems: 8
                 };
             case 'tablet':
                 return {

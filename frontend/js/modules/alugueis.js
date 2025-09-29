@@ -164,23 +164,23 @@ class AlugueisModule {
             if (alugueisDoImovel.length === 0) return '';
 
             const alugueisHtml = alugueisDoImovel.map(item => `
-                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                    <span>${item.proprietario ? SecurityUtils.escapeHtml(item.proprietario.nome) : 'Desconhecido'}</span>
-                    <strong>R$ ${item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
-                </div>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    ${item.proprietario ? SecurityUtils.escapeHtml(item.proprietario.nome) : 'Desconhecido'}
+                    <span class="badge bg-success rounded-pill">R$ ${item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                </li>
             `).join('');
 
             const totalImovel = alugueisDoImovel.reduce((sum, item) => sum + item.valor, 0);
 
             return `
-                <div class="card mobile-card mb-3">
+                <div class="card mobile-card mb-3 shadow-sm">
                     <div class="card-header bg-light d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">${SecurityUtils.escapeHtml(imovel.nome)}</h5>
                         <strong class="text-primary">R$ ${totalImovel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
                     </div>
-                    <div class="card-body p-3">
+                    <ul class="list-group list-group-flush">
                         ${alugueisHtml}
-                    </div>
+                    </ul>
                 </div>
             `;
         }).join('');

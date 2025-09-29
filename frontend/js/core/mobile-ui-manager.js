@@ -20,18 +20,6 @@ class MobileUIManager {
     getMobileDashboardHTML() {
         if (!this.isMobile) return '';
 
-        const navItems = window.unifiedNavigator ? window.unifiedNavigator.getNavigationItems() : [];
-        const dashboardNavItems = navItems.filter(item => item.id !== 'dashboard');
-
-        const navGridHTML = dashboardNavItems.map(item => `
-            <a href="#" class="nav-grid-item" data-view="${item.id}">
-                <div class="nav-grid-item-icon">
-                    <i class="${item.icon} fa-2x"></i>
-                </div>
-                <div class="nav-grid-item-label">${item.label}</div>
-            </a>
-        `).join('');
-
         const statsHTML = `
             <div class="stats-container">
                 <div class="stat-item">
@@ -52,9 +40,6 @@ class MobileUIManager {
         return `
             <div class="mobile-dashboard">
                 ${statsHTML}
-                <div class="nav-grid">
-                    ${navGridHTML}
-                </div>
             </div>
         `;
     }
@@ -75,8 +60,8 @@ class MobileUIManager {
         if (receitaEl) receitaEl.textContent = '...';
 
         try {
-            // Use the global apiService to fetch data
-            const data = await window.apiService.get('/dashboard/summary');
+            // Use the dedicated helper method which correctly unwraps the data
+            const data = await window.apiService.getDashboardSummary();
 
             if (proprietariosEl) proprietariosEl.textContent = data.total_proprietarios;
             if (imoveisEl) imoveisEl.textContent = data.total_imoveis;

@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 # Configuración
-PORT = 8081
+PORT = 3000
 DIRECTORY = Path(__file__).parent
 
 class UnifiedHandler(http.server.SimpleHTTPRequestHandler):
