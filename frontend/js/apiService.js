@@ -38,6 +38,11 @@ window.apiService = {
             'Content-Type': 'application/json'
         };
 
+        // Agregar Authorization header si existe
+        if (window.authService && window.authService.getAuthHeader()) {
+            headers['Authorization'] = window.authService.getAuthHeader();
+        }
+
         // Agregar CSRF token si existe
         if (this.csrfToken) {
             headers['X-CSRF-Token'] = this.csrfToken;
@@ -166,8 +171,8 @@ window.apiService = {
         try {
             console.log('🌐 API Request:', options.method, url);
 
-            // Adicionar credentials: 'include' para enviar cookies
-            const finalOptions = { ...options, credentials: 'include' };
+            // Usar Authorization header em vez de cookies
+            const finalOptions = { ...options };
 
             const response = await fetch(url, finalOptions);
             

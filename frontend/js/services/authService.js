@@ -6,6 +6,7 @@ class AuthService {
     constructor() {
         this.usuario = null;
         this.tipo = null;
+        this.token = null;  // Add token property
         console.log('🔐 AuthService inicializado para autenticação baseada em cookie.');
     }
 
@@ -27,6 +28,7 @@ class AuthService {
                 const data = response.data;
                 this.usuario = data.usuario;
                 this.tipo = data.tipo_usuario;
+                this.token = data.access_token;  // Armazenar o token
 
                 console.log('🔐 Login bem-sucedido. Sessão do usuário estabelecida:', {
                     usuario: this.usuario,
@@ -54,6 +56,7 @@ class AuthService {
     clearSession() {
         this.usuario = null;
         this.tipo = null;
+        this.token = null;  // Clear token
         console.log('🧹 Sessão do usuário limpa na memória.');
     }
 
@@ -156,6 +159,16 @@ class AuthService {
      */
     getUserType() {
         return this.tipo;
+    }
+
+    /**
+     * Obter cabeçalho de autorização para requisições
+     */
+    getAuthHeader() {
+        if (this.token) {
+            return `Bearer ${this.token}`;
+        }
+        return null;
     }
 }
 
