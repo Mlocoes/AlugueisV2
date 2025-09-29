@@ -192,8 +192,9 @@ async def login(request: Request, response: Response, login_data: LoginRequest, 
         key="access_token",
         value=access_token,
         httponly=True,
-        samesite="lax",  # Usar lax para desenvolvimento com domínios externos via HTTP
+        samesite=None,   # None para permitir cross-origin
         secure=False,    # False para desenvolvimento HTTP
+        domain=None,     # None para usar o domínio atual
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
 

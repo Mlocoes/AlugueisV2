@@ -16,7 +16,10 @@ console = Console()
 
 def run_command(command, capture_output=False, text=False, check=True):
     """Helper to run a shell command."""
-    return subprocess.run(command, capture_output=capture_output, text=text, check=check, shell=True)
+    if isinstance(command, str):
+        return subprocess.run(command, capture_output=capture_output, text=text, check=check, shell=True)
+    else:
+        return subprocess.run(command, capture_output=capture_output, text=text, check=check)
 
 
 def check_requirements():
@@ -120,26 +123,33 @@ def generate_env_files(config):
     """Generates the .env files for docker-compose and the backend."""
     console.print("[bold cyan][3/7] Gerando Arquivos de Configuração...[/bold cyan]")
 
-    # Gerar Secret Key
+    # Gerar Secret Keys
     secret_key = token_hex(32)
+    csrf_secret_key = token_hex(32)
 
-    # Definir a origem do CORS
+    # Definir as origens do CORS - múltiplas origens para desenvolvimento
+    cors_origins = []
     if config["USE_TRAEFIK"]:
-        # Para Traefik, usamos o domínio do frontend.
-        # O navegador pode adicionar a porta, então é mais seguro permitir o domínio.
-        # Protocolo https é importante.
-        cors_origin = f"https://{config['FRONTEND_DOMAIN']}"
+        # Para Traefik, usamos o domínio do frontend com https
+        cors_origins.append(f"https://{config['FRONTEND_DOMAIN']}")
+        cors_origins.append(f"http://{config['FRONTEND_DOMAIN']}:3000")  # Para desenvolvimento
     else:
-        # Para acesso local, usamos o IP e a porta 3000
-        cors_origin = f"http://{config['HOST_IP']}:3000"
+        # Para acesso local, múltiplas origens
+        cors_origins.append(f"http://{config['HOST_IP']}:3000")
+        cors_origins.append("http://localhost:3000")
+        cors_origins.append("http://127.0.0.1:3000")
+    
+    cors_origin_string = ",".join(cors_origins)
 
     # Conteúdo do backend/.env
     backend_env_content = f"""
 ENV=development
 SECRET_KEY={secret_key}
+CSRF_SECRET_KEY={csrf_secret_key}
 DEBUG=true
-CORS_ALLOW_ORIGINS={cors_origin}
-DATABASE_URL=postgresql+psycopg2://{config['POSTGRES_USER']}:{config['POSTGRES_PASSWORD']}@postgres_v2:5432/{config['POSTGRES_DB']}
+CORS_ALLOW_ORIGINS={cors_origin_string}
+CORS_ALLOW_CREDENTIALS=true
+DATABASE_URL=postgresql+psycopg2://{config['POSTGRES_USER']}:{config['POSTGRES_PASSWORD']}@alugueisV2_postgres:5432/{config['POSTGRES_DB']}
 """.strip()
 
     # Conteúdo do .env principal
@@ -149,8 +159,10 @@ POSTGRES_USER={config['POSTGRES_USER']}
 POSTGRES_PASSWORD={config['POSTGRES_PASSWORD']}
 ADMIN_USER={config['ADMIN_USER']}
 ADMIN_PASS={config['ADMIN_PASS']}
-DATABASE_URL=postgresql://{config['POSTGRES_USER']}:{config['POSTGRES_PASSWORD']}@postgres_v2:5432/{config['POSTGRES_DB']}
+DATABASE_URL=postgresql://{config['POSTGRES_USER']}:{config['POSTGRES_PASSWORD']}@alugueisV2_postgres:5432/{config['POSTGRES_DB']}
 SECRET_KEY={secret_key}
+CSRF_SECRET_KEY={csrf_secret_key}
+CORS_ALLOW_CREDENTIALS=true
 DEBUG=false
 FRONTEND_DOMAIN={config.get('FRONTEND_DOMAIN', 'localhost')}
 BACKEND_DOMAIN={config.get('BACKEND_DOMAIN', 'localhost')}
@@ -234,9 +246,9 @@ def wait_for_postgres(config):
         for _ in range(60):  # Tenta por até 120 segundos
             try:
                 # O nome do container é definido no docker-compose.yml
-                container_name = "postgres_v2"
+                container_name = "alugueisV2_postgres"
                 result = run_command(
-                    f"docker inspect -f '{{{{.State.Health.Status}}}}' {container_name}",
+                    ['docker', 'inspect', '-f', '{{.State.Health.Status}}', container_name],
                     capture_output=True, text=True, check=True
                 )
                 status = result.stdout.strip()
@@ -251,7 +263,7 @@ def wait_for_postgres(config):
             time.sleep(2)
 
     console.print("[bold red]❌ O container do PostgreSQL não ficou saudável a tempo.[/bold red]")
-    console.print("Verifique os logs do container com: [bold]docker compose logs postgres_v2[/bold]")
+    console.print("Verifique os logs do container com: [bold]docker compose logs alugueisV2_postgres[/bold]")
     exit(1)
 
 
@@ -259,33 +271,23 @@ def initialize_database(config):
     """Creates the admin user in the database."""
     console.print("[bold cyan][6/7] Inicializando Banco de Dados e Criando Admin...[/bold cyan]")
 
-    # Usar um container temporário para executar o script de hash
-    # Isso evita a necessidade de instalar dependências na máquina host.
+    # O usuário do banco já foi criado automaticamente pelo script 00_create_app_user.sh
+    # Agora só precisamos criar o usuário administrador da aplicação
+
     try:
         console.print("Gerando hash da senha do administrador...")
 
-        # Comando para gerar o hash de forma segura dentro de um container python
-        # Nota: O bcrypt é instalado no Dockerfile do backend, então podemos usar esse container.
-        backend_container = "backend_v2"
-
-        # Esperar um pouco para garantir que o backend_v2 esteja pronto para executar comandos
-        time.sleep(5)
-
-        hash_command = (
-            f"docker exec {backend_container} python -c \""
-            f"import bcrypt; "
-            f"pwd = '{config['ADMIN_PASS']}'.encode('utf-8'); "
-            f"hashed = bcrypt.hashpw(pwd, bcrypt.gensalt()); "
-            f"print(hashed.decode('utf-8'))\""
-        )
-
-        result = run_command(hash_command, capture_output=True, text=True, check=True)
-        hashed_password = result.stdout.strip()
+        # Gerar hash usando comando direto
+        import os
+        hash_cmd = f"docker exec alugueisV2_backend python -c \"from passlib.context import CryptContext; pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto'); print(pwd_context.hash('{config['ADMIN_PASS']}'))\""
+        result = os.popen(hash_cmd).read().strip()
+        hashed_password = result
+        
+        console.print("Hash gerado com sucesso.")
 
         console.print("Inserindo usuário administrador no banco de dados...")
 
-        # Comando SQL para inserir o usuário
-        # Usamos ON CONFLICT para evitar erros se o usuário já existir
+        # Comando SQL para inserir o usuário admin
         sql_command = (
             "INSERT INTO usuarios (usuario, senha, tipo_de_usuario) "
             f"VALUES ('{config['ADMIN_USER']}', '{hashed_password}', 'administrador') "
@@ -293,11 +295,13 @@ def initialize_database(config):
         )
 
         # Executa o comando psql dentro do container do postgres
-        psql_command = (
-            f"docker exec -e PGPASSWORD={config['POSTGRES_PASSWORD']} postgres_v2 "
-            f"psql -U {config['POSTGRES_USER']} -d {config['POSTGRES_DB']} -c \"{sql_command}\""
-        )
-
+        # Usar subprocess com lista para evitar problemas de escaping
+        psql_command = [
+            "docker", "exec", "-e", f"PGPASSWORD={config['POSTGRES_PASSWORD']}", 
+            "alugueisV2_postgres", "psql", "-U", config['POSTGRES_USER'], 
+            "-d", config['POSTGRES_DB'], "-c", sql_command
+        ]
+        
         run_command(psql_command, check=True)
 
         console.print("[bold green]Usuário administrador criado/verificado com sucesso![/bold green]\n")

@@ -3,7 +3,7 @@
 # Uso: docker-compose -f docker-compose.yml -f docker-compose.traefik.yml up -d
 
 services:
-  backend_v1:
+  backend_v2:
     ports: []  # Remover puertos expuestos cuando usa Traefik
     labels:
       - "traefik.enable=true"
@@ -19,7 +19,7 @@ services:
       - "traefik.http.middlewares.alugueisv1-cors.headers.addvaryheader=true"
       - "traefik.http.routers.alugueisv1-backend.middlewares=alugueisv1-cors@docker"
 
-  frontend_v1:
+  frontend_v2:
     ports: []  # Remover puertos expuestos cuando usa Traefik
     labels:
       - "traefik.enable=true"

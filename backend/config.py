@@ -60,11 +60,12 @@ logging.basicConfig(level=logging.INFO)
 logging.info(f"[CORS] Ambiente: {ENV}")
 logging.info(f"[CORS] ALLOW_ORIGINS: {ALLOW_ORIGINS}")
 
-# Controlar credenciais por variável (padrão: false em dev, true em prod)
+# Controlar credenciais por variável (padrão: true se usar cookies, false se wildcard)
 if os.getenv("CORS_ALLOW_CREDENTIALS") is not None:
     allow_credentials_effective = os.getenv("CORS_ALLOW_CREDENTIALS", "false").lower() == "true"
 else:
-    allow_credentials_effective = (ENV == "production")
+    # Permitir credentials por padrão, já que o sistema usa autenticação baseada em cookies
+    allow_credentials_effective = True
 
 # Se wildcard for usado, não permitir credenciais (requisito do navegador)
 if "*" in ALLOW_ORIGINS:
@@ -75,7 +76,7 @@ CORS_CONFIG = {
     "allow_origins": ALLOW_ORIGINS,
     "allow_credentials": allow_credentials_effective,
     "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    "allow_headers": ["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"]
+    "allow_headers": ["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With", "X-CSRF-Token"]
 }
 
 # Configurações de segredo e debug

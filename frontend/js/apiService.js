@@ -15,7 +15,8 @@ window.apiService = {
             hostname === '' ||
             hostname.startsWith('192.168.') ||
             hostname.startsWith('10.') ||
-            hostname.startsWith('172.');
+            hostname.startsWith('172.') ||
+            hostname === 'zeus.kronos.cloudns.ph';
         
         console.log('🌐 Detectando URL base - Hostname:', hostname, 'Port:', port, 'isLocalDevelopment:', isLocalDevelopment);
         
@@ -212,7 +213,7 @@ window.apiService = {
             };
 
         } catch (error) {
-            // Evitar logs duplicados para errores ya manejados específicamente
+            // Evitar logs duplicados para erros ja manejados especificamente
             if (!error.message.includes('HTTP error! status: 401') || !url.includes('/api/auth/')) {
                 console.error('❌ Error en la requisición:', error);
             }
