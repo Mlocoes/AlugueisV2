@@ -168,6 +168,9 @@ class ViewManager {
             // Activar vista
             this.currentView = viewId;
             
+            // Adicionado um pequeno atraso para garantir que o DOM seja atualizado antes de inicializar os módulos
+            await new Promise(resolve => setTimeout(resolve, 100)); // Aumentado para 100ms para mais segurança
+            
             // Inicializar módulos requeridos
             await this.initializeRequiredModules(view);
             

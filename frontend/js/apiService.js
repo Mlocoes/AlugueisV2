@@ -15,8 +15,7 @@ window.apiService = {
             hostname === '' ||
             hostname.startsWith('192.168.') ||
             hostname.startsWith('10.') ||
-            hostname.startsWith('172.') ||
-            hostname === 'zeus.kronos.cloudns.ph';
+            hostname.startsWith('172.');
         
         console.log('🌐 Detectando URL base - Hostname:', hostname, 'Port:', port, 'isLocalDevelopment:', isLocalDevelopment);
         

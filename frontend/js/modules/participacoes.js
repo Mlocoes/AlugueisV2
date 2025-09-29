@@ -323,17 +323,43 @@ class ParticipacoesModule {
 
             const body = modalEl.querySelector('#nv-body');
             const im = this.imoveis.find(i => String(i.id) === String(imovelId));
-            const tds = this.proprietarios.map(p => {
+            body.innerHTML = ''; // Limpar conteúdo existente
+
+            const tr = document.createElement('tr');
+            tr.dataset.imovel = im.id;
+
+            const imovelCell = document.createElement('td');
+            imovelCell.textContent = im.nome;
+            tr.appendChild(imovelCell);
+
+            this.proprietarios.forEach(p => {
                 const value = porImovel[im.id][p.id];
-                return `<td><input type="number" step="0.01" min="0" max="100" data-prop="${SecurityUtils.escapeHtml(p.id)}" class="form-control form-control-sm" style="font-size:0.80rem;" value="${SecurityUtils.escapeHtml(value)}" /></td>`;
-            }).join('');
-            SecurityUtils.setSafeHTML(body, `<tr data-imovel="${SecurityUtils.escapeHtml(im.id)}"><td>${SecurityUtils.escapeHtml(im.nome)}</td>${tds}<td class="nv-total">0%</td></tr>`);
+                const cell = document.createElement('td');
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.step = '0.01';
+                input.min = '0';
+                input.max = '100';
+                input.dataset.prop = p.id;
+                input.className = 'form-control form-control-sm';
+                input.style.fontSize = '0.80rem';
+                input.value = value;
+                cell.appendChild(input);
+                tr.appendChild(cell);
+            });
+
+            const totalCell = document.createElement('td');
+            totalCell.className = 'nv-total';
+            totalCell.textContent = '0%';
+            tr.appendChild(totalCell);
+
+            body.appendChild(tr);
 
             const recalc = () => {
                 let soma = 0;
                 body.querySelectorAll('input[data-prop]').forEach(inp => { soma += Number(inp.value || 0); });
                 const somaRounded = Math.round(soma);
-                body.querySelector('.nv-total').textContent = somaRounded + '%';
+                modalEl.querySelector('.nv-total').textContent = somaRounded + '%';
                 return { soma, somaRounded };
             };
             body.addEventListener('input', recalc);
