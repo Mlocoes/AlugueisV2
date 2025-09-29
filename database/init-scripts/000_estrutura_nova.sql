@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS proprietarios (
     conta VARCHAR(30),
     tipo_conta VARCHAR(20),
     observacoes TEXT,
+    ativo BOOLEAN DEFAULT TRUE,
     data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
