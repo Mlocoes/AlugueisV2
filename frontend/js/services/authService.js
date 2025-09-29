@@ -170,6 +170,16 @@ class AuthService {
         }
         return null;
     }
+
+    /**
+     * Obter objeto de cabeçalho de autorização para requisições
+     */
+    getAuthHeaderObject() {
+        if (this.token) {
+            return { 'Authorization': `Bearer ${this.token}` };
+        }
+        return {};
+    }
 }
 
 // Inicializar serviço globalmente

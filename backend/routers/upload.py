@@ -885,6 +885,42 @@ async def import_data(file_id: str, db: Session = Depends(get_db)):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Erro interno ao importar dados: {str(e)}")
 
+async def salvar_historico_participacoes(db: Session) -> str:
+    """
+    Salva o estado atual de todas as participações ativas na tabela de histórico
+    e retorna o ID da nova versão.
+    """
+    current_timestamp = datetime.utcnow()
+    new_version_id = str(uuid.uuid4())
+    
+    # Obter todas as participações ativas
+    participacoes_ativas = db.query(Participacion).filter(Participacion.ativo == True).all()
+    
+    if not participacoes_ativas:
+        return new_version_id # Nenhuma participação para historiar
+
+    # Criar registros de histórico
+    historico_records = []
+    for part in participacoes_ativas:
+        historico_records.append(
+            HistoricoParticipacao(
+                versao_id=new_version_id,
+                data_versao=current_timestamp,
+                imovel_id=part.imovel_id,
+                proprietario_id=part.proprietario_id,
+                porcentagem=part.porcentagem,
+                data_registro_original=part.data_registro,
+                ativo=part.ativo
+            )
+        )
+    
+    # Inserir em lote no banco de dados
+    if historico_records:
+        db.bulk_save_objects(historico_records)
+        db.commit()
+    
+    return new_version_id
+
 async def import_propietarios(df: pd.DataFrame, db: Session) -> int:
     """Importar e atualizar proprietários desde DataFrame com sanitização."""
     # Sanitizar DataFrame
@@ -1192,116 +1228,69 @@ async def import_participacoes(df: pd.DataFrame, db: Session) -> int:
     versao_id = await salvar_historico_participacoes(db)
     print(f"Criada versão histórica: {versao_id}")
     
-    errors = []
+    df = sanitize_dataframe(df)
+    new_participacoes = []
     count = 0
 
-    # Mapeamento de colunas para maior flexibilidade
+    # Mapeamento de colunas
     column_mapping = {
         'imovel_id': ['imovel_id', 'Imovel ID', 'IMOVEL_ID', 'inmueble_id', 'Inmueble ID', 'INMUEBLE_ID'],
         'proprietario_id': ['proprietario_id', 'Proprietario ID', 'PROPRIETARIO_ID', 'propietario_id', 'Propietario ID', 'PROPIETARIO_ID'],
         'porcentagem': ['porcentagem', 'Porcentagem', 'PORCENTAGEM', 'participacao', 'Participacao', 'PARTICIPACION']
     }
-    
-    # Normalizar nomes de colunas
+
     def get_column_value(row, field_name):
         possible_names = column_mapping.get(field_name, [field_name])
         for name in possible_names:
-            if name in row.index:
-                return row.get(name)
+            if name in row.index and pd.notna(row[name]):
+                return row[name]
         return None
 
-    # PASSO 1: Criar histórico completo das participações existentes
-    existing_participacoes = db.query(Participacion).filter(Participacion.ativo == True).all()
+    # Desativar todas as participações existentes que serão atualizadas
+    imovel_ids_in_df = pd.to_numeric(df.apply(lambda row: get_column_value(row, 'imovel_id'), axis=1), errors='coerce').dropna().unique().tolist()
+    if imovel_ids_in_df:
+        db.query(Participacion).filter(
+            Participacion.imovel_id.in_(imovel_ids_in_df),
+            Participacion.ativo == True
+        ).update({"ativo": False}, synchronize_session=False)
+        db.commit()
+        print(f"Desativadas participações existentes para {len(imovel_ids_in_df)} imóveis.")
 
-    if existing_participacoes:
-        # Criar novas versões de TODAS as participações existentes com nova data_registro
-        current_timestamp = datetime.utcnow()
-        historical_participacoes = []
+    current_timestamp = datetime.utcnow()
+    for index, row in df.iterrows():
+        try:
+            imovel_id = get_column_value(row, 'imovel_id')
+            proprietario_id = get_column_value(row, 'proprietario_id')
+            porcentagem = get_column_value(row, 'porcentagem')
 
-        for existing_part in existing_participacoes:
-            historical_participacoes.append({
-                "imovel_id": existing_part.imovel_id,
-                "proprietario_id": existing_part.proprietario_id,
-                "porcentagem": round(float(existing_part.porcentagem), 8),
+            if not all([imovel_id, proprietario_id, porcentagem]):
+                print(f"Linha {index+2}: Dados incompletos, pulando.")
+                continue
+
+            # Validações (poderiam ser mais robustas)
+            imovel_id = int(imovel_id)
+            proprietario_id = int(proprietario_id)
+            porcentagem = float(porcentagem)
+
+            if not (0 < porcentagem <= 100):
+                 print(f"Linha {index+2}: Porcentagem inválida ({porcentagem}), pulando.")
+                 continue
+
+            new_participacoes.append({
+                "imovel_id": imovel_id,
+                "proprietario_id": proprietario_id,
+                "porcentagem": porcentagem,
                 "ativo": True,
                 "data_registro": current_timestamp
             })
-
-        # Inserir histórico completo
-        if historical_participacoes:
-            db.bulk_insert_mappings(Participacion, historical_participacoes)
-            print(f"Criado histórico de {len(historical_participacoes)} participações existentes")
-
-    # PASSO 2: Validar e processar novas participações
-    # Obter imóveis existentes por nome
-    nomes_imoveis = df['Nome'].dropna().unique().tolist()
-    existing_imoveis = {i.nome: i for i in db.query(Inmueble).filter(Inmueble.nome.in_(nomes_imoveis)).all()}
-    
-    # Detectar formato: Nnnn* ou nomes reais
-    nnnn_columns = [col for col in df.columns if col.startswith('Nnnn')]
-    proprietario_nomes_conhecidos = ['Jandira', 'Manoel', 'Fabio', 'Carla', 'Armando', 'Suely', 'Felipe', 'Adriana', 'Regina', 'Mario']
-    proprietario_columns_reais = [col for col in df.columns if any(nome in col for nome in proprietario_nomes_conhecidos)]
-    
-    if len(nnnn_columns) > 0:
-        # Formato Nnnn*: usar mapeamento ordinal
-        proprietarios_ordenados = db.query(Propietario).order_by(Propietario.nome, Propietario.sobrenome).all()
-        proprietario_mapping = {}
-        for i, col in enumerate(nnnn_columns):
-            if i < len(proprietarios_ordenados):
-                proprietario_mapping[col] = proprietarios_ordenados[i]
-    elif len(proprietario_columns_reais) > 0:
-        # Formato com nomes reais: mapear pelo nome
-        proprietario_nomes = {p.nome + ' ' + (p.sobrenome or ''): p for p in db.query(Propietario).all()}
-        proprietario_nomes.update({p.nome: p for p in db.query(Propietario).all()})  # também sem sobrenome
-        
-        proprietario_mapping = {}
-        for col in proprietario_columns_reais:
-            # Tentar encontrar proprietário pelo nome da coluna
-            proprietario = proprietario_nomes.get(col.strip())
-            if proprietario:
-                proprietario_mapping[col] = proprietario
-            else:
-                print(f"Proprietário não encontrado para coluna: {col}")
-    else:
-        print("Nenhuma coluna de proprietário válida encontrada")
-        return 0
-    
-    # Processar cada linha do DataFrame
-    current_timestamp = datetime.utcnow()
-    for _, row in df.iterrows():
-        try:
-            nome_imovel = str(row.get('Nome', '')).strip()
-            imovel = existing_imoveis.get(nome_imovel)
-            
-            if not imovel:
-                print(f"Imóvel não encontrado: {nome_imovel}")
-                continue
-            
-            # Processar cada coluna de proprietário
-            for col, proprietario in proprietario_mapping.items():
-                porcentagem = row.get(col, 0)
-                
-                if pd.isna(porcentagem) or porcentagem <= 0:
-                    continue
-                
-                # Sempre criar nova participação (histórico)
-                new_participacoes.append({
-                    "imovel_id": imovel.id,
-                    "proprietario_id": proprietario.id,
-                    "porcentagem": round(float(porcentagem), 8),
-                    "ativo": True,
-                    "data_registro": current_timestamp
-                })
-                    
-        except Exception as e:
-            print(f"Erro processando participação: {e}")
+        except (ValueError, TypeError) as e:
+            print(f"Erro processando linha {index+2}: {e}")
             continue
-    
-    # Executar operações em lote
+
     if new_participacoes:
         db.bulk_insert_mappings(Participacion, new_participacoes)
-        count += len(new_participacoes)
-        print(f"Inseridas {len(new_participacoes)} novas participações")
+        count = len(new_participacoes)
+        print(f"Inseridas {count} novas participações.")
     
     return count
 

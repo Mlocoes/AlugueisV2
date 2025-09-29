@@ -327,13 +327,13 @@ class ParticipacoesModule {
                 const value = porImovel[im.id][p.id];
                 return `<td><input type="number" step="0.01" min="0" max="100" data-prop="${SecurityUtils.escapeHtml(p.id)}" class="form-control form-control-sm" style="font-size:0.80rem;" value="${SecurityUtils.escapeHtml(value)}" /></td>`;
             }).join('');
-            SecurityUtils.setSafeHTML(body, `<tr data-imovel="${SecurityUtils.escapeHtml(im.id)}"><td>${SecurityUtils.escapeHtml(im.nome)}</td>${tds}<td id="nv-total">0%</td></tr>`);
+            SecurityUtils.setSafeHTML(body, `<tr data-imovel="${SecurityUtils.escapeHtml(im.id)}"><td>${SecurityUtils.escapeHtml(im.nome)}</td>${tds}<td class="nv-total">0%</td></tr>`);
 
             const recalc = () => {
                 let soma = 0;
                 body.querySelectorAll('input[data-prop]').forEach(inp => { soma += Number(inp.value || 0); });
                 const somaRounded = Math.round(soma);
-                body.querySelector('#nv-total').textContent = somaRounded + '%';
+                body.querySelector('.nv-total').textContent = somaRounded + '%';
                 return { soma, somaRounded };
             };
             body.addEventListener('input', recalc);
