@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS proprietarios (
     conta VARCHAR(30),
     tipo_conta VARCHAR(20),
     observacoes TEXT,
+    ativo BOOLEAN DEFAULT TRUE,
     data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -151,9 +152,18 @@ COMMENT ON TABLE transferencias IS 'Tabela para armazenar transferências cadast
 COMMENT ON COLUMN transferencias.id_proprietarios IS 'JSON array com objetos {id: number, valor: number}';
 
 -- CONSTRAINT ÚNICA PARA HISTÓRICO DE PARTICIPAÇÕES
-ALTER TABLE historico_participacoes
-ADD CONSTRAINT IF NOT EXISTS uniq_historico_participacao_versao
-UNIQUE (versao_id, imovel_id, proprietario_id);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'uniq_historico_participacao_versao'
+        AND table_name = 'historico_participacoes'
+    ) THEN
+        ALTER TABLE historico_participacoes
+        ADD CONSTRAINT uniq_historico_participacao_versao
+        UNIQUE (versao_id, imovel_id, proprietario_id);
+    END IF;
+END $$;
 
 -- FUNÇÃO OPTIMIZADA PARA CÁLCULO DE TAXA (sin usar campo ativo eliminado)
 CREATE OR REPLACE FUNCTION calcular_taxa_proprietario_automatico()

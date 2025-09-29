@@ -100,7 +100,7 @@ AlugueisV2/
 
 ### Instalação Interativa
 
-O sistema agora conta com um script de instalação interativo que cuida de toda a configuração para você.
+O sistema conta com um **instalador totalmente automático** que cuida de toda a configuração para você, desde a criação do usuário do banco de dados até a configuração dos containers Docker.
 
 1. **Clone o repositório**
    ```bash
@@ -115,7 +115,13 @@ O sistema agora conta com um script de instalação interativo que cuida de toda
    *Este passo é necessário para a interface bonita do instalador.*
 
 3. **Execute o script de instalação**
-   O script irá verificar os pré-requisitos, solicitar as configurações necessárias (usuário admin, banco de dados, domínios, etc.) e configurar o sistema automaticamente.
+   O script irá:
+   - ✅ Verificar pré-requisitos (Docker, Docker Compose)
+   - ✅ Solicitar configurações (usuário admin, banco, domínios)
+   - ✅ Gerar arquivos `.env` automaticamente
+   - ✅ Construir e iniciar containers Docker
+   - ✅ Aguardar banco de dados ficar saudável
+   - ✅ Criar usuário administrador automaticamente
    ```bash
    python3 scripts/install.py
    ```
@@ -123,6 +129,8 @@ O sistema agora conta com um script de instalação interativo que cuida de toda
 
 4. **Acesse a aplicação**
    Ao final da instalação, o script exibirá um resumo com todos os URLs de acesso para o frontend, backend e o painel de gerenciamento do banco de dados, junto com as credenciais do usuário administrador que você configurou.
+
+**🎉 O instalador é totalmente automático - você só precisa executar o comando e responder às perguntas de configuração!**
 
 ---
 
@@ -250,7 +258,7 @@ Acesse a documentação interativa da API em [http://192.168.0.7:8000/docs](http
 - Para **instalaciones existentes**: ejecutar `database/migrations/009_fix_trigger_taxa_proprietario.sql`
 
 ```sql
--- Aplicar corrección manualmente si necesario:
+-- Aplicar correção manualmente se necessario:
 CREATE OR REPLACE FUNCTION calcular_taxa_proprietario_automatico()
 RETURNS TRIGGER AS $$
 BEGIN

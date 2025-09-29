@@ -53,6 +53,7 @@ class LoginRequest(BaseModel):
 class UserResponse(BaseModel):
     usuario: str
     tipo_usuario: str
+    access_token: str
 
 class TokenData(BaseModel):
     usuario: Optional[str] = None
@@ -192,14 +193,16 @@ async def login(request: Request, response: Response, login_data: LoginRequest, 
         key="access_token",
         value=access_token,
         httponly=True,
-        samesite="lax",  # Usar lax para desenvolvimento com domínios externos via HTTP
+        samesite=None,   # None para permitir cross-origin
         secure=False,    # False para desenvolvimento HTTP
+        domain=None,     # None para usar o domínio atual
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
 
     return UserResponse(
         usuario=usuario.usuario,
-        tipo_usuario=usuario.tipo_de_usuario
+        tipo_usuario=usuario.tipo_de_usuario,
+        access_token=access_token
     )
 
 @router.get("/verify")

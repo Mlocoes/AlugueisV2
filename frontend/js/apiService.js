@@ -15,7 +15,8 @@ window.apiService = {
             hostname === '' ||
             hostname.startsWith('192.168.') ||
             hostname.startsWith('10.') ||
-            hostname.startsWith('172.');
+            hostname.startsWith('172.') ||
+            hostname === 'zeus.kronos.cloudns.ph';
         
         console.log('🌐 Detectando URL base - Hostname:', hostname, 'Port:', port, 'isLocalDevelopment:', isLocalDevelopment);
         
@@ -36,6 +37,11 @@ window.apiService = {
         const headers = {
             'Content-Type': 'application/json'
         };
+
+        // Agregar Authorization header si existe
+        if (window.authService && window.authService.getAuthHeader()) {
+            headers['Authorization'] = window.authService.getAuthHeader();
+        }
 
         // Agregar CSRF token si existe
         if (this.csrfToken) {
@@ -165,8 +171,8 @@ window.apiService = {
         try {
             console.log('🌐 API Request:', options.method, url);
 
-            // Adicionar credentials: 'include' para enviar cookies
-            const finalOptions = { ...options, credentials: 'include' };
+            // Usar Authorization header em vez de cookies
+            const finalOptions = { ...options };
 
             const response = await fetch(url, finalOptions);
             
@@ -212,7 +218,7 @@ window.apiService = {
             };
 
         } catch (error) {
-            // Evitar logs duplicados para errores ya manejados específicamente
+            // Evitar logs duplicados para erros ja manejados especificamente
             if (!error.message.includes('HTTP error! status: 401') || !url.includes('/api/auth/')) {
                 console.error('❌ Error en la requisición:', error);
             }

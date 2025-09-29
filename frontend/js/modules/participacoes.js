@@ -236,8 +236,76 @@ class ParticipacoesModule {
         `;
         document.body.insertAdjacentHTML('beforeend', modalHtml);
 
+// feature/mobile-interface
         const modalInstance = document.getElementById(modalId);
         const totalEl = modalInstance.querySelector('#total-percent');
+
+            const body = modalEl.querySelector('#nv-body');
+            const im = this.imoveis.find(i => String(i.id) === String(imovelId));
+            const tds = this.proprietarios.map(p => {
+                const value = porImovel[im.id][p.id];
+                return `<td><input type="number" step="0.01" min="0" max="100" data-prop="${SecurityUtils.escapeHtml(p.id)}" class="form-control form-control-sm" style="font-size:0.80rem;" value="${SecurityUtils.escapeHtml(value)}" /></td>`;
+            }).join('');
+            SecurityUtils.setSafeHTML(body, `<tr data-imovel="${SecurityUtils.escapeHtml(im.id)}"><td>${SecurityUtils.escapeHtml(im.nome)}</td>${tds}<td class="nv-total">0%</td></tr>`);
+
+            const recalc = () => {
+                let soma = 0;
+                body.querySelectorAll('input[data-prop]').forEach(inp => { soma += Number(inp.value || 0); });
+                const somaRounded = Math.round(soma);
+                body.querySelector('.nv-total').textContent = somaRounded + '%';
+                return { soma, somaRounded };
+            };
+            body.addEventListener('input', recalc);
+            recalc();
+
+            const salvar = async () => {
+                // Normalizar apenas o imóvel editado
+                const edited = {};
+                body.querySelectorAll('input[data-prop]').forEach(inp => {
+                    const pid = Number(inp.getAttribute('data-prop'));
+                    edited[pid] = Number(inp.value || 0);
+                });
+                // Construir payload: copiar conjunto atual, substituindo apenas o imóvel editado
+                const payload = { participacoes: [] };
+                for (const imovel of this.imoveis) {
+                    for (const prop of this.proprietarios) {
+                        let val;
+                        if (imovel.id === im.id && edited[prop.id] != null) {
+                            val = edited[prop.id];
+                        } else {
+                            const part = this.participacoes.find(p => p.imovel_id === imovel.id && p.proprietario_id === prop.id);
+                            val = part ? (part.porcentagem < 1 ? part.porcentagem * 100 : part.porcentagem) : 0;
+                        }
+                        payload.participacoes.push({ imovel_id: imovel.id, proprietario_id: prop.id, porcentagem: val });
+                    }
+                }
+                // Enviar ao backend
+                try {
+                    this.uiManager.showLoading('Salvando nova versão...');
+                    const resp = await this.apiService.createNovaVersaoParticipacoes(payload);
+                    this.uiManager.hideLoading();
+                    if (resp && (resp.success || resp.mensagem || resp.message)) {
+                        this.uiManager.showSuccess('Nova versão criada com sucesso');
+                        // Aplicar focus management antes de cerrar modal exitosamente
+                        if (document.activeElement) document.activeElement.blur();
+                        document.body.focus();
+                        if (window.bootstrap && window.bootstrap.Modal) {
+                            const bs = bootstrap.Modal.getOrCreateInstance(modalEl);
+                            bs.hide();
+                        } else {
+                            modalEl.style.display = 'none'; modalEl.classList.remove('show');
+                        }
+                        // Recarregar dados após sucesso
+                        await this.load();
+                    } else {
+                        this.uiManager.showError('Erro ao criar nova versão: Resposta inesperada do servidor');
+                    }
+                } catch (error) {
+                    this.uiManager.showError('Erro ao criar nova versão: ' + error.message);
+                    this.uiManager.hideLoading();
+                }
+            };
+// main
 
         const updateTotal = () => {
             let total = 0;

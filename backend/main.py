@@ -151,8 +151,19 @@ async def api_health_check(db: Session = Depends(get_db)):
 
 # CSRF Protection endpoints
 @app.get("/api/csrf-token")
-def get_csrf_token(csrf_protect: CsrfProtect = Depends()):
-    token, secret = csrf_protect.generate_csrf_tokens()
+def get_csrf_token():
+    # Generate CSRF token without requiring existing validation (for initial requests)
+    from itsdangerous import URLSafeTimedSerializer
+    from config import SECRET_KEY
+    from dotenv import load_dotenv
+    import os
+    load_dotenv()
+    csrf_secret = os.getenv("CSRF_SECRET_KEY")
+    if not csrf_secret:
+        raise RuntimeError("CSRF_SECRET_KEY must be set")
+    
+    serializer = URLSafeTimedSerializer(csrf_secret, salt="fastapi-csrf-token")
+    token = serializer.dumps({"csrf": "token"})
     return {"csrf_token": token}
 
 # O middleware fastapi-csrf-protect agora lida com a verificação de CSRF.
