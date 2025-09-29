@@ -200,7 +200,7 @@ class SistemaAlugueisApp {
         if (typeof ProprietariosModule !== 'undefined') {
             this.modules.proprietarios = new ProprietariosModule();
             window.proprietariosModule = this.modules.proprietarios;
-            window.proprietariosModule.load(); // Call load() method
+            // window.proprietariosModule.load(); // Call load() method
             console.log('✅ Módulo Proprietarios criado e carregado');
         }
 
