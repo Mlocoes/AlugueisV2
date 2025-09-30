@@ -35,6 +35,9 @@ class AuthService {
                     tipo: this.tipo
                 });
 
+                // Iniciar validação periódica da sessão
+                this.startSessionValidation();
+
                 return {
                     success: true,
                     usuario: this.usuario,
@@ -57,6 +60,10 @@ class AuthService {
         this.usuario = null;
         this.tipo = null;
         this.token = null;  // Clear token
+        
+        // Parar validação periódica da sessão
+        this.stopSessionValidation();
+        
         console.log('🧹 Sessão do usuário limpa na memória.');
     }
 
@@ -95,9 +102,21 @@ class AuthService {
      * Verifica se o usuário está autenticado na memória.
      */
     isAuthenticated() {
-        const authenticated = !!this.usuario;
-        console.log(`🔍 Verificação de autenticação: ${authenticated ? 'Autenticado' : 'Não autenticado'}`);
-        return authenticated;
+        // Primeiro verificar se há dados na memória
+        if (!this.usuario || !this.token) {
+            console.log(`🔍 Verificação de autenticação: Não autenticado (sem dados)`);
+            return false;
+        }
+        
+        // Verificar se o token está expirado
+        if (this.isTokenExpired()) {
+            console.log(`🔍 Verificação de autenticação: Token expirado`);
+            this.clearSession();
+            return false;
+        }
+        
+        console.log(`🔍 Verificação de autenticação: Autenticado`);
+        return true;
     }
 
     /**
@@ -148,6 +167,33 @@ class AuthService {
     }
 
     /**
+     * Iniciar validação periódica da sessão
+     */
+    startSessionValidation() {
+        // Verificar a cada 5 minutos se a sessão ainda é válida
+        this.sessionCheckInterval = setInterval(async () => {
+            if (this.isAuthenticated()) {
+                console.log('🔄 Verificação periódica da sessão...');
+                const isValid = await this.validateSession();
+                if (!isValid) {
+                    console.warn('⚠️ Sessão expirada durante verificação periódica. Forçando recarga.');
+                    window.location.reload();
+                }
+            }
+        }, 5 * 60 * 1000); // 5 minutos
+    }
+
+    /**
+     * Parar validação periódica da sessão
+     */
+    stopSessionValidation() {
+        if (this.sessionCheckInterval) {
+            clearInterval(this.sessionCheckInterval);
+            this.sessionCheckInterval = null;
+        }
+    }
+
+    /**
      * Verificar se o usuário é administrador
      */
     isAdmin() {
@@ -179,6 +225,29 @@ class AuthService {
             return { 'Authorization': `Bearer ${this.token}` };
         }
         return {};
+    }
+
+    /**
+     * Verificar se o token JWT está expirado
+     */
+    isTokenExpired() {
+        if (!this.token) return true;
+        
+        try {
+            // Decodificar o payload do JWT (formato: header.payload.signature)
+            const payload = this.token.split('.')[1];
+            const decodedPayload = JSON.parse(atob(payload));
+            
+            // Verificar se o token tem expiração
+            if (!decodedPayload.exp) return false; // Token sem expiração
+            
+            // Comparar com o tempo atual (em segundos)
+            const currentTime = Math.floor(Date.now() / 1000);
+            return decodedPayload.exp < currentTime;
+        } catch (error) {
+            console.warn('Erro ao verificar expiração do token:', error);
+            return true; // Considerar expirado se não conseguir verificar
+        }
     }
 }
 
