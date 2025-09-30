@@ -123,8 +123,14 @@ class ParticipacoesModule {
 
     renderMobileCards() {
         const isAdmin = window.authService && window.authService.isAdmin();
+        const targetVersaoId = this.selectedData === 'ativo' ? null : this.selectedData;
+
         const cardsHtml = this.imoveis.map(imovel => {
-            const participacoesDoImovel = this.participacoes.filter(p => p.imovel_id === imovel.id && p.porcentagem > 0);
+            const participacoesDoImovel = this.participacoes.filter(p =>
+                p.imovel_id === imovel.id &&
+                p.porcentagem > 0 &&
+                p.versao_id === targetVersaoId
+            );
             if (participacoesDoImovel.length === 0) return '';
 
             // Using list-group for a cleaner look
