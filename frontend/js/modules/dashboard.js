@@ -81,12 +81,20 @@ class DashboardModule {
     }
 
     createIncomeChart() {
-        const canvas = document.getElementById('ingresosChart');
-        if (!canvas) {
-            console.error("Elemento canvas 'ingresosChart' não encontrado.");
-            return;
-        }
+        const waitForCanvas = (retries = 0) => {
+            const canvas = document.getElementById('ingresosChart');
+            if (canvas) {
+                this.renderIncomeChart(canvas);
+            } else if (retries < 10) {
+                setTimeout(() => waitForCanvas(retries + 1), 100);
+            } else {
+                console.error("Elemento canvas 'ingresosChart' não encontrado após múltiplas tentativas.");
+            }
+        };
+        waitForCanvas();
+    }
 
+    renderIncomeChart(canvas) {
         const { income_chart_data } = this.summaryData;
         if (!income_chart_data || !income_chart_data.labels || !income_chart_data.values) {
             console.error("Dados para o gráfico de receitas estão incompletos.");
