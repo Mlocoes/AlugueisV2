@@ -21,24 +21,54 @@ class ExtrasManager {
         }
     }
     confirmarExclusao(tipo, id, nome) {
-    console.log('[DEBUG] Entrando en confirmarExclusao:', { tipo, id, nome });
+        console.log('[DEBUG] Entrando en confirmarExclusao:', { tipo, id, nome });
         console.log('🗑️ Iniciando confirmação de exclusão:', { tipo, id, nome });
-        this.exclusaoTipo = tipo;
-        this.exclusaoId = id;
-        this.exclusaoNome = nome;
-        const modalMsg = document.getElementById('modal-confirmar-exclusao-extras-msg');
-        if (modalMsg) {
-            if (tipo === 'alias') {
-                modalMsg.textContent = `Tem certeza que deseja excluir o alias "${nome}"? Esta ação não pode ser desfeita.`;
-            } else if (tipo === 'transferencia') {
-                modalMsg.textContent = `Tem certeza que deseja excluir a transferência "${nome}"? Esta ação não pode ser desfeita.`;
-            } else {
-                modalMsg.textContent = 'Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.';
-            }
-        }
+        
         // Mostrar el modal de confirmación
         const modalEl = document.getElementById('modal-confirmar-exclusao-extras');
         if (modalEl) {
+            const modalMsg = document.getElementById('modal-confirmar-exclusao-extras-msg');
+            if (modalMsg) {
+                if (tipo === 'alias') {
+                    modalMsg.textContent = `Tem certeza que deseja excluir o alias "${nome}"? Esta ação não pode ser desfeita.`;
+                } else if (tipo === 'transferencia') {
+                    modalMsg.textContent = `Tem certeza que deseja excluir a transferência "${nome}"? Esta ação não pode ser desfeita.`;
+                } else {
+                    modalMsg.textContent = 'Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.';
+                }
+            }
+            
+            // Configurar el event listener con closure para capturar los parámetros
+            const btnConfirmarExclusao = document.getElementById('btn-confirmar-exclusao-extras');
+            if (btnConfirmarExclusao) {
+                // Remover listener anterior si existe
+                if (this._exclusaoListener) {
+                    btnConfirmarExclusao.removeEventListener('click', this._exclusaoListener);
+                }
+                
+                // Crear nuevo listener com closure
+                this._exclusaoListener = async (e) => {
+                    console.log('[DEBUG] Click en btn-confirmar-exclusao-extras:', { tipo, id });
+                    e.stopImmediatePropagation();
+                    btnConfirmarExclusao.removeEventListener('click', this._exclusaoListener);
+                    console.log('🔥 Ejecutando exclusão:', { tipo, id });
+                    try {
+                        if (tipo === 'alias') {
+                            await this.excluirAlias(id);
+                        } else if (tipo === 'transferencia') {
+                            await this.excluirTransferencia(id);
+                        }
+                        // Fechar modal após exclusão
+                        this.safeCloseModal('modal-confirmar-exclusao-extras', 'btn-confirmar-exclusao-extras');
+                    } catch (error) {
+                        console.error('❌ Erro durante exclusão:', error);
+                        this.showError('Erro ao excluir: ' + error.message);
+                    }
+                };
+                
+                btnConfirmarExclusao.addEventListener('click', this._exclusaoListener);
+            }
+            
             const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
             modalInstance.show();
         }
@@ -54,6 +84,10 @@ class ExtrasManager {
         this.allProprietarios = [];
         this.initialized = false;
         this.pendingOperations = new Set();
+        // Propriedades para exclusão
+        this.exclusaoTipo = null;
+        this.exclusaoId = null;
+        this.exclusaoNome = null;
         // Binding de métodos
         this.load = this.load.bind(this);
         this.loadExtras = this.loadExtras.bind(this);
@@ -66,44 +100,6 @@ class ExtrasManager {
      * Inicializar eventos
      */
     setupEvents() {
-        // Botón de confirmar exclusão no modal
-        const btnConfirmarExclusao = document.getElementById('btn-confirmar-exclusao-extras');
-        const modalExclusao = document.getElementById('modal-confirmar-exclusao-extras');
-        if (btnConfirmarExclusao && modalExclusao) {
-            // Listener para mostrar el modal: vincular el evento solo cuando se muestra
-            modalExclusao.addEventListener('shown.bs.modal', () => {
-                // Eliminar listener anterior si existe
-                if (this._exclusaoListener) {
-                    btnConfirmarExclusao.removeEventListener('click', this._exclusaoListener);
-                }
-                this._exclusaoListener = async (e) => {
-                    console.log('[DEBUG] Click en btn-confirmar-exclusao-extras:', { tipo: this.exclusaoTipo, id: this.exclusaoId });
-                    // Detener propagación y eliminar listener inmediatamente
-                    e.stopImmediatePropagation();
-                    btnConfirmarExclusao.removeEventListener('click', this._exclusaoListener);
-                    console.log('🔥 Ejecutando exclusão:', { tipo: this.exclusaoTipo, id: this.exclusaoId });
-                    try {
-                        if (this.exclusaoTipo === 'alias') {
-                            await this.excluirAlias(this.exclusaoId);
-                        } else if (this.exclusaoTipo === 'transferencia') {
-                            await this.excluirTransferencia(this.exclusaoId);
-                        }
-                        // Fechar modal após exclusão
-                        this.safeCloseModal('modal-confirmar-exclusao-extras', 'btn-confirmar-exclusao-extras');
-                    } catch (error) {
-                        console.error('❌ Erro durante exclusão:', error);
-                        this.showError('Erro ao excluir: ' + error.message);
-                    }
-                };
-                btnConfirmarExclusao.addEventListener('click', this._exclusaoListener);
-            });
-            // Listener para ocultar el modal: eliminar el evento
-            modalExclusao.addEventListener('hidden.bs.modal', () => {
-                if (this._exclusaoListener) {
-                    btnConfirmarExclusao.removeEventListener('click', this._exclusaoListener);
-                }
-            });
-        }
         // Botões principais
         document.getElementById('btn-novo-alias')?.addEventListener('click', () => {
             this.showAliasModal();
@@ -926,8 +922,18 @@ class ExtrasManager {
 
             console.log('💾 Salvando transferência:', { aliasId, nomeTransferencia, dataCriacao, dataFim, proprietarios });
 
-            // Calcular valor total
-            const valorTotal = proprietarios.reduce((sum, prop) => sum + prop.valor, 0);
+            // Calcular valor total da transferência (soma dos valores absolutos)
+            const valorTotal = proprietarios.reduce((sum, p) => sum + Math.abs(p.valor), 0);
+
+            // Verificar se é edição ou criação usando campo hidden
+            const form = document.getElementById('form-transferencias');
+            const transferenciaIdInput = form.querySelector('input[name="transferencia_id"]');
+            const transferenciaId = transferenciaIdInput ? transferenciaIdInput.value : null;
+
+            console.log('🔍 Verificando modo de salvamento:', {
+                transferenciaId: transferenciaId,
+                modo: transferenciaId ? 'EDIÇÃO' : 'CRIAÇÃO'
+            });
 
             // Preparar dados para envio
             const transferenciaData = {
@@ -940,16 +946,11 @@ class ExtrasManager {
             };
 
             let response;
-            console.log('🔍 Verificando modo de salvamento:', {
-                currentTransferencia: this.currentTransferencia,
-                currentTransferenciaId: this.currentTransferencia?.id,
-                modo: this.currentTransferencia ? 'EDIÇÃO' : 'CRIAÇÃO'
-            });
             
-            if (this.currentTransferencia) {
+            if (transferenciaId) {
                 // Atualizar transferência existente
-                console.log('✏️ Fazendo PUT para editar transferência ID:', this.currentTransferencia.id);
-                response = await this.apiService.put(`/api/transferencias/${this.currentTransferencia.id}`, transferenciaData);
+                console.log('✏️ Fazendo PUT para editar transferência ID:', transferenciaId);
+                response = await this.apiService.put(`/api/transferencias/${transferenciaId}`, transferenciaData);
             } else {
                 // Criar nova transferência
                 console.log('➕ Fazendo POST para criar nova transferência');
@@ -957,11 +958,11 @@ class ExtrasManager {
             }
 
             if (response && (response.id || response.success !== false)) {
-                this.showSuccess(this.currentTransferencia ? 
+                this.showSuccess(transferenciaId ? 
                     'Transferência atualizada com sucesso!' : 
                     'Transferência criada com sucesso!');
-                // Resetar currentTransferencia
-                this.currentTransferencia = null;
+                // Resetar campo hidden
+                if (transferenciaIdInput) transferenciaIdInput.value = '';
                 // Fechar modal de forma segura para acessibilidade
                 this.safeCloseModal('modal-transferencias', 'btn-salvar-transferencia');
                 // Recargar la lista de transferencias para mostrar la nova transferência
@@ -1121,16 +1122,31 @@ class ExtrasManager {
             const transferencia = response.data || response;
             console.log('📋 Transferência encontrada:', transferencia);
 
-            // DEFINIR currentTransferencia para que os valores sejam carregados
-            this.currentTransferencia = transferencia;
-            console.log('💰 Dados da transferência para valores:', {
-                id_proprietarios: transferencia.id_proprietarios,
-                transferenciaCompleta: transferencia
-            });
+            try {
+                // DEFINIR currentTransferencia para que os valores sejam carregados
+                this.currentTransferencia = transferencia;
+                console.log('✅ currentTransferencia SETEADO:', this.currentTransferencia);
+                console.log('💰 Dados da transferência para valores:', {
+                    id_proprietarios: transferencia.id_proprietarios,
+                    transferenciaCompleta: transferencia
+                });
+            } catch (error) {
+                console.error('❌ Erro ao setar currentTransferencia:', error);
+            }
 
             // Resetar formulário
             const form = document.getElementById('form-transferencias');
             if (form) form.reset();
+
+            // Adicionar campo hidden para o ID da transferência
+            let hiddenId = form.querySelector('input[name="transferencia_id"]');
+            if (!hiddenId) {
+                hiddenId = document.createElement('input');
+                hiddenId.type = 'hidden';
+                hiddenId.name = 'transferencia_id';
+                form.appendChild(hiddenId);
+            }
+            hiddenId.value = transferencia.id;
 
             // Definir título
             const modalTitle = document.getElementById('modalTransferenciasLabel');
@@ -1203,12 +1219,6 @@ class ExtrasManager {
     console.log('[DEBUG] allTransferencias:', this.allTransferencias);
     console.log('[DEBUG] Entrando en excluirTransferencia:', id);
         try {
-            // Buscar a transferência sem operações pesadas
-        const transferencia = this.allTransferencias.find(t => t.id == id);
-            if (!transferencia) {
-                this.showError('Transferência não encontrada');
-                return;
-            }
             // Executar a exclusão diretamente (modal já confirma)
             console.log('[DEBUG] Llamando executeDeleteTransferencia com:', id);
             await this.executeDeleteTransferencia(id);
@@ -1238,14 +1248,9 @@ class ExtrasManager {
             const response = await this.apiService.delete(`/api/transferencias/${id}`);
             
             if (response && (response.message || response.success !== false)) {
-                // Actualizar dados localmente sem renderizar imediatamente
-                this.allTransferencias = this.allTransferencias.filter(t => t.id !== id);
-                
-                // Mostrar sucesso e renderizar no próximo frame
+                // Recargar transferências da API para garantir dados atualizados
                 this.showSuccess('Transferência excluída com sucesso!');
-                requestAnimationFrame(() => {
-                    this.renderTransferenciasTable(this.allTransferencias);
-                });
+                await this.loadTransferencias();
                 
             } else {
                 throw new Error('Resposta inválida do servidor');
