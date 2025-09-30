@@ -590,41 +590,11 @@ class ExtrasManager {
      */
     showTransferenciasModal() {
         console.log('showTransferenciasModal chamada');
-        // Si los propietarios no están cargados, cargarlos primero y continuar
-        if (!this.allProprietarios || this.allProprietarios.length === 0) {
-            this.loadProprietarios().then(() => {
-                this.showTransferenciasModal();
-            });
-            return;
-        }
-        // Mostrar integrantes si hay alias seleccionado y cargar propietarios
-        setTimeout(() => {
-            const aliasSelect = document.getElementById('transferencia-alias');
-            const container = document.getElementById('transferencia-proprietarios-container');
-            if (aliasSelect && container && aliasSelect.value) {
-                container.style.display = '';
-                // Copia lógica de edição: carregar proprietários do alias selecionado
-                if (typeof this.carregarProprietariosAlias === 'function') {
-                    this.carregarProprietariosAlias(aliasSelect.value);
-                }
-            }
-        }, 300);
-        // Si estamos em modo criação e já hay um alias seleccionado, cargar propietarios igual que em edição
-        if (!this.currentTransferencia) {
-            const aliasSelect = document.getElementById('transferencia-alias');
-            if (aliasSelect && aliasSelect.value) {
-                if (typeof this.carregarProprietariosAlias === 'function') {
-                    this.carregarProprietariosAlias(aliasSelect.value);
-                }
-            }
-        }
         const modal = document.getElementById('modal-transferencias');
         console.log('Modal element encontrado:', !!modal);
         console.log('Modais abertos atualmente:', document.querySelectorAll('.modal.show').length);
         const form = document.getElementById('form-transferencias');
         const modalTitle = document.getElementById('modalTransferenciasLabel');
-
-        // REMOVIDO: Configuração de event listener duplicada - agora é feita no setupEvents()
 
         // Configurar o modal para edição ou criação
         if (this.currentTransferencia) {
@@ -1106,43 +1076,43 @@ class ExtrasManager {
      */
     async editarTransferencia(id) {
         console.log('editarTransferencia chamada com id:', id);
-        console.log('window.extrasManager existe:', !!window.extrasManager);
-        console.log('this.showTransferenciasModal existe:', !!this.showTransferenciasModal);
 
-        // Versão simplificada: mostrar modal diretamente
+        // CORREÇÃO SIMPLES: mostrar modal diretamente sem complexidades
         const modal = document.getElementById('modal-transferencias');
         if (!modal) {
-            console.error('Modal não encontrado!');
+            console.error('ERRO: Modal não encontrado!');
+            alert('Erro: Modal de transferências não encontrado!');
             return;
         }
 
-        console.log('Modal encontrado, mostrando diretamente...');
-        
-        // Reset form
+        // Resetar formulário
         const form = document.getElementById('form-transferencias');
         if (form) form.reset();
 
-        // Set title
+        // Definir título
         const modalTitle = document.getElementById('modalTransferenciasLabel');
         if (modalTitle) {
             modalTitle.innerHTML = '<i class="fas fa-edit me-2"></i>Editar Transferência';
         }
 
-        // Mostrar modal diretamente
+        // MOSTRAR MODAL DIRETAMENTE
         modal.style.display = 'block';
         modal.classList.add('show');
-        modal.style.zIndex = '9999';
+        modal.style.zIndex = '1050'; // Z-index padrão do Bootstrap
         
-        // Criar backdrop
+        // Adicionar classe modal-open ao body
+        document.body.classList.add('modal-open');
+        
+        // Criar backdrop se não existir
         let backdrop = document.querySelector('.modal-backdrop');
         if (!backdrop) {
             backdrop = document.createElement('div');
             backdrop.className = 'modal-backdrop show';
-            backdrop.style.zIndex = '9998';
+            backdrop.style.zIndex = '1040'; // Z-index padrão do Bootstrap - 1
             document.body.appendChild(backdrop);
         }
 
-        console.log('Modal mostrado diretamente');
+        console.log('✅ Modal mostrado com sucesso (versão simples)');
     }
 
     /**
