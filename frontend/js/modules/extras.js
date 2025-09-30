@@ -787,6 +787,12 @@ class ExtrasManager {
                     }
                 }
                 console.log('📊 Total de linhas na tabela:', tableBody.children.length);
+                console.log('👁️ Container visibility check:', {
+                    display: container.style.display,
+                    visibility: window.getComputedStyle(container).visibility,
+                    opacity: window.getComputedStyle(container).opacity,
+                    height: container.offsetHeight
+                });
                 container.style.display = proprietarioIds.length > 0 ? 'block' : 'none';
                 console.log('📦 Container display set to:', container.style.display);
             } else {
