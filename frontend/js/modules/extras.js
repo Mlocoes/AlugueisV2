@@ -411,7 +411,7 @@ class ExtrasManager {
                 <td class="text-center">${dataFimFormatada}</td>
                 <td class="text-center">
                     <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary ${disabledClass}" onclick="window.extrasManager.editarTransferencia(${transferencia.id})" ${disabledAttr} ${titleAttr}>
+                        <button class="btn btn-outline-primary ${disabledClass}" onclick="console.log('Botão editar clicado para ID:', ${transferencia.id}); window.extrasManager.editarTransferencia(${transferencia.id})" ${disabledAttr} ${titleAttr}>
                             <i class="fas fa-edit"></i>
                         </button>
                         <button class="btn btn-outline-danger ${disabledClass}"
