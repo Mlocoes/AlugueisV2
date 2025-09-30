@@ -700,7 +700,7 @@ class ViewManager {
                             </div>
                         </div>
                     </div>
-                    <div class="row d-desktop-block d-tablet-block d-mobile-none">
+                    <div class="row">
                         <div class="col-md-8">
                             <div class="card-responsive">
                                 <div class="card-header-responsive">
