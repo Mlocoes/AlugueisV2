@@ -83,7 +83,9 @@ class DashboardModule {
     createIncomeChart() {
         const canvas = document.getElementById('ingresosChart');
         if (!canvas) {
-            console.error("Elemento canvas 'ingresosChart' não encontrado.");
+            console.warn("Elemento canvas 'ingresosChart' não encontrado, tentando novamente em 100ms.");
+            // Retry after a short delay
+            setTimeout(() => this.createIncomeChart(), 100);
             return;
         }
 
