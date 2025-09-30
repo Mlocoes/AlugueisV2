@@ -1077,24 +1077,7 @@ class ExtrasManager {
     async editarTransferencia(id) {
         console.log('🎯 editarTransferencia chamada com id:', id);
 
-        // Verificação rápida se temos transferências carregadas
-        if (!this.allTransferencias || this.allTransferencias.length === 0) {
-            console.error('❌ Nenhuma transferência carregada');
-            alert('Erro: Nenhuma transferência carregada!');
-            return;
-        }
-
-        // Encontrar a transferência (otimizado)
-        const transferencia = this.allTransferencias.find(t => t.id === id);
-        if (!transferencia) {
-            console.error('❌ Transferência não encontrada:', id);
-            alert('Erro: Transferência não encontrada!');
-            return;
-        }
-
-        console.log('📋 Transferência encontrada:', transferencia.nome_transferencia);
-
-        // Obter elementos do modal (otimizado - apenas os necessários)
+        // MOSTRAR MODAL IMEDIATAMENTE para feedback visual
         const modal = document.getElementById('modal-transferencias');
         if (!modal) {
             console.error('❌ Modal não encontrado no DOM');
@@ -1102,17 +1085,53 @@ class ExtrasManager {
             return;
         }
 
-        // MOSTRAR MODAL IMEDIATAMENTE (sem reset desnecessário)
         try {
+            // Buscar transferência específica da API
+            console.log('🔍 Buscando transferência ID:', id);
+            const response = await this.apiService.get(`/api/transferencias/${id}`);
+            
+            if (!response || !response.success) {
+                throw new Error('Transferência não encontrada');
+            }
+            
+            const transferencia = response.data || response;
+            console.log('📋 Transferência encontrada:', transferencia);
+
+            // Resetar formulário
+            const form = document.getElementById('form-transferencias');
+            if (form) form.reset();
+
+            // Definir título
+            const modalTitle = document.getElementById('modalTransferenciasLabel');
+            if (modalTitle) {
+                modalTitle.innerHTML = '<i class="fas fa-edit me-2"></i>Editar Transferência';
+            }
+
+            // Preencher campos
+            const nomeInput = document.getElementById('transferencia-nome');
+            if (nomeInput) nomeInput.value = transferencia.nome_transferencia || '';
+
+            const dataCriacaoInput = document.getElementById('transferencia-data-criacao');
+            if (dataCriacaoInput && transferencia.data_criacao) {
+                dataCriacaoInput.value = transferencia.data_criacao.split('T')[0];
+            }
+
+            const dataFimInput = document.getElementById('transferencia-data-fim');
+            if (dataFimInput && transferencia.data_fim) {
+                dataFimInput.value = transferencia.data_fim.split('T')[0];
+            }
+
+            // MOSTRAR MODAL
             const bsModal = new bootstrap.Modal(modal, {
                 backdrop: 'static',
                 keyboard: false
             });
             bsModal.show();
             console.log('✅ Modal mostrado com sucesso');
+
         } catch (error) {
-            console.error('❌ Erro no Bootstrap:', error);
-            alert('Erro ao mostrar modal: ' + error.message);
+            console.error('❌ Erro ao buscar transferência:', error);
+            alert('Erro ao carregar transferência: ' + error.message);
         }
     }
 
