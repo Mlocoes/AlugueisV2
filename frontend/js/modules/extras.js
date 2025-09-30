@@ -349,10 +349,8 @@ class ExtrasManager {
                 
                 this.renderTransferenciasTable(this.allTransferencias);
             } else if (response && response.success && Array.isArray(response.data)) {
-                console.log('🔧 Atribuindo response.data a allTransferencias:', response.data);
                 this.allTransferencias = response.data;
                 console.log('✅ Transferências carregadas:', this.allTransferencias.length);
-                console.log('🔧 this.allTransferencias após atribuição:', this.allTransferencias);
                 
                 this.renderTransferenciasTable(this.allTransferencias);
             } else {
@@ -565,7 +563,6 @@ class ExtrasManager {
      * Mostrar modal de transferências
      */
     showTransferenciasModal() {
-        console.log('🔧 showTransferenciasModal chamada');
         // Si los propietarios no están cargados, cargarlos primero y continuar
         if (!this.allProprietarios || this.allProprietarios.length === 0) {
             this.loadProprietarios().then(() => {
@@ -1052,7 +1049,6 @@ class ExtrasManager {
      * Editar transferência
      */
     async editarTransferencia(id) {
-        console.log('🔧 editarTransferencia chamada com id:', id);
         try {
             const transferencia = this.allTransferencias.find(t => t.id === id);
             if (!transferencia) {
