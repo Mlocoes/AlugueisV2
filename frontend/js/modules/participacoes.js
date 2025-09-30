@@ -123,16 +123,20 @@ class ParticipacoesModule {
 
     renderMobileCards() {
         const isAdmin = window.authService && window.authService.isAdmin();
-        const targetVersaoId = this.selectedData === 'ativo' ? null : parseInt(this.selectedData, 10);
+
+        let targetVersaoId;
+        if (this.selectedData === 'ativo' || this.selectedData === null) {
+            targetVersaoId = null;
+        } else {
+            targetVersaoId = parseInt(this.selectedData, 10);
+        }
 
         const cardsHtml = this.imoveis.map(imovel => {
-            const participacoesDoImovel = this.participacoes.filter(p => {
-                const pVersaoId = p.versao_id === null ? null : parseInt(p.versao_id, 10);
-                return p.imovel_id === imovel.id &&
-                       p.porcentagem > 0 &&
-                       pVersaoId === targetVersaoId;
-            });
-
+            const participacoesDoImovel = this.participacoes.filter(p =>
+                p.imovel_id === imovel.id &&
+                p.porcentagem > 0 &&
+                p.versao_id === targetVersaoId
+            );
             if (participacoesDoImovel.length === 0) return '';
 
             const participantsHtml = participacoesDoImovel.map(part => {
@@ -181,19 +185,23 @@ class ParticipacoesModule {
         headHtml += '<th>Total</th><th>Ações</th></tr>';
         tableHead.innerHTML = headHtml;
 
-        const targetVersaoId = this.selectedData === 'ativo' ? null : parseInt(this.selectedData, 10);
+        let targetVersaoId;
+        if (this.selectedData === 'ativo' || this.selectedData === null) {
+            targetVersaoId = null;
+        } else {
+            targetVersaoId = parseInt(this.selectedData, 10);
+        }
 
         tableBody.innerHTML = '';
         this.imoveis.forEach(imovel => {
             let rowHtml = `<tr><td>${SecurityUtils.escapeHtml(imovel.nome)}</td>`;
             let total = 0;
             this.proprietarios.forEach(prop => {
-                const part = this.participacoes.find(p => {
-                    const pVersaoId = p.versao_id === null ? null : parseInt(p.versao_id, 10);
-                    return p.imovel_id === imovel.id &&
-                           p.proprietario_id === prop.id &&
-                           pVersaoId === targetVersaoId;
-                });
+                const part = this.participacoes.find(p =>
+                    p.imovel_id === imovel.id &&
+                    p.proprietario_id === prop.id &&
+                    p.versao_id === targetVersaoId
+                );
                 const val = part ? (part.porcentagem < 1 ? part.porcentagem * 100 : part.porcentagem) : 0;
                 total += val;
                 rowHtml += `<td>${val > 0 ? val.toFixed(2) + ' %' : '-'}</td>`;
