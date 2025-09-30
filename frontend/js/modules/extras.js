@@ -1138,6 +1138,12 @@ class ExtrasManager {
                 dataFimInput.value = transferencia.data_fim.split('T')[0];
             }
 
+            // CARREGAR PROPRIETÁRIOS PRIMEIRO se não estiverem carregados
+            if (!this.allProprietarios || this.allProprietarios.length === 0) {
+                console.log('🔄 Carregando proprietários primeiro...');
+                await this.loadProprietarios();
+            }
+
             // CARREGAR ALIASES E SELECIONAR O CORRETO
             console.log('🔄 Carregando aliases...');
             await this.carregarAliasParaTransferencia();
