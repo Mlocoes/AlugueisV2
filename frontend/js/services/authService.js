@@ -107,17 +107,13 @@ class AuthService {
      * Verifica se o usuário está autenticado na memória.
      */
     isAuthenticated() {
-        console.log('🔍 isAuthenticated chamado');
-        
         // Primeiro verificar se há dados na memória
         if (!this.usuario || !this.token) {
-            console.log(`🔍 Verificação de autenticação: Não autenticado (sem dados)`);
             return false;
         }
         
         // Verificar se o token está expirado
         if (this.isTokenExpired()) {
-            console.log(`🔍 Verificação de autenticação: Token expirado - forçando recarga`);
             this.clearSession();
             // Forçar recarga imediata quando detectar token expirado
             setTimeout(() => {
@@ -126,7 +122,6 @@ class AuthService {
             return false;
         }
         
-        console.log(`🔍 Verificação de autenticação: Autenticado`);
         return true;
     }
 
@@ -288,7 +283,6 @@ class AuthService {
      */
     isTokenExpired() {
         if (!this.token) {
-            console.log('🔍 isTokenExpired: Nenhum token encontrado');
             return true;
         }
         
@@ -297,24 +291,16 @@ class AuthService {
             const payload = this.token.split('.')[1];
             const decodedPayload = JSON.parse(atob(payload));
             
-            console.log('🔍 isTokenExpired: Payload decodificado:', decodedPayload);
-            
             // Verificar se o token tem expiração
             if (!decodedPayload.exp) {
-                console.log('🔍 isTokenExpired: Token sem campo exp');
                 return false; // Token sem expiração
             }
             
             // Comparar com o tempo atual (em segundos)
             const currentTime = Math.floor(Date.now() / 1000);
-            const isExpired = decodedPayload.exp < currentTime;
-            
-            console.log('🔍 isTokenExpired: exp:', decodedPayload.exp, 'currentTime:', currentTime, 'isExpired:', isExpired);
-            
-            return isExpired;
+            return decodedPayload.exp < currentTime;
         } catch (error) {
             console.warn('Erro ao verificar expiração do token:', error);
-            console.warn('Token que falhou:', this.token);
             return true; // Considerar expirado se não conseguir verificar
         }
     }
