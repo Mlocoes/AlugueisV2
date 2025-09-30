@@ -783,8 +783,11 @@ class ExtrasManager {
                         tableBody.appendChild(row);
                     }
                 }
+                console.log('✅ Proprietários carregados:', proprietarioIds.length);
                 container.style.display = proprietarioIds.length > 0 ? 'block' : 'none';
+                console.log('📦 Container display set to:', container.style.display);
             } else {
+                console.log('⚠️ Nenhum proprietário encontrado para este alias');
                 container.style.display = 'none';
             }
         } catch (error) {
