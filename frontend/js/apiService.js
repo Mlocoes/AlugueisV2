@@ -194,7 +194,10 @@ window.apiService = {
                     if (window.authService) {
                         window.authService.clearSession(); // Limpa a sessão local
                     }
-                    window.location.reload(); // Força a recarga da página
+                    // Pequeno delay para garantir que a limpeza seja processada
+                    setTimeout(() => {
+                        window.location.reload(); // Força a recarga da página
+                    }, 100);
                 } else {
                     console.error('❌ Error en la requisición:', `Error: HTTP error! status: ${response.status}, message: ${errorData}`);
                 }

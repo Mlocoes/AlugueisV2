@@ -8,6 +8,9 @@ class AuthService {
         this.tipo = null;
         this.token = null;  // Add token property
         console.log('🔐 AuthService inicializado para autenticação baseada em cookie.');
+        
+        // Tentar restaurar sessão do cookie quando a página carrega
+        this.restoreSession();
     }
 
     /**
@@ -35,8 +38,10 @@ class AuthService {
                     tipo: this.tipo
                 });
 
-                // Iniciar validação periódica da sessão
-                this.startSessionValidation();
+                // Iniciar validação periódica da sessão (se não já estiver rodando)
+                if (!this.sessionCheckInterval) {
+                    this.startSessionValidation();
+                }
 
                 return {
                     success: true,
@@ -102,6 +107,8 @@ class AuthService {
      * Verifica se o usuário está autenticado na memória.
      */
     isAuthenticated() {
+        console.log('🔍 isAuthenticated chamado');
+        
         // Primeiro verificar se há dados na memória
         if (!this.usuario || !this.token) {
             console.log(`🔍 Verificação de autenticação: Não autenticado (sem dados)`);
@@ -110,8 +117,12 @@ class AuthService {
         
         // Verificar se o token está expirado
         if (this.isTokenExpired()) {
-            console.log(`🔍 Verificação de autenticação: Token expirado`);
+            console.log(`🔍 Verificação de autenticação: Token expirado - forçando recarga`);
             this.clearSession();
+            // Forçar recarga imediata quando detectar token expirado
+            setTimeout(() => {
+                window.location.reload();
+            }, 100);
             return false;
         }
         
@@ -167,20 +178,65 @@ class AuthService {
     }
 
     /**
+     * Tentar restaurar sessão do cookie quando a página carrega
+     */
+    async restoreSession() {
+        try {
+            console.log('🔄 Tentando restaurar sessão do cookie...');
+            
+            // Verificar se há uma sessão válida no backend (usando cookie)
+            const isValid = await this.validateSession();
+            if (isValid) {
+                console.log('✅ Sessão restaurada com sucesso do cookie');
+                // Iniciar validação periódica
+                this.startSessionValidation();
+            } else {
+                console.log('❌ Nenhuma sessão válida encontrada no cookie');
+            }
+        } catch (error) {
+            console.warn('Erro ao restaurar sessão:', error);
+        }
+    }
+
+    /**
      * Iniciar validação periódica da sessão
      */
     startSessionValidation() {
-        // Verificar a cada 5 minutos se a sessão ainda é válida
+        // Verificar a cada 2 minutos se a sessão ainda é válida (mais frequente)
         this.sessionCheckInterval = setInterval(async () => {
-            if (this.isAuthenticated()) {
-                console.log('🔄 Verificação periódica da sessão...');
-                const isValid = await this.validateSession();
-                if (!isValid) {
-                    console.warn('⚠️ Sessão expirada durante verificação periódica. Forçando recarga.');
-                    window.location.reload();
+            console.log('🔄 Verificação periódica da sessão...');
+            if (this.usuario && this.token) {
+                // Primeiro verificar se o token local está expirado
+                if (this.isTokenExpired()) {
+                    console.warn('⚠️ Token expirado detectado na validação periódica. Forçando recarga.');
+                    this.clearSession();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 100);
+                    return;
+                }
+                
+                // Se token local parece válido, validar com servidor
+                try {
+                    const isValid = await this.validateSession();
+                    if (!isValid) {
+                        console.warn('⚠️ Sessão inválida detectada na validação periódica. Forçando recarga.');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 100);
+                    } else {
+                        console.log('✅ Sessão válida confirmada pelo servidor');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Erro na validação periódica da sessão:', error);
+                    // Em caso de erro, assumir que a sessão pode estar expirada
+                    this.clearSession();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 100);
                 }
             }
-        }, 5 * 60 * 1000); // 5 minutos
+        }, 2 * 60 * 1000); // 2 minutos (mais frequente)
     }
 
     /**
@@ -231,21 +287,34 @@ class AuthService {
      * Verificar se o token JWT está expirado
      */
     isTokenExpired() {
-        if (!this.token) return true;
+        if (!this.token) {
+            console.log('🔍 isTokenExpired: Nenhum token encontrado');
+            return true;
+        }
         
         try {
             // Decodificar o payload do JWT (formato: header.payload.signature)
             const payload = this.token.split('.')[1];
             const decodedPayload = JSON.parse(atob(payload));
             
+            console.log('🔍 isTokenExpired: Payload decodificado:', decodedPayload);
+            
             // Verificar se o token tem expiração
-            if (!decodedPayload.exp) return false; // Token sem expiração
+            if (!decodedPayload.exp) {
+                console.log('🔍 isTokenExpired: Token sem campo exp');
+                return false; // Token sem expiração
+            }
             
             // Comparar com o tempo atual (em segundos)
             const currentTime = Math.floor(Date.now() / 1000);
-            return decodedPayload.exp < currentTime;
+            const isExpired = decodedPayload.exp < currentTime;
+            
+            console.log('🔍 isTokenExpired: exp:', decodedPayload.exp, 'currentTime:', currentTime, 'isExpired:', isExpired);
+            
+            return isExpired;
         } catch (error) {
             console.warn('Erro ao verificar expiração do token:', error);
+            console.warn('Token que falhou:', this.token);
             return true; // Considerar expirado se não conseguir verificar
         }
     }
