@@ -563,6 +563,7 @@ class ExtrasManager {
      * Mostrar modal de transferências
      */
     showTransferenciasModal() {
+        console.log('🔧 showTransferenciasModal chamada');
         // Si los propietarios no están cargados, cargarlos primero y continuar
         if (!this.allProprietarios || this.allProprietarios.length === 0) {
             this.loadProprietarios().then(() => {
@@ -1043,6 +1044,7 @@ class ExtrasManager {
      * Editar transferência
      */
     async editarTransferencia(id) {
+        console.log('🔧 editarTransferencia chamada com id:', id);
         try {
             const transferencia = this.allTransferencias.find(t => t.id === id);
             if (!transferencia) {
