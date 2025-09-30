@@ -536,7 +536,13 @@ class ExtrasManager {
         }, { once: true });
 
         // Mostrar modal
-        bootstrapModal.show();
+        console.log('Tentando mostrar modal...');
+        try {
+            bootstrapModal.show();
+            console.log('Modal mostrado com sucesso');
+        } catch (error) {
+            console.error('Erro ao mostrar modal:', error);
+        }
     }
 
     /**
@@ -563,6 +569,7 @@ class ExtrasManager {
      * Mostrar modal de transferências
      */
     showTransferenciasModal() {
+        console.log('showTransferenciasModal chamada');
         // Si los propietarios no están cargados, cargarlos primero y continuar
         if (!this.allProprietarios || this.allProprietarios.length === 0) {
             this.loadProprietarios().then(() => {
@@ -592,6 +599,8 @@ class ExtrasManager {
             }
         }
         const modal = document.getElementById('modal-transferencias');
+        console.log('Modal element encontrado:', !!modal);
+        console.log('Modais abertos atualmente:', document.querySelectorAll('.modal.show').length);
         const form = document.getElementById('form-transferencias');
         const modalTitle = document.getElementById('modalTransferenciasLabel');
 
@@ -663,7 +672,13 @@ class ExtrasManager {
         }, { once: true });
 
         // Mostrar modal
-        bootstrapModal.show();
+        console.log('Tentando mostrar modal...');
+        try {
+            bootstrapModal.show();
+            console.log('Modal mostrado com sucesso');
+        } catch (error) {
+            console.error('Erro ao mostrar modal:', error);
+        }
     }
 
     /**
@@ -1049,6 +1064,9 @@ class ExtrasManager {
      * Editar transferência
      */
     async editarTransferencia(id) {
+        console.log('editarTransferencia chamada com id:', id);
+        console.log('window.extrasManager existe:', !!window.extrasManager);
+        console.log('this.showTransferenciasModal existe:', !!this.showTransferenciasModal);
         try {
             const transferencia = this.allTransferencias.find(t => t.id === id);
             if (!transferencia) {
@@ -1060,8 +1078,7 @@ class ExtrasManager {
             this.currentTransferencia = transferencia;
 
             // 1. Mostra o modal de transferências.
-            // A lógica interna de showTransferenciasModal vai detectar
-            // this.currentTransferencia e não vai limpar o formulário.
+            console.log('🔄 Chamando showTransferenciasModal...');
             this.showTransferenciasModal();
 
             // 2. Usamos um event listener para garantir que o modal está
