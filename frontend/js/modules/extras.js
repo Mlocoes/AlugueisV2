@@ -538,6 +538,8 @@ class ExtrasManager {
 
         // Mostrar modal
         console.log('Tentando mostrar modal...');
+        // Forçar z-index alto para garantir que o modal apareça na frente
+        modal.style.zIndex = '9999';
         try {
             bootstrapModal.show();
             console.log('Modal mostrado com sucesso');
@@ -546,6 +548,8 @@ class ExtrasManager {
                 console.log('Modal classes após show:', modal.className);
                 console.log('Modal tem classe show:', modal.classList.contains('show'));
                 console.log('Modal backdrop existe:', !!document.querySelector('.modal-backdrop'));
+                console.log('Modal computed style display:', window.getComputedStyle(modal).display);
+                console.log('Modal computed style visibility:', window.getComputedStyle(modal).visibility);
             }, 100);
         } catch (error) {
             console.error('Erro ao mostrar modal:', error);
@@ -693,6 +697,8 @@ class ExtrasManager {
 
         // Mostrar modal
         console.log('Tentando mostrar modal...');
+        // Forçar z-index alto para garantir que o modal apareça na frente
+        modal.style.zIndex = '9999';
         try {
             bootstrapModal.show();
             console.log('Modal mostrado com sucesso');
@@ -701,6 +707,8 @@ class ExtrasManager {
                 console.log('Modal classes após show:', modal.className);
                 console.log('Modal tem classe show:', modal.classList.contains('show'));
                 console.log('Modal backdrop existe:', !!document.querySelector('.modal-backdrop'));
+                console.log('Modal computed style display:', window.getComputedStyle(modal).display);
+                console.log('Modal computed style visibility:', window.getComputedStyle(modal).visibility);
             }, 100);
         } catch (error) {
             console.error('Erro ao mostrar modal:', error);
