@@ -831,7 +831,7 @@ class ExtrasManager {
                 this.showSuccess(this.currentExtra ? 'Alias atualizado com sucesso!' : 'Alias criado com sucesso!');
                 // Fechar modal de forma segura para acessibilidade
                 this.safeCloseModal('modal-alias', 'btn-salvar-alias');
-                // Recargar la lista de aliases para mostrar el nuevo alias
+                // Recargar la lista de aliases para mostrar el novo alias
                 await this.loadExtras();
             }
 
@@ -1075,50 +1075,49 @@ class ExtrasManager {
      * Editar transferência
      */
     async editarTransferencia(id) {
-        // TESTE SIMPLES: apenas mostrar um alert para confirmar que funciona
-        alert('Botão editar transferência clicado! ID: ' + id);
-        
-        // Código original comentado para teste
-        /*
-        console.log('editarTransferencia chamada com id:', id);
+        console.log('🎯 editarTransferencia chamada com id:', id);
 
-        // CORREÇÃO SIMPLES: mostrar modal diretamente sem complexidades
+        // Encontrar a transferência
+        const transferencia = this.allTransferencias?.find(t => t.id === id);
+        if (!transferencia) {
+            alert('Erro: Transferência não encontrada!');
+            return;
+        }
+
+        // Obter elementos do modal
         const modal = document.getElementById('modal-transferencias');
+        const form = document.getElementById('form-transferencias');
+        const modalTitle = document.getElementById('modalTransferenciasLabel');
+        
         if (!modal) {
-            console.error('ERRO: Modal não encontrado!');
-            alert('Erro: Modal de transferências não encontrado!');
+            alert('Erro: Modal não encontrado no DOM!');
             return;
         }
 
         // Resetar formulário
-        const form = document.getElementById('form-transferencias');
         if (form) form.reset();
 
         // Definir título
-        const modalTitle = document.getElementById('modalTransferenciasLabel');
         if (modalTitle) {
             modalTitle.innerHTML = '<i class="fas fa-edit me-2"></i>Editar Transferência';
         }
 
-        // MOSTRAR MODAL DIRETAMENTE
-        modal.style.display = 'block';
-        modal.classList.add('show');
-        modal.style.zIndex = '1050'; // Z-index padrão do Bootstrap
-        
-        // Adicionar classe modal-open ao body
-        document.body.classList.add('modal-open');
-        
-        // Criar backdrop se não existir
-        let backdrop = document.querySelector('.modal-backdrop');
-        if (!backdrop) {
-            backdrop = document.createElement('div');
-            backdrop.className = 'modal-backdrop show';
-            backdrop.style.zIndex = '1040'; // Z-index padrão do Bootstrap - 1
-            document.body.appendChild(backdrop);
-        }
+        // Preencher campos básicos
+        const nomeInput = document.getElementById('transferencia-nome');
+        if (nomeInput) nomeInput.value = transferencia.nome_transferencia || '';
 
-        console.log('✅ Modal mostrado com sucesso (versão simples)');
-        */
+        // MOSTRAR MODAL USANDO BOOTSTRAP DIRETO
+        try {
+            const bsModal = new bootstrap.Modal(modal, {
+                backdrop: 'static', // Impede fechar clicando fora
+                keyboard: false     // Impede fechar com ESC
+            });
+            bsModal.show();
+            console.log('✅ Modal mostrado via Bootstrap');
+        } catch (error) {
+            console.error('❌ Erro ao mostrar modal:', error);
+            alert('Erro ao mostrar modal: ' + error.message);
+        }
     }
 
     /**
