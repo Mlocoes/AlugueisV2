@@ -540,20 +540,27 @@ class ExtrasManager {
         console.log('Tentando mostrar modal...');
         // Forçar z-index alto para garantir que o modal apareça na frente
         modal.style.zIndex = '9999';
-        try {
-            bootstrapModal.show();
-            console.log('Modal mostrado com sucesso');
-            // Verificar se o modal está visível no DOM
-            setTimeout(() => {
-                console.log('Modal classes após show:', modal.className);
-                console.log('Modal tem classe show:', modal.classList.contains('show'));
-                console.log('Modal backdrop existe:', !!document.querySelector('.modal-backdrop'));
-                console.log('Modal computed style display:', window.getComputedStyle(modal).display);
-                console.log('Modal computed style visibility:', window.getComputedStyle(modal).visibility);
-            }, 100);
-        } catch (error) {
-            console.error('Erro ao mostrar modal:', error);
+        // Adicionar classe show manualmente primeiro
+        modal.classList.add('show');
+        modal.style.display = 'block';
+        // Criar backdrop manualmente se não existir
+        let backdrop = document.querySelector('.modal-backdrop');
+        if (!backdrop) {
+            backdrop = document.createElement('div');
+            backdrop.className = 'modal-backdrop show';
+            backdrop.style.zIndex = '9998';
+            document.body.appendChild(backdrop);
+            console.log('Backdrop criado manualmente');
         }
+        console.log('Modal mostrado manualmente');
+        // Verificar se o modal está visível no DOM
+        setTimeout(() => {
+            console.log('Modal classes após show:', modal.className);
+            console.log('Modal tem classe show:', modal.classList.contains('show'));
+            console.log('Modal backdrop existe:', !!document.querySelector('.modal-backdrop'));
+            console.log('Modal computed style display:', window.getComputedStyle(modal).display);
+            console.log('Modal computed style visibility:', window.getComputedStyle(modal).visibility);
+        }, 100);
     }
 
     /**
@@ -699,20 +706,27 @@ class ExtrasManager {
         console.log('Tentando mostrar modal...');
         // Forçar z-index alto para garantir que o modal apareça na frente
         modal.style.zIndex = '9999';
-        try {
-            bootstrapModal.show();
-            console.log('Modal mostrado com sucesso');
-            // Verificar se o modal está visível no DOM
-            setTimeout(() => {
-                console.log('Modal classes após show:', modal.className);
-                console.log('Modal tem classe show:', modal.classList.contains('show'));
-                console.log('Modal backdrop existe:', !!document.querySelector('.modal-backdrop'));
-                console.log('Modal computed style display:', window.getComputedStyle(modal).display);
-                console.log('Modal computed style visibility:', window.getComputedStyle(modal).visibility);
-            }, 100);
-        } catch (error) {
-            console.error('Erro ao mostrar modal:', error);
+        // Adicionar classe show manualmente primeiro
+        modal.classList.add('show');
+        modal.style.display = 'block';
+        // Criar backdrop manualmente se não existir
+        let backdrop = document.querySelector('.modal-backdrop');
+        if (!backdrop) {
+            backdrop = document.createElement('div');
+            backdrop.className = 'modal-backdrop show';
+            backdrop.style.zIndex = '9998';
+            document.body.appendChild(backdrop);
+            console.log('Backdrop criado manualmente');
         }
+        console.log('Modal mostrado manualmente');
+        // Verificar se o modal está visível no DOM
+        setTimeout(() => {
+            console.log('Modal classes após show:', modal.className);
+            console.log('Modal tem classe show:', modal.classList.contains('show'));
+            console.log('Modal backdrop existe:', !!document.querySelector('.modal-backdrop'));
+            console.log('Modal computed style display:', window.getComputedStyle(modal).display);
+            console.log('Modal computed style visibility:', window.getComputedStyle(modal).visibility);
+        }, 100);
     }
 
     /**
