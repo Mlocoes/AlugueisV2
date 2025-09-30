@@ -13,8 +13,22 @@ class ProprietariosModule {
             ? document.getElementById('proprietarios-list-mobile')
             : document.getElementById('proprietarios-table-body');
 
+        // If container not found, wait a bit and try again (timing issue)
         if (!this.container) {
-            console.warn("Container for ProprietariosModule not found.");
+            console.log('[ProprietariosModule] Container not found, waiting 100ms and trying again...');
+            setTimeout(() => {
+                this.container = this.isMobile
+                    ? document.getElementById('proprietarios-list-mobile')
+                    : document.getElementById('proprietarios-table-body');
+                console.log('[ProprietariosModule] Container found after delay:', !!this.container);
+                
+                if (this.container) {
+                    this.modalManager = new ModalManager('proprietario-modal');
+                    this.bindPageEvents();
+                    this.bindContainerEvents();
+                    this.loadProprietarios();
+                }
+            }, 100);
             return;
         }
         

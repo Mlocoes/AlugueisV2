@@ -13,8 +13,22 @@ class ImoveisModule {
             ? document.getElementById('imoveis-list-mobile')
             : document.getElementById('imoveis-table-body');
 
+        // If container not found, wait a bit and try again (timing issue)
         if (!this.container) {
-            console.warn("Container for ImoveisModule not found.");
+            console.log('[ImoveisModule] Container not found, waiting 100ms and trying again...');
+            setTimeout(() => {
+                this.container = this.isMobile
+                    ? document.getElementById('imoveis-list-mobile')
+                    : document.getElementById('imoveis-table-body');
+                console.log('[ImoveisModule] Container found after delay:', !!this.container);
+                
+                if (this.container) {
+                    this.modalManager = new ModalManager('novo-imovel-modal', 'edit-imovel-modal');
+                    this.bindPageEvents();
+                    this.bindContainerEvents();
+                    this.loadImoveis();
+                }
+            }, 100);
             return;
         }
 
