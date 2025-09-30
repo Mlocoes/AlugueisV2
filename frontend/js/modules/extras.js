@@ -1077,45 +1077,41 @@ class ExtrasManager {
     async editarTransferencia(id) {
         console.log('🎯 editarTransferencia chamada com id:', id);
 
-        // Encontrar a transferência
-        const transferencia = this.allTransferencias?.find(t => t.id === id);
+        // Verificação rápida se temos transferências carregadas
+        if (!this.allTransferencias || this.allTransferencias.length === 0) {
+            console.error('❌ Nenhuma transferência carregada');
+            alert('Erro: Nenhuma transferência carregada!');
+            return;
+        }
+
+        // Encontrar a transferência (otimizado)
+        const transferencia = this.allTransferencias.find(t => t.id === id);
         if (!transferencia) {
+            console.error('❌ Transferência não encontrada:', id);
             alert('Erro: Transferência não encontrada!');
             return;
         }
 
-        // Obter elementos do modal
+        console.log('📋 Transferência encontrada:', transferencia.nome_transferencia);
+
+        // Obter elementos do modal (otimizado - apenas os necessários)
         const modal = document.getElementById('modal-transferencias');
-        const form = document.getElementById('form-transferencias');
-        const modalTitle = document.getElementById('modalTransferenciasLabel');
-        
         if (!modal) {
-            alert('Erro: Modal não encontrado no DOM!');
+            console.error('❌ Modal não encontrado no DOM');
+            alert('Erro: Modal não encontrado!');
             return;
         }
 
-        // Resetar formulário
-        if (form) form.reset();
-
-        // Definir título
-        if (modalTitle) {
-            modalTitle.innerHTML = '<i class="fas fa-edit me-2"></i>Editar Transferência';
-        }
-
-        // Preencher campos básicos
-        const nomeInput = document.getElementById('transferencia-nome');
-        if (nomeInput) nomeInput.value = transferencia.nome_transferencia || '';
-
-        // MOSTRAR MODAL USANDO BOOTSTRAP DIRETO
+        // MOSTRAR MODAL IMEDIATAMENTE (sem reset desnecessário)
         try {
             const bsModal = new bootstrap.Modal(modal, {
-                backdrop: 'static', // Impede fechar clicando fora
-                keyboard: false     // Impede fechar com ESC
+                backdrop: 'static',
+                keyboard: false
             });
             bsModal.show();
-            console.log('✅ Modal mostrado via Bootstrap');
+            console.log('✅ Modal mostrado com sucesso');
         } catch (error) {
-            console.error('❌ Erro ao mostrar modal:', error);
+            console.error('❌ Erro no Bootstrap:', error);
             alert('Erro ao mostrar modal: ' + error.message);
         }
     }
