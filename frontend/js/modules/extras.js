@@ -349,8 +349,10 @@ class ExtrasManager {
                 
                 this.renderTransferenciasTable(this.allTransferencias);
             } else if (response && response.success && Array.isArray(response.data)) {
+                console.log('🔧 Atribuindo response.data a allTransferencias:', response.data);
                 this.allTransferencias = response.data;
                 console.log('✅ Transferências carregadas:', this.allTransferencias.length);
+                console.log('🔧 this.allTransferencias após atribuição:', this.allTransferencias);
                 
                 this.renderTransferenciasTable(this.allTransferencias);
             } else {
