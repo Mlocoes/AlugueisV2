@@ -139,10 +139,11 @@ class ExtrasManager {
         });
 
         // Limpar currentTransferencia quando o modal fechar
-        document.getElementById('modal-transferencias')?.addEventListener('hidden.bs.modal', () => {
-            this.currentTransferencia = null;
-            console.log('🧹 Modal fechado - currentTransferencia limpo');
-        });
+        // REMOVIDO: Event listener pode estar causando conflitos
+        // document.getElementById('modal-transferencias')?.addEventListener('hidden.bs.modal', () => {
+        //     this.currentTransferencia = null;
+        //     console.log('🧹 Modal fechado - currentTransferencia limpo');
+        // });
 
         // Event listeners para botões de cancelar para gerenciamento de foco
         const setupCancelButtonHandlers = () => {
