@@ -781,9 +781,12 @@ class ExtrasManager {
                             </td>
                         `;
                         tableBody.appendChild(row);
+                        console.log('➕ Linha adicionada para proprietário:', proprietario.nome);
+                    } else {
+                        console.log('⚠️ Proprietário não encontrado:', id);
                     }
                 }
-                console.log('✅ Proprietários carregados:', proprietarioIds.length);
+                console.log('📊 Total de linhas na tabela:', tableBody.children.length);
                 container.style.display = proprietarioIds.length > 0 ? 'block' : 'none';
                 console.log('📦 Container display set to:', container.style.display);
             } else {
