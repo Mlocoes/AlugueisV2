@@ -18,6 +18,7 @@ class ParticipacoesModule {
             ? document.getElementById('participacoes-list-mobile')
             : document.getElementById('participacoes-matrix-body');
 
+
         if (!this.container) {
             console.warn("ParticipacoesModule: Container not found. View might not be active.");
             return;
@@ -60,7 +61,9 @@ class ParticipacoesModule {
             }
             
             if (this.selectedData) {
-                await this.loadParticipacoes(this.selectedData);
+                // Para mobile, sempre carregar o conjunto mais recente (ativo)
+                const dataToLoad = this.isMobile ? null : this.selectedData;
+                await this.loadParticipacoes(dataToLoad);
             }
         } catch (error) {
             this.uiManager.showAlert('Erro ao carregar conjuntos: ' + error.message, 'error');
@@ -127,17 +130,31 @@ class ParticipacoesModule {
         const isAdmin = window.authService && window.authService.isAdmin();
 
         let targetVersaoId;
-        if (this.selectedData === 'ativo' || this.selectedData === null) {
+        if (this.isMobile) {
+            // No mobile, sempre usar null para pegar participações ativas (mais recentes)
             targetVersaoId = null;
         } else {
-            targetVersaoId = parseInt(this.selectedData, 10);
+            if (this.selectedData === 'ativo' || this.selectedData === null) {
+                targetVersaoId = null;
+            } else {
+                targetVersaoId = parseInt(this.selectedData, 10);
+            }
         }
 
+        // Filtrar participações para garantir que só do conjunto mais recente sejam exibidas
+        // Para participações ativas, versao_id é null ou undefined
+        const participacoesFiltradas = this.participacoes.filter(p => {
+            if (targetVersaoId === null) {
+                return p.versao_id == null || p.versao_id === undefined;
+            } else {
+                return p.versao_id === targetVersaoId;
+            }
+        });
+
         const cardsHtml = this.imoveis.map(imovel => {
-            const participacoesDoImovel = this.participacoes.filter(p =>
+            const participacoesDoImovel = participacoesFiltradas.filter(p =>
                 p.imovel_id === imovel.id &&
-                p.porcentagem > 0 &&
-                p.versao_id === targetVersaoId
+                p.porcentagem > 0
             );
             if (participacoesDoImovel.length === 0) return '';
 
