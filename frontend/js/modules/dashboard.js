@@ -109,7 +109,9 @@ class DashboardModule {
     }
 
     createIncomeChart() {
-        if (!this.isViewActive) return;
+        if (!this.isViewActive || (window.deviceManager && window.deviceManager.deviceType === 'mobile')) {
+            return;
+        }
 
         const waitForCanvas = (retries = 0) => {
             const canvas = document.getElementById('ingresosChart');
