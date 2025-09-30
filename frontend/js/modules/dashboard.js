@@ -6,6 +6,9 @@ class DashboardModule {
         this.charts = {};
         this.summaryData = {};
         this.initialized = false;
+        this.isViewActive = false; // Flag para saber se a view do dashboard está ativa
+        this.dataLoaded = false;   // Flag para saber se os dados já foram carregados
+        this.isLoading = false;    // Flag para evitar múltiplas chamadas de API
         // Adicionar referência ao uiManager e apiService
         this.uiManager = window.uiManager;
         this.apiService = window.apiService;
@@ -16,14 +19,18 @@ class DashboardModule {
 
         window.addEventListener('navigate', (e) => {
             if (e.detail.view === 'dashboard') {
+                console.log("Dashboard view activated");
                 this.isViewActive = true;
+                // Apenas carrega os dados se ainda não foram carregados
                 if (!this.dataLoaded) {
                     this.load();
                 } else {
+                    // Se os dados já existem, apenas recria os gráficos
                     this.createCharts();
                 }
             } else {
                 this.isViewActive = false;
+                // Destroi os gráficos ao sair da visualização para liberar memória
                 this.destroyAllCharts();
             }
         });
@@ -45,17 +52,23 @@ class DashboardModule {
     }
 
     async load() {
+        // Evita cargas múltiplas se uma já estiver em andamento
+        if (this.isLoading) return;
+        this.isLoading = true;
+
         const summary = await this.handleApiCall(
             () => this.apiService.getDashboardSummary(),
             'Carregando dashboard...',
             'Erro ao carregar dados do dashboard'
         );
+        this.isLoading = false;
 
         if (summary) {
             this.dataLoaded = true;
             this.summaryData = summary;
             console.log('📊 Dados agregados do dashboard carregados:', this.summaryData);
 
+            // Renderiza apenas se a visualização do dashboard ainda estiver ativa
             if (this.isViewActive) {
                 this.updateStats();
                 this.createCharts();
@@ -99,14 +112,32 @@ class DashboardModule {
     }
 
     createIncomeChart() {
-        if (!this.isViewActive) return;
-
-        const canvas = document.getElementById('ingresosChart');
-        if (!canvas) {
-            console.error("Elemento canvas 'ingresosChart' não encontrado. O gráfico não será renderizado.");
+        // Adiciona uma verificação para garantir que a view está ativa
+        if (!this.isViewActive) {
+            console.log("Dashboard view is not active, skipping chart creation.");
             return;
         }
-        this.renderIncomeChart(canvas);
+
+        const waitForCanvas = (retries = 0) => {
+            // Se o usuário navegou para longe enquanto esperava, cancela a operação
+            if (!this.isViewActive) {
+                console.log("View changed while waiting for canvas, aborting chart creation.");
+                return;
+            }
+
+            const canvas = document.getElementById('ingresosChart');
+            // `offsetParent` é uma boa maneira de verificar se o elemento está visível no DOM
+            if (canvas && canvas.offsetParent !== null) {
+                console.log("Canvas 'ingresosChart' found and visible, rendering chart.");
+                this.renderIncomeChart(canvas);
+            } else if (retries < 20) { // Aumenta o número de tentativas
+                setTimeout(() => waitForCanvas(retries + 1), 150); // Aumenta o tempo de espera
+            } else {
+                console.error("Elemento canvas 'ingresosChart' não encontrado ou não visível após múltiplas tentativas.");
+            }
+        };
+
+        waitForCanvas();
     }
 
     renderIncomeChart(canvas) {
@@ -170,12 +201,16 @@ class DashboardModule {
 
     async refresh() {
         this.dataLoaded = false;
-        await this.load();
+        // Só recarrega se a view do dashboard estiver ativa
+        if (this.isViewActive) {
+            await this.load();
+        }
     }
 }
 
 // Inicialização do módulo
 document.addEventListener('DOMContentLoaded', () => {
+    // A inicialização agora é incondicional, a lógica interna do módulo controla a execução
     window.dashboardModule = new DashboardModule();
     window.dashboardModule.init();
 });
