@@ -498,8 +498,8 @@ class ExtrasManager {
         const alerts = document.getElementById('alias-alerts');
         if (alerts) alerts.innerHTML = '';
 
-        // Criar instância do modal
-        const bootstrapModal = new bootstrap.Modal(modal);
+        // Obter instância do modal ou criar uma nova se não existir
+        const bootstrapModal = bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal);
 
         const saveBtn = document.getElementById('btn-salvar-alias');
         if(saveBtn) {
@@ -637,8 +637,8 @@ class ExtrasManager {
         const alerts = document.getElementById('transferencia-alerts');
         if (alerts) alerts.innerHTML = '';
 
-        // Criar instância do modal
-        const bootstrapModal = new bootstrap.Modal(modal);
+        // Obter instância do modal ou criar uma nova se não existir
+        const bootstrapModal = bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal);
         
         // Configurar eventos mais robustos - usando 'once' para evitar acúmulo
         modal.addEventListener('shown.bs.modal', () => {
