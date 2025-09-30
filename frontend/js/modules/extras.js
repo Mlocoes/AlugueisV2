@@ -1121,6 +1121,24 @@ class ExtrasManager {
                 dataFimInput.value = transferencia.data_fim.split('T')[0];
             }
 
+            // CARREGAR ALIASES E SELECIONAR O CORRETO
+            console.log('🔄 Carregando aliases...');
+            await this.carregarAliasParaTransferencia();
+            
+            // Aguardar um pouco para os aliases serem carregados
+            setTimeout(() => {
+                const aliasSelect = document.getElementById('transferencia-alias');
+                if (aliasSelect && transferencia.alias_id) {
+                    aliasSelect.value = transferencia.alias_id;
+                    console.log('✅ Alias selecionado:', transferencia.alias_id);
+                    
+                    // Carregar proprietários do alias selecionado
+                    if (typeof this.carregarProprietariosAlias === 'function') {
+                        this.carregarProprietariosAlias(transferencia.alias_id);
+                    }
+                }
+            }, 100);
+
             // MOSTRAR MODAL
             const bsModal = new bootstrap.Modal(modal, {
                 backdrop: 'static',
