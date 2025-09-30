@@ -940,11 +940,19 @@ class ExtrasManager {
             };
 
             let response;
+            console.log('🔍 Verificando modo de salvamento:', {
+                currentTransferencia: this.currentTransferencia,
+                currentTransferenciaId: this.currentTransferencia?.id,
+                modo: this.currentTransferencia ? 'EDIÇÃO' : 'CRIAÇÃO'
+            });
+            
             if (this.currentTransferencia) {
                 // Atualizar transferência existente
+                console.log('✏️ Fazendo PUT para editar transferência ID:', this.currentTransferencia.id);
                 response = await this.apiService.put(`/api/transferencias/${this.currentTransferencia.id}`, transferenciaData);
             } else {
                 // Criar nova transferência
+                console.log('➕ Fazendo POST para criar nova transferência');
                 response = await this.apiService.post('/api/transferencias/', transferenciaData);
             }
 
@@ -1092,8 +1100,7 @@ class ExtrasManager {
      * Editar transferência
      */
     async editarTransferencia(id) {
-        console.log('🎯 editarTransferencia chamada com id:', id);
-
+        console.log('🎯 editarTransferencia INÍCIO - id:', id, 'currentTransferencia antes:', this.currentTransferencia);
         // MOSTRAR MODAL IMEDIATAMENTE para feedback visual
         const modal = document.getElementById('modal-transferencias');
         if (!modal) {
