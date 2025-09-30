@@ -53,9 +53,17 @@ class ParticipacoesModule {
             this.uiManager.hideLoading();
             
             this.datas = (datas && Array.isArray(datas)) ? datas : [];
+
+            if (this.isMobile && this.datas.length > 0) {
+                // Em dispositivos móveis, mostrar apenas o conjunto mais recente.
+                this.datas = [this.datas[0]];
+            }
+
             this.selectedData = this.datas.length ? this.datas[0].versao_id : "ativo";
 
-            this.renderDataSelector();
+            if (!this.isMobile) {
+                this.renderDataSelector();
+            }
             
             if (this.selectedData) {
                 await this.loadParticipacoes(this.selectedData);
