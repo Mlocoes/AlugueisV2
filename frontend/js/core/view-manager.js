@@ -540,6 +540,85 @@ class ViewManager {
                     <i class="fas fa-plus"></i>
                 </button>
             </div>
+
+            <!-- Modal Genérico para Proprietário (adicionado para mobile) -->
+            <div class="modal fade" id="proprietario-modal" tabindex="-1" aria-labelledby="proprietarioModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="proprietario-modal-title"></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" style="font-size: 0.8rem; padding: 1rem;">
+                            <form id="form-proprietario">
+                                <div class="row" style="margin-bottom: 0.25rem;">
+                                    <div class="col-md-6 mb-1">
+                                        <label for="proprietario-nome" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.1rem;">Nome *</label>
+                                        <input type="text" class="form-control form-control-sm" id="proprietario-nome" name="nome" required style="font-size: 0.8rem; padding: 0.25rem 0.5rem;">
+                                    </div>
+                                    <div class="col-md-6 mb-1">
+                                        <label for="proprietario-sobrenome" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.1rem;">Sobrenome</label>
+                                        <input type="text" class="form-control form-control-sm" id="proprietario-sobrenome" name="sobrenome" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;">
+                                    </div>
+                                </div>
+                                <div class="row" style="margin-bottom: 0.25rem;">
+                                    <div class="col-md-6 mb-1">
+                                        <label for="proprietario-tipo_documento" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.1rem;">Tipo de Documento</label>
+                                        <input type="text" class="form-control form-control-sm" id="proprietario-tipo_documento" name="tipo_documento" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;">
+                                    </div>
+                                    <div class="col-md-6 mb-1">
+                                        <label for="proprietario-documento" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.1rem;">Documento</label>
+                                        <input type="text" class="form-control form-control-sm" id="proprietario-documento" name="documento" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;">
+                                    </div>
+                                </div>
+                                <div class="mb-1">
+                                    <label for="proprietario-endereco" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.1rem;">Endereço</label>
+                                    <input type="text" class="form-control form-control-sm" id="proprietario-endereco" name="endereco" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;">
+                                </div>
+                                <div class="row" style="margin-bottom: 0.25rem;">
+                                    <div class="col-md-6 mb-1">
+                                        <label for="proprietario-telefone" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.1rem;">Telefone</label>
+                                        <input type="text" class="form-control form-control-sm" id="proprietario-telefone" name="telefone" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;">
+                                    </div>
+                                    <div class="col-md-6 mb-1">
+                                        <label for="proprietario-email" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.1rem;">Email</label>
+                                        <input type="email" class="form-control form-control-sm" id="proprietario-email" name="email" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;">
+                                </div>
+                                <hr style="margin: 0.5rem 0;">
+                                <h6 style="font-size: 0.9rem; margin-bottom: 0.25rem;">Dados Bancários</h6>
+                                <div class="row" style="margin-bottom: 0.25rem;">
+                                    <div class="col-md-6 mb-1">
+                                        <label for="proprietario-banco" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.1rem;">Banco</label>
+                                        <input type="text" class="form-control form-control-sm" id="proprietario-banco" name="banco" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;">
+                                    </div>
+                                    <div class="col-md-6 mb-1">
+                                        <label for="proprietario-agencia" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.1rem;">Agência</label>
+                                        <input type="text" class="form-control form-control-sm" id="proprietario-agencia" name="agencia" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;">
+                                    </div>
+                                </div>
+                                <div class="row" style="margin-bottom: 0.25rem;">
+                                    <div class="col-md-6 mb-1">
+                                        <label for="proprietario-conta" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.1rem;">Conta</label>
+                                        <input type="text" class="form-control form-control-sm" id="proprietario-conta" name="conta" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;">
+                                    </div>
+                                    <div class="col-md-6 mb-1">
+                                        <label for="proprietario-tipo_conta" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.1rem;">Tipo de Conta</label>
+                                        <input type="text" class="form-control form-control-sm" id="proprietario-tipo_conta" name="tipo_conta" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;">
+                                    </div>
+                                </div>
+                                <div class="mb-1">
+                                    <label for="proprietario-observacoes" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.1rem;">Observações</label>
+                                    <textarea class="form-control form-control-sm" id="proprietario-observacoes" name="observacoes" rows="2" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;"></textarea>
+                                </div>
+                                <div class="modal-footer" style="padding: 0.25rem;">
+                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary btn-sm" id="btn-salvar-proprietario">Salvar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
         `;
     }
 
