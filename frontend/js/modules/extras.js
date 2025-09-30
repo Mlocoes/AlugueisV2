@@ -1115,74 +1115,41 @@ class ExtrasManager {
         console.log('editarTransferencia chamada com id:', id);
         console.log('window.extrasManager existe:', !!window.extrasManager);
         console.log('this.showTransferenciasModal existe:', !!this.showTransferenciasModal);
-        try {
-            const transferencia = this.allTransferencias.find(t => t.id === id);
-            if (!transferencia) {
-                this.showError('Transferência não encontrada');
-                return;
-            }
 
-            console.log('📝 Editando transferência:', transferencia);
-            this.currentTransferencia = transferencia;
-
-            // 1. Mostra o modal de transferências.
-            console.log('🔄 Chamando showTransferenciasModal...');
-            this.showTransferenciasModal();
-
-            // 2. Usamos um event listener para garantir que o modal está
-            // completamente visível antes de tentarmos preencher os dados.
-            const modalEl = document.getElementById('modal-transferencias');
-
-            const handleShown = async () => {
-                console.log('🔧 Modal de transferência exibido, carregando dados para edição...');
-                try {
-                    // 3. Carrega os aliases no combo
-                    await this.carregarAliasParaTransferencia();
-
-                    // 4. Preenche os campos do formulário com os dados da transferência
-                    const aliasSelect = document.getElementById('transferencia-alias');
-                    if (aliasSelect) {
-                        aliasSelect.value = transferencia.alias_id;
-                    }
-
-                    const nomeInput = document.getElementById('transferencia-nome');
-                    if (nomeInput) {
-                        nomeInput.value = transferencia.nome_transferencia || '';
-                    }
-
-                    if (transferencia.data_criacao) {
-                        const dataCriacaoInput = document.getElementById('transferencia-data-criacao');
-                        if (dataCriacaoInput) {
-                            const data = new Date(transferencia.data_criacao);
-                            dataCriacaoInput.value = data.toISOString().split('T')[0];
-                        }
-                    }
-
-                    if (transferencia.data_fim) {
-                        const dataFimInput = document.getElementById('transferencia-data-fim');
-                        if (dataFimInput) {
-                            const data = new Date(transferencia.data_fim);
-                            dataFimInput.value = data.toISOString().split('T')[0];
-                        }
-                    }
-
-                    // 5. Carrega os proprietários do alias e preenche os valores
-                    await this.carregarProprietariosAlias(transferencia.alias_id);
-                    console.log('✅ Dados da transferência carregados no formulário.');
-
-                } catch (error) {
-                    console.error('Erro ao carregar dados para edição no modal:', error);
-                    this.showError('Erro ao preparar edição: ' + error.message);
-                }
-            };
-
-            // Adiciona o listener para o evento 'shown.bs.modal', que dispara uma única vez
-            modalEl.addEventListener('shown.bs.modal', handleShown, { once: true });
-
-        } catch (error) {
-            console.error('Erro ao carregar transferência para edição:', error);
-            this.showError('Erro ao carregar transferência: ' + error.message);
+        // Versão simplificada: mostrar modal diretamente
+        const modal = document.getElementById('modal-transferencias');
+        if (!modal) {
+            console.error('Modal não encontrado!');
+            return;
         }
+
+        console.log('Modal encontrado, mostrando diretamente...');
+        
+        // Reset form
+        const form = document.getElementById('form-transferencias');
+        if (form) form.reset();
+
+        // Set title
+        const modalTitle = document.getElementById('modalTransferenciasLabel');
+        if (modalTitle) {
+            modalTitle.innerHTML = '<i class="fas fa-edit me-2"></i>Editar Transferência';
+        }
+
+        // Mostrar modal diretamente
+        modal.style.display = 'block';
+        modal.classList.add('show');
+        modal.style.zIndex = '9999';
+        
+        // Criar backdrop
+        let backdrop = document.querySelector('.modal-backdrop');
+        if (!backdrop) {
+            backdrop = document.createElement('div');
+            backdrop.className = 'modal-backdrop show';
+            backdrop.style.zIndex = '9998';
+            document.body.appendChild(backdrop);
+        }
+
+        console.log('Modal mostrado diretamente');
     }
 
     /**
