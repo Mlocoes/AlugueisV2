@@ -32,13 +32,6 @@ class RelatoriosModule {
         this.proprietarioSelect = document.getElementById(`relatorios-proprietario-select${suffix}`);
         this.transferenciasCheck = document.getElementById(`relatorios-transferencias-check${suffix}`);
 
-        console.log('RelatoriosModule elements found:', {
-            anoSelect: !!this.anoSelect,
-            mesSelect: !!this.mesSelect,
-            proprietarioSelect: !!this.proprietarioSelect,
-            transferenciasCheck: !!this.transferenciasCheck
-        });
-
         this.setupEventListeners();
         this.initialized = true;
     }
@@ -144,7 +137,6 @@ class RelatoriosModule {
         try {
             this.uiManager.showLoading('Carregando relatórios...');
             const response = await this.apiService.get(`/api/reportes/resumen-mensual?${params.toString()}`);
-            console.log('API Response for relatorios:', response);
             let data = (response.success ? response.data : response) || [];
 
             if (proprietarioSelection && proprietarioSelection.startsWith('alias:')) {
@@ -157,7 +149,6 @@ class RelatoriosModule {
             this.currentData = data;
             await this.render();
         } catch (error) {
-            console.error('Erro detalhado ao carregar dados de relatórios:', error);
             this.uiManager.showError('Erro ao carregar dados de relatórios.');
         } finally {
             this.uiManager.hideLoading();
@@ -276,7 +267,10 @@ class RelatoriosModule {
         const isAdmin = window.authService && window.authService.isAdmin();
         if (this.transferenciasCheck) {
             this.transferenciasCheck.disabled = !isAdmin;
-            this.transferenciasCheck.closest('.form-check').title = isAdmin ? '' : 'Apenas administradores podem alterar esta opção.';
+            const formCheckElement = this.transferenciasCheck.closest('.form-check');
+            if (formCheckElement) {
+                formCheckElement.title = isAdmin ? '' : 'Apenas administradores podem alterar esta opção.';
+            }
         }
     }
 }
