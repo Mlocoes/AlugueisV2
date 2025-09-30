@@ -600,8 +600,14 @@ class ExtrasManager {
 
         // REMOVIDO: Configuração de event listener duplicada - agora é feita no setupEvents()
 
-        // Se NÃO estivermos editando, limpiar todo e forçar título
-        if (!this.currentTransferencia) {
+        // Configurar o modal para edição ou criação
+        if (this.currentTransferencia) {
+            // Modo Edição: Apenas ajusta o título. O preenchimento é feito em `editarTransferencia`.
+            if (modalTitle) {
+                modalTitle.innerHTML = '<i class="fas fa-edit me-2"></i>Editar Transferência';
+            }
+        } else {
+            // Modo Criação: Limpa o formulário e define o título padrão.
             form.reset();
             if (modalTitle) {
                 modalTitle.innerHTML = '<i class="fas fa-exchange-alt me-2"></i>Nova Transferência';
@@ -1047,55 +1053,71 @@ class ExtrasManager {
      */
     async editarTransferencia(id) {
         console.log('🔧 editarTransferencia chamada com id:', id);
-        console.log('🔧 allTransferencias atual:', this.allTransferencias);
         try {
             const transferencia = this.allTransferencias.find(t => t.id === id);
-            console.log('🔧 Procurando transferência com id ===', id, 'encontrada:', transferencia);
             if (!transferencia) {
                 this.showError('Transferência não encontrada');
                 return;
             }
+
             console.log('📝 Editando transferência:', transferencia);
             this.currentTransferencia = transferencia;
-            console.log('🔧 Chamando showTransferenciasModal');
+
+            // 1. Mostra o modal de transferências.
+            // A lógica interna de showTransferenciasModal vai detectar
+            // this.currentTransferencia e não vai limpar o formulário.
             this.showTransferenciasModal();
-            requestAnimationFrame(async () => {
-                console.log('🔧 Dentro do requestAnimationFrame, iniciando carregamento de dados');
+
+            // 2. Usamos um event listener para garantir que o modal está
+            // completamente visível antes de tentarmos preencher os dados.
+            const modalEl = document.getElementById('modal-transferencias');
+
+            const handleShown = async () => {
+                console.log('🔧 Modal de transferência exibido, carregando dados para edição...');
                 try {
+                    // 3. Carrega os aliases no combo
                     await this.carregarAliasParaTransferencia();
-                    requestAnimationFrame(() => {
-                        const aliasSelect = document.getElementById('transferencia-alias');
-                        if (aliasSelect) {
-                            aliasSelect.value = transferencia.alias_id;
-                            console.log('🔍 Alias selecionado:', aliasSelect.value);
+
+                    // 4. Preenche os campos do formulário com os dados da transferência
+                    const aliasSelect = document.getElementById('transferencia-alias');
+                    if (aliasSelect) {
+                        aliasSelect.value = transferencia.alias_id;
+                    }
+
+                    const nomeInput = document.getElementById('transferencia-nome');
+                    if (nomeInput) {
+                        nomeInput.value = transferencia.nome_transferencia || '';
+                    }
+
+                    if (transferencia.data_criacao) {
+                        const dataCriacaoInput = document.getElementById('transferencia-data-criacao');
+                        if (dataCriacaoInput) {
+                            const data = new Date(transferencia.data_criacao);
+                            dataCriacaoInput.value = data.toISOString().split('T')[0];
                         }
-                        const nomeInput = document.getElementById('transferencia-nome');
-                        if (nomeInput) {
-                            nomeInput.value = transferencia.nome_transferencia || '';
-                            console.log('📝 Nome preenchido:', nomeInput.value);
+                    }
+
+                    if (transferencia.data_fim) {
+                        const dataFimInput = document.getElementById('transferencia-data-fim');
+                        if (dataFimInput) {
+                            const data = new Date(transferencia.data_fim);
+                            dataFimInput.value = data.toISOString().split('T')[0];
                         }
-                        if (transferencia.data_criacao) {
-                            const dataCriacaoInput = document.getElementById('transferencia-data-criacao');
-                            if (dataCriacaoInput) {
-                                const data = new Date(transferencia.data_criacao);
-                                dataCriacaoInput.value = data.toISOString().split('T')[0];
-                                console.log('📅 Data de criação preenchida:', dataCriacaoInput.value);
-                            }
-                        }
-                        if (transferencia.data_fim) {
-                            const dataFimInput = document.getElementById('transferencia-data-fim');
-                            if (dataFimInput) {
-                                const data = new Date(transferencia.data_fim);
-                                dataFimInput.value = data.toISOString().split('T')[0];
-                                console.log('📅 Data de fim preenchida:', dataFimInput.value);
-                            }
-                        }
-                        this.carregarProprietariosAlias(transferencia.alias_id);
-                    });
+                    }
+
+                    // 5. Carrega os proprietários do alias e preenche os valores
+                    await this.carregarProprietariosAlias(transferencia.alias_id);
+                    console.log('✅ Dados da transferência carregados no formulário.');
+
                 } catch (error) {
-                    console.error('Erro ao carregar dados para edição:', error);
+                    console.error('Erro ao carregar dados para edição no modal:', error);
+                    this.showError('Erro ao preparar edição: ' + error.message);
                 }
-            });
+            };
+
+            // Adiciona o listener para o evento 'shown.bs.modal', que dispara uma única vez
+            modalEl.addEventListener('shown.bs.modal', handleShown, { once: true });
+
         } catch (error) {
             console.error('Erro ao carregar transferência para edição:', error);
             this.showError('Erro ao carregar transferência: ' + error.message);
