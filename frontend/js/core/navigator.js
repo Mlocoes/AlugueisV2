@@ -83,13 +83,25 @@ class UnifiedNavigator {
      * Criar navegação inferior (móvil)
      */
     createBottomNavigation(container) {
-        const navItems = this.getNavigationItems();
+        const allNavItems = this.getNavigationItems();
+        const regularItems = allNavItems.filter(item => item.permission === 'all');
+        const adminItems = allNavItems.filter(item => item.permission === 'admin');
+
+        let adminItemsHTML = '';
+        if (adminItems.length > 0) {
+            adminItemsHTML = `
+                <div class="bottom-nav-items admin-items">
+                    ${adminItems.map(item => this.createBottomNavItem(item)).join('')}
+                </div>
+            `;
+        }
         
         const bottomNavHTML = `
             <div class="bottom-nav" id="bottom-nav">
                 <div class="bottom-nav-items">
-                    ${navItems.map(item => this.createBottomNavItem(item)).join('')}
+                    ${regularItems.map(item => this.createBottomNavItem(item)).join('')}
                 </div>
+                ${adminItemsHTML}
             </div>
         `;
         

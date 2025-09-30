@@ -13,7 +13,21 @@ class DashboardModule {
 
     init() {
         if (this.initialized) return;
-        this.load();
+
+        window.addEventListener('navigate', (e) => {
+            if (e.detail.view === 'dashboard') {
+                this.isViewActive = true;
+                if (!this.dataLoaded) {
+                    this.load();
+                } else {
+                    this.createCharts();
+                }
+            } else {
+                this.isViewActive = false;
+                this.destroyAllCharts();
+            }
+        });
+
         this.initialized = true;
     }
 
@@ -38,10 +52,14 @@ class DashboardModule {
         );
 
         if (summary) {
+            this.dataLoaded = true;
             this.summaryData = summary;
             console.log('📊 Dados agregados do dashboard carregados:', this.summaryData);
-            this.updateStats();
-            this.createCharts();
+
+            if (this.isViewActive) {
+                this.updateStats();
+                this.createCharts();
+            }
         }
     }
 
@@ -81,17 +99,14 @@ class DashboardModule {
     }
 
     createIncomeChart() {
-        const waitForCanvas = (retries = 0) => {
-            const canvas = document.getElementById('ingresosChart');
-            if (canvas) {
-                this.renderIncomeChart(canvas);
-            } else if (retries < 10) {
-                setTimeout(() => waitForCanvas(retries + 1), 100);
-            } else {
-                console.error("Elemento canvas 'ingresosChart' não encontrado após múltiplas tentativas.");
-            }
-        };
-        waitForCanvas();
+        if (!this.isViewActive) return;
+
+        const canvas = document.getElementById('ingresosChart');
+        if (!canvas) {
+            console.error("Elemento canvas 'ingresosChart' não encontrado. O gráfico não será renderizado.");
+            return;
+        }
+        this.renderIncomeChart(canvas);
     }
 
     renderIncomeChart(canvas) {
@@ -154,17 +169,15 @@ class DashboardModule {
     }
 
     async refresh() {
+        this.dataLoaded = false;
         await this.load();
     }
 }
 
-// Inicialização do módulo quando o DOM estiver pronto
+// Inicialização do módulo
 document.addEventListener('DOMContentLoaded', () => {
-    // Garante que o módulo só seja inicializado na página do dashboard
-    if (document.getElementById('dashboard-total-proprietarios')) {
-        window.dashboardModule = new DashboardModule();
-        window.dashboardModule.init();
-    }
+    window.dashboardModule = new DashboardModule();
+    window.dashboardModule.init();
 });
 
 // Exportar classe globalmente para o app.js
