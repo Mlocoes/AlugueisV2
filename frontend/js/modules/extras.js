@@ -1242,6 +1242,72 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ ExtrasManager inicializado');
 });
 
+// VERSÃO SIMPLIFICADA - Remover código complexo e duplicado
+ExtrasManager.prototype.editarTransferenciaSimplificada = function(id) {
+    console.log('🎯 editarTransferenciaSimplificada chamada com id:', id);
+    
+    // 1. Encontrar a transferência
+    const transferencia = this.allTransferencias?.find(t => t.id === id);
+    if (!transferencia) {
+        console.error('❌ Transferência não encontrada:', id);
+        return;
+    }
+    console.log('📋 Transferência encontrada:', transferencia);
+    
+    // 2. Obter elementos do modal
+    const modal = document.getElementById('modal-transferencias');
+    const form = document.getElementById('form-transferencias');
+    const modalTitle = document.getElementById('modalTransferenciasLabel');
+    
+    if (!modal) {
+        console.error('❌ Modal não encontrado no DOM');
+        return;
+    }
+    console.log('✅ Modal encontrado');
+    
+    // 3. Resetar formulário
+    if (form) form.reset();
+    
+    // 4. Definir título
+    if (modalTitle) {
+        modalTitle.innerHTML = '<i class="fas fa-edit me-2"></i>Editar Transferência';
+    }
+    
+    // 5. Preencher campos (simplificado)
+    const nomeInput = document.getElementById('transferencia-nome');
+    if (nomeInput) nomeInput.value = transferencia.nome_transferencia || '';
+    
+    const dataCriacaoInput = document.getElementById('transferencia-data-criacao');
+    if (dataCriacaoInput && transferencia.data_criacao) {
+        dataCriacaoInput.value = transferencia.data_criacao.split('T')[0];
+    }
+    
+    const dataFimInput = document.getElementById('transferencia-data-fim');
+    if (dataFimInput && transferencia.data_fim) {
+        dataFimInput.value = transferencia.data_fim.split('T')[0];
+    }
+    
+    // 6. Mostrar modal diretamente
+    modal.style.display = 'block';
+    modal.classList.add('show');
+    modal.style.zIndex = '9999';
+    document.body.classList.add('modal-open');
+    
+    // 7. Criar backdrop
+    let backdrop = document.querySelector('.modal-backdrop');
+    if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop show';
+        backdrop.style.zIndex = '9998';
+        document.body.appendChild(backdrop);
+    }
+    
+    console.log('✅ Modal mostrado com sucesso');
+};
+
+// Substituir a função complexa pela simplificada
+ExtrasManager.prototype.editarTransferencia = ExtrasManager.prototype.editarTransferenciaSimplificada;
+
 // Adicionar método applyPermissions à classe ExtrasManager
 ExtrasManager.prototype.applyPermissions = function(isAdmin) {
     console.log(`🔒 Aplicando permissões no módulo Extras: ${isAdmin ? 'ADMIN' : 'USUÁRIO'}`);
