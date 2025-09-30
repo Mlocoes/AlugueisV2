@@ -1114,6 +1114,13 @@ class ExtrasManager {
             const transferencia = response.data || response;
             console.log('📋 Transferência encontrada:', transferencia);
 
+            // DEFINIR currentTransferencia para que os valores sejam carregados
+            this.currentTransferencia = transferencia;
+            console.log('💰 Dados da transferência para valores:', {
+                id_proprietarios: transferencia.id_proprietarios,
+                transferenciaCompleta: transferencia
+            });
+
             // Resetar formulário
             const form = document.getElementById('form-transferencias');
             if (form) form.reset();
