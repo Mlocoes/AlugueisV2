@@ -183,6 +183,11 @@ class ViewManager {
             this.hideLoading();
             
             console.log(`✅ Vista cargada: ${viewId}`);
+
+            // Disparar evento de que a vista foi completamente mostrada
+            window.dispatchEvent(new CustomEvent('view-shown', {
+                detail: { viewId: view.id }
+            }));
             
         } catch (error) {
             console.error(`❌ Error cargando vista ${viewId}:`, error);
