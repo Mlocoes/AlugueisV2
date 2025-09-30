@@ -583,7 +583,7 @@ class ExtrasManager {
                 }
             }
         }, 300);
-        // Si estamos em modo criação e já hay um alias seleccionado, cargar propietarios igual que en edição
+        // Si estamos em modo criação e já hay um alias seleccionado, cargar propietarios igual que em edição
         if (!this.currentTransferencia) {
             const aliasSelect = document.getElementById('transferencia-alias');
             if (aliasSelect && aliasSelect.value) {
@@ -1053,8 +1053,10 @@ class ExtrasManager {
             }
             console.log('📝 Editando transferência:', transferencia);
             this.currentTransferencia = transferencia;
+            console.log('🔧 Chamando showTransferenciasModal');
             this.showTransferenciasModal();
             requestAnimationFrame(async () => {
+                console.log('🔧 Dentro do requestAnimationFrame, iniciando carregamento de dados');
                 try {
                     await this.carregarAliasParaTransferencia();
                     requestAnimationFrame(() => {
