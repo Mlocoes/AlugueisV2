@@ -540,6 +540,12 @@ class ExtrasManager {
         try {
             bootstrapModal.show();
             console.log('Modal mostrado com sucesso');
+            // Verificar se o modal está visível no DOM
+            setTimeout(() => {
+                console.log('Modal classes após show:', modal.className);
+                console.log('Modal tem classe show:', modal.classList.contains('show'));
+                console.log('Modal backdrop existe:', !!document.querySelector('.modal-backdrop'));
+            }, 100);
         } catch (error) {
             console.error('Erro ao mostrar modal:', error);
         }
@@ -646,6 +652,19 @@ class ExtrasManager {
         // Obter instância do modal ou criar uma nova se não existir
         const bootstrapModal = bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal);
         
+        // Adicionar listener para debug
+        modal.addEventListener('show.bs.modal', () => {
+            console.log('🎭 Evento show.bs.modal disparado');
+        }, { once: true });
+        
+        modal.addEventListener('shown.bs.modal', () => {
+            console.log('🎭 Evento shown.bs.modal disparado');
+        }, { once: true });
+        
+        modal.addEventListener('hide.bs.modal', () => {
+            console.log('🎭 Evento hide.bs.modal disparado');
+        }, { once: true });
+        
         // Configurar eventos mais robustos - usando 'once' para evitar acúmulo
         modal.addEventListener('shown.bs.modal', () => {
             // Permitir que o Bootstrap termine de configurar o modal primeiro
@@ -676,6 +695,12 @@ class ExtrasManager {
         try {
             bootstrapModal.show();
             console.log('Modal mostrado com sucesso');
+            // Verificar se o modal está visível no DOM
+            setTimeout(() => {
+                console.log('Modal classes após show:', modal.className);
+                console.log('Modal tem classe show:', modal.classList.contains('show'));
+                console.log('Modal backdrop existe:', !!document.querySelector('.modal-backdrop'));
+            }, 100);
         } catch (error) {
             console.error('Erro ao mostrar modal:', error);
         }
