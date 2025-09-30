@@ -1045,8 +1045,10 @@ class ExtrasManager {
      */
     async editarTransferencia(id) {
         console.log('🔧 editarTransferencia chamada com id:', id);
+        console.log('🔧 allTransferencias atual:', this.allTransferencias);
         try {
             const transferencia = this.allTransferencias.find(t => t.id === id);
+            console.log('🔧 Procurando transferência com id ===', id, 'encontrada:', transferencia);
             if (!transferencia) {
                 this.showError('Transferência não encontrada');
                 return;
