@@ -7,30 +7,24 @@ class ParticipacoesModule {
         this.selectedData = null;
         this.proprietarios = [];
         this.imoveis = [];
-        this.initialized = false;
-        this.isMobile = window.deviceManager && window.deviceManager.deviceType === 'mobile';
+        this.container = null;
+        this.isMobile = false;
     }
 
     async load() {
-        if (!this.initialized) {
-            this.init();
-        }
-        await this.loadDatas();
-    }
-
-    init() {
-        if (this.initialized) return;
+        // Re-evaluate container and device type every time the view is loaded.
+        this.isMobile = window.deviceManager && window.deviceManager.deviceType === 'mobile';
         this.container = this.isMobile
             ? document.getElementById('participacoes-list-mobile')
             : document.getElementById('participacoes-matrix-body');
 
         if (!this.container) {
-            console.warn("Container for ParticipacoesModule not found.");
+            console.warn("ParticipacoesModule: Container not found. View might not be active.");
             return;
         }
 
         this.bindContainerEvents();
-        this.initialized = true;
+        await this.loadDatas();
     }
 
     bindContainerEvents() {
