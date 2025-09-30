@@ -731,6 +731,7 @@ class ExtrasManager {
      * Carregar proprietários do alias selecionado
      */
     async carregarProprietariosAlias(aliasId) {
+        console.log('🏠 carregarProprietariosAlias chamada com aliasId:', aliasId);
         const container = document.getElementById('transferencia-proprietarios-container');
         const tableBody = document.getElementById('transferencia-proprietarios-table');
     // ...
@@ -740,8 +741,12 @@ class ExtrasManager {
             return;
         }
         try {
+            console.log('🔍 Procurando proprietários para aliasId:', aliasId);
             const aliasSelect = document.getElementById('transferencia-alias');
             const selectedOption = aliasSelect.querySelector(`option[value="${aliasId}"]`);
+            console.log('📋 Selected option:', selectedOption);
+            console.log('📋 Dataset proprietarios:', selectedOption?.dataset?.proprietarios);
+
             if (selectedOption && selectedOption.dataset.proprietarios) {
                 const proprietarioIds = JSON.parse(selectedOption.dataset.proprietarios);
                 tableBody.innerHTML = '';
@@ -1133,11 +1138,17 @@ class ExtrasManager {
                     console.log('✅ Alias selecionado:', transferencia.alias_id);
                     
                     // Carregar proprietários do alias selecionado
+                    console.log('🔄 Carregando proprietários do alias...');
                     if (typeof this.carregarProprietariosAlias === 'function') {
                         this.carregarProprietariosAlias(transferencia.alias_id);
+                        console.log('✅ Função carregarProprietariosAlias chamada');
+                    } else {
+                        console.error('❌ Função carregarProprietariosAlias não encontrada');
                     }
+                } else {
+                    console.warn('⚠️ Alias select não encontrado ou transferência sem alias_id');
                 }
-            }, 100);
+            }, 200); // Aumentei para 200ms para dar mais tempo
 
             // MOSTRAR MODAL
             const bsModal = new bootstrap.Modal(modal, {
