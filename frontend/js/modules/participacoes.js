@@ -18,6 +18,15 @@ class ParticipacoesModule {
             ? document.getElementById('participacoes-list-mobile')
             : document.getElementById('participacoes-matrix-body');
 
+        // If container not found, wait a bit and try again (timing issue)
+        if (!this.container) {
+            console.log('[DEBUG] Container not found, waiting 100ms and trying again...');
+            await new Promise(resolve => setTimeout(resolve, 100));
+            this.container = this.isMobile
+                ? document.getElementById('participacoes-list-mobile')
+                : document.getElementById('participacoes-matrix-body');
+            console.log('[DEBUG] Container found after delay:', !!this.container);
+        }
 
         if (!this.container) {
             console.warn("ParticipacoesModule: Container not found. View might not be active.");
