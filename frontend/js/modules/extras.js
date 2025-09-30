@@ -1075,6 +1075,11 @@ class ExtrasManager {
      * Editar transferência
      */
     async editarTransferencia(id) {
+        // TESTE SIMPLES: apenas mostrar um alert para confirmar que funciona
+        alert('Botão editar transferência clicado! ID: ' + id);
+        
+        // Código original comentado para teste
+        /*
         console.log('editarTransferencia chamada com id:', id);
 
         // CORREÇÃO SIMPLES: mostrar modal diretamente sem complexidades
@@ -1113,6 +1118,7 @@ class ExtrasManager {
         }
 
         console.log('✅ Modal mostrado com sucesso (versão simples)');
+        */
     }
 
     /**
