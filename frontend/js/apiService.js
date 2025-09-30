@@ -189,7 +189,12 @@ window.apiService = {
                 if (response.status === 401 && url.includes('/api/auth/')) {
                     console.log('🔍 Verificação de sessão inicial:', `No hay sesión activa (401)`);
                 } else if (response.status === 401) {
-                    console.warn('⚠️ Autenticación requerida:', `HTTP ${response.status}, message: ${errorData}`);
+                    // Token expirado ou inválido, forçar recarga para pedir novas credenciais
+                    console.warn('⚠️ Token expirado ou inválido. Forçando recarga da página.');
+                    if (window.authService) {
+                        window.authService.clearSession(); // Limpa a sessão local
+                    }
+                    window.location.reload(); // Força a recarga da página
                 } else {
                     console.error('❌ Error en la requisición:', `Error: HTTP error! status: ${response.status}, message: ${errorData}`);
                 }
