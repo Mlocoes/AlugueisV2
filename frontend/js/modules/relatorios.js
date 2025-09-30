@@ -21,13 +21,23 @@ class RelatoriosModule {
             ? document.getElementById('relatorios-list-mobile')
             : document.getElementById('relatorios-table-body');
 
-        if (!this.container) return;
+        if (!this.container) {
+            console.warn('RelatoriosModule: Container not found. View might not be active.');
+            return;
+        }
 
         const suffix = this.isMobile ? '-mobile' : '';
         this.anoSelect = document.getElementById(`relatorios-ano-select${suffix}`);
         this.mesSelect = document.getElementById(`relatorios-mes-select${suffix}`);
         this.proprietarioSelect = document.getElementById(`relatorios-proprietario-select${suffix}`);
         this.transferenciasCheck = document.getElementById(`relatorios-transferencias-check${suffix}`);
+
+        console.log('RelatoriosModule elements found:', {
+            anoSelect: !!this.anoSelect,
+            mesSelect: !!this.mesSelect,
+            proprietarioSelect: !!this.proprietarioSelect,
+            transferenciasCheck: !!this.transferenciasCheck
+        });
 
         this.setupEventListeners();
         this.initialized = true;
@@ -134,6 +144,7 @@ class RelatoriosModule {
         try {
             this.uiManager.showLoading('Carregando relatórios...');
             const response = await this.apiService.get(`/api/reportes/resumen-mensual?${params.toString()}`);
+            console.log('API Response for relatorios:', response);
             let data = (response.success ? response.data : response) || [];
 
             if (proprietarioSelection && proprietarioSelection.startsWith('alias:')) {
@@ -146,6 +157,7 @@ class RelatoriosModule {
             this.currentData = data;
             await this.render();
         } catch (error) {
+            console.error('Erro detalhado ao carregar dados de relatórios:', error);
             this.uiManager.showError('Erro ao carregar dados de relatórios.');
         } finally {
             this.uiManager.hideLoading();
