@@ -201,6 +201,8 @@ class ExtrasManager {
         try {
             // Verificar se o usuário é administrador antes de fazer a chamada
             const isAdmin = window.authService && window.authService.isAdmin();
+            console.log('Usuário é admin:', isAdmin);
+            const disabledAttr = isAdmin ? '' : 'disabled';
             if (!isAdmin) {
                 console.log('⚠️ Usuário não-administrador tentou carregar extras - pulando');
                 this.renderExtrasTable([]);
@@ -716,17 +718,8 @@ class ExtrasManager {
             backdrop.className = 'modal-backdrop show';
             backdrop.style.zIndex = '9998';
             document.body.appendChild(backdrop);
-            console.log('Backdrop criado manualmente');
         }
-        console.log('Modal mostrado manualmente');
-        // Verificar se o modal está visível no DOM
-        setTimeout(() => {
-            console.log('Modal classes após show:', modal.className);
-            console.log('Modal tem classe show:', modal.classList.contains('show'));
-            console.log('Modal backdrop existe:', !!document.querySelector('.modal-backdrop'));
-            console.log('Modal computed style display:', window.getComputedStyle(modal).display);
-            console.log('Modal computed style visibility:', window.getComputedStyle(modal).visibility);
-        }, 100);
+        console.log('Modal mostrado diretamente');
     }
 
     /**
