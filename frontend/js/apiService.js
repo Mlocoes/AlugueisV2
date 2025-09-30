@@ -237,18 +237,13 @@ window.apiService = {
     async getParticipacoes(data = null) {
         let endpoint = '/api/participacoes/';
         if (data && data !== "ativo") {
-            // Si data es un string (fecha), usarlo como parámetro data_registro
-            if (typeof data === 'string') {
+            // Se data é um UUID (versao_id), usar o endpoint do histórico
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (uuidRegex.test(data)) {
+                endpoint = `/api/participacoes/historico/${encodeURIComponent(data)}`;
+            } else {
+                // Si data es un string (fecha), usarlo como parámetro data_registro
                 endpoint += `?data_registro=${encodeURIComponent(data)}`;
-            } else if (typeof data === 'object') {
-                // Si data es un objeto, procesarlo como antes
-                const params = Object.entries(data)
-                    .filter(([key, value]) => value !== null && value !== undefined && value !== '')
-                    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-                    .join('&');
-                if (params) {
-                    endpoint += `?${params}`;
-                }
             }
         }
         const response = await this.get(endpoint);

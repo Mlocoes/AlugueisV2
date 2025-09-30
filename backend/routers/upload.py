@@ -899,20 +899,24 @@ async def salvar_historico_participacoes(db: Session) -> str:
     if not participacoes_ativas:
         return new_version_id # Nenhuma participação para historiar
 
-    # Criar registros de histórico
+    # Criar registros de histórico, evitando duplicatas por imovel_id e proprietario_id
     historico_records = []
+    seen = set()
     for part in participacoes_ativas:
-        historico_records.append(
-            HistoricoParticipacao(
-                versao_id=new_version_id,
-                data_versao=current_timestamp,
-                imovel_id=part.imovel_id,
-                proprietario_id=part.proprietario_id,
-                porcentagem=part.porcentagem,
-                data_registro_original=part.data_registro,
-                ativo=part.ativo
+        key = (part.imovel_id, part.proprietario_id)
+        if key not in seen:
+            historico_records.append(
+                HistoricoParticipacao(
+                    versao_id=new_version_id,
+                    data_versao=current_timestamp,
+                    imovel_id=part.imovel_id,
+                    proprietario_id=part.proprietario_id,
+                    porcentagem=part.porcentagem,
+                    data_registro_original=part.data_registro,
+                    ativo=part.ativo
+                )
             )
-        )
+            seen.add(key)
     
     # Inserir em lote no banco de dados
     if historico_records:

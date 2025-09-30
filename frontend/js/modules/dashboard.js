@@ -54,6 +54,13 @@ class DashboardModule {
         if (this.isLoading) return;
         this.isLoading = true;
 
+        // Para mobile, os dados são carregados pelo mobileUIManager
+        const isMobile = window.deviceManager && window.deviceManager.deviceType === 'mobile';
+        if (isMobile) {
+            this.isLoading = false;
+            return;
+        }
+
         const summary = await this.handleApiCall(
             () => this.apiService.getDashboardSummary(),
             'Carregando dashboard...',
@@ -66,8 +73,10 @@ class DashboardModule {
             this.summaryData = summary;
             console.log('📊 Dados agregados do dashboard carregados:', this.summaryData);
 
+            // Sempre atualizar estatísticas quando dados são carregados
+            this.updateStats();
+
             if (this.isViewActive) {
-                this.updateStats();
                 this.createCharts();
             }
         }
@@ -91,6 +100,8 @@ class DashboardModule {
         const element = document.getElementById(elementId);
         if (element) {
             element.textContent = value;
+        } else {
+            console.error(`❌ Elemento ${elementId} não encontrado para atualização`);
         }
     }
 

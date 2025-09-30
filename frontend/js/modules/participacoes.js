@@ -217,7 +217,7 @@ class ParticipacoesModule {
         if (this.selectedData === 'ativo' || this.selectedData === null) {
             targetVersaoId = null;
         } else {
-            targetVersaoId = parseInt(this.selectedData, 10);
+            targetVersaoId = this.selectedData; // Manter como string UUID
         }
 
         tableBody.innerHTML = '';
@@ -228,7 +228,7 @@ class ParticipacoesModule {
                 const part = this.participacoes.find(p =>
                     p.imovel_id === imovel.id &&
                     p.proprietario_id === prop.id &&
-                    p.versao_id === targetVersaoId
+                    (p.versao_id || null) === targetVersaoId
                 );
                 const val = part ? (part.porcentagem < 1 ? part.porcentagem * 100 : part.porcentagem) : 0;
                 total += val;
