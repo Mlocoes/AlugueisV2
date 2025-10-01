@@ -8,47 +8,20 @@ class ExtrasManager {
      * Cierra el modal por id y devuelve el foco al botón indicado
      */
     safeCloseModal(modalId, buttonId) {
-        console.log('[DEBUG] safeCloseModal chamado:', modalId, buttonId);
         const modalEl = document.getElementById(modalId);
-        console.log('[DEBUG] Modal element encontrado:', !!modalEl);
         if (modalEl) {
-            try {
-                // Tentar fechar usando Bootstrap
-                const modalInstance = bootstrap.Modal.getInstance(modalEl);
-                if (modalInstance) {
-                    console.log('[DEBUG] Usando modal instance existente');
-                    modalInstance.hide();
-                } else {
-                    console.log('[DEBUG] Criando nova modal instance');
-                    const newInstance = new bootstrap.Modal(modalEl);
-                    newInstance.hide();
-                }
-                
-                // Como backup, tentar fechar manualmente
-                setTimeout(() => {
-                    if (modalEl.classList.contains('show')) {
-                        console.log('[DEBUG] Modal ainda aberto, forçando fechamento');
-                        modalEl.classList.remove('show');
-                        modalEl.style.display = 'none';
-                        document.body.classList.remove('modal-open');
-                        const backdrop = document.querySelector('.modal-backdrop');
-                        if (backdrop) backdrop.remove();
-                    }
-                }, 100);
-                
-            } catch (error) {
-                console.error('[DEBUG] Erro ao fechar modal:', error);
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) {
+                modalInstance.hide();
             }
         }
         if (buttonId) {
             const btn = document.getElementById(buttonId);
             if (btn) {
+                // O timeout é bom para permitir que o modal feche antes de focar
                 setTimeout(() => {
                     btn.focus();
-                    console.log('[DEBUG] Foco setado no botao:', buttonId);
                 }, 300);
-            } else {
-                console.log('[DEBUG] Botao nao encontrado:', buttonId);
             }
         }
     }
@@ -530,9 +503,9 @@ class ExtrasManager {
     /**
      * Mostrar modal de alias
      */
-    async showAliasModal(extra = null) { // Added async here
+    async showAliasModal(extra = null) {
         this.currentExtra = extra;
-        const modal = document.getElementById('modal-alias');
+        const modalEl = document.getElementById('modal-alias');
         const modalTitle = document.getElementById('modalAliasLabel');
         const form = document.getElementById('form-alias');
         
@@ -542,79 +515,23 @@ class ExtrasManager {
         } else {
             modalTitle.innerHTML = '<i class="fas fa-plus me-2"></i>Novo Alias';
             form.reset();
-            console.log('Calling loadProprietarios from showAliasModal (Novo Alias mode)');
-            // Cargar lista de proprietários disponibles
             await this.loadProprietarios();
         }
 
-        // Limpar alertas
         const alerts = document.getElementById('alias-alerts');
         if (alerts) alerts.innerHTML = '';
 
-        // Obter instância do modal ou criar uma nova se não existir
-        const bootstrapModal = bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal);
+        const bootstrapModal = bootstrap.Modal.getOrCreateInstance(modalEl);
 
-        const saveBtn = document.getElementById('btn-salvar-alias');
-        if(saveBtn) {
-            const newSaveBtn = saveBtn.cloneNode(true);
-            saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
-    
-            newSaveBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.salvarAlias();
-            });
-        }
-
-        // Configurar eventos mais robustos - usando 'once' para evitar acúmulo
-        modal.addEventListener('shown.bs.modal', () => {
-            // Permitir que o Bootstrap termine de configurar o modal primeiro
-            setTimeout(() => {
-                // Focar no primeiro input disponível após o modal ser exibido
-                const firstInput = modal.querySelector('input[type="text"]:not([disabled]), select:not([disabled])');
-                if (firstInput && !firstInput.matches(':focus')) {
-                    firstInput.focus();
-                }
-            }, 200);
-        }, { once: true });
-
-        modal.addEventListener('hide.bs.modal', () => {
-            // Remover foco antes que o modal seja oculto
-            const focusedElement = modal.querySelector(':focus');
-            if (focusedElement) {
-                focusedElement.blur();
+        // Focar no primeiro input quando o modal for exibido
+        modalEl.addEventListener('shown.bs.modal', () => {
+            const firstInput = modalEl.querySelector('input[type="text"], select');
+            if (firstInput) {
+                firstInput.focus();
             }
         }, { once: true });
 
-        modal.addEventListener('hidden.bs.modal', () => {
-            // O Bootstrap lida com aria-hidden automaticamente, não precisamos interferir
-            modal.removeAttribute('aria-modal');
-        }, { once: true });
-
-        // Mostrar modal
-        console.log('Tentando mostrar modal...');
-        // Forçar z-index alto para garantir que o modal apareça na frente
-        modal.style.zIndex = '9999';
-        // Adicionar classe show manualmente primeiro
-        modal.classList.add('show');
-        modal.style.display = 'block';
-        // Criar backdrop manualmente se não existir
-        let backdrop = document.querySelector('.modal-backdrop');
-        if (!backdrop) {
-            backdrop = document.createElement('div');
-            backdrop.className = 'modal-backdrop show';
-            backdrop.style.zIndex = '9998';
-            document.body.appendChild(backdrop);
-            console.log('Backdrop criado manualmente');
-        }
-        console.log('Modal mostrado manualmente');
-        // Verificar se o modal está visível no DOM
-        setTimeout(() => {
-            console.log('Modal classes após show:', modal.className);
-            console.log('Modal tem classe show:', modal.classList.contains('show'));
-            console.log('Modal backdrop existe:', !!document.querySelector('.modal-backdrop'));
-            console.log('Modal computed style display:', window.getComputedStyle(modal).display);
-            console.log('Modal computed style visibility:', window.getComputedStyle(modal).visibility);
-        }, 100);
+        bootstrapModal.show();
     }
 
     /**
@@ -641,116 +558,40 @@ class ExtrasManager {
      * Mostrar modal de transferências
      */
     showTransferenciasModal() {
-        console.log('showTransferenciasModal chamada');
-        const modal = document.getElementById('modal-transferencias');
-        console.log('Modal element encontrado:', !!modal);
-        console.log('Modais abertos atualmente:', document.querySelectorAll('.modal.show').length);
-        
-        // Garantir que os event listeners estejam configurados SEMPRE que o modal for mostrado
-        console.log('[DEBUG] Garantindo configuração de event listeners para modal de transferências');
-        if (!this._transferModalEventsConfigured) {
-            this.setupEvents();
-            this._transferModalEventsConfigured = true;
-            console.log('[DEBUG] Event listeners configurados para modal de transferências');
-        }
-        
+        const modalEl = document.getElementById('modal-transferencias');
         const form = document.getElementById('form-transferencias');
         const modalTitle = document.getElementById('modalTransferenciasLabel');
 
-        // Configurar o modal para edição ou criação
         if (this.currentTransferencia) {
-            // Modo Edição: Apenas ajusta o título. O preenchimento é feito em `editarTransferencia`.
-            if (modalTitle) {
-                modalTitle.innerHTML = '<i class="fas fa-edit me-2"></i>Editar Transferência';
-            }
+            if (modalTitle) modalTitle.innerHTML = '<i class="fas fa-edit me-2"></i>Editar Transferência';
         } else {
-            // Modo Criação: Limpa o formulário e define o título padrão.
             form.reset();
-            if (modalTitle) {
-                modalTitle.innerHTML = '<i class="fas fa-exchange-alt me-2"></i>Nova Transferência';
-            }
-            // Limpar campo de nome da transferência
-            const nomeInput = document.getElementById('transferencia-nome');
-            if (nomeInput) nomeInput.value = '';
-            // Inicializar data de criação com a data atual
+            if (modalTitle) modalTitle.innerHTML = '<i class="fas fa-exchange-alt me-2"></i>Nova Transferência';
+
             const dataCriacaoInput = document.getElementById('transferencia-data-criacao');
             if (dataCriacaoInput) {
-                const hoje = new Date();
-                const dataFormatada = hoje.toISOString().split('T')[0];
-                dataCriacaoInput.value = dataFormatada;
+                dataCriacaoInput.value = new Date().toISOString().split('T')[0];
             }
-            // Limpar data fim
-            const dataFimInput = document.getElementById('transferencia-data-fim');
-            if (dataFimInput) dataFimInput.value = '';
-            // Ocultar contêiner de proprietários até selecionar alias
+
             const container = document.getElementById('transferencia-proprietarios-container');
             if (container) container.style.display = 'none';
         }
         
-        // Carregar aliases disponíveis (sempre)
         this.carregarAliasParaTransferencia();
 
-        // Limpar alertas
         const alerts = document.getElementById('transferencia-alerts');
         if (alerts) alerts.innerHTML = '';
 
-        // Obter instância do modal ou criar uma nova se não existir
-        const bootstrapModal = bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal);
-        
-        // Adicionar listener para debug
-        modal.addEventListener('show.bs.modal', () => {
-            console.log('🎭 Evento show.bs.modal disparado');
-        }, { once: true });
-        
-        modal.addEventListener('shown.bs.modal', () => {
-            console.log('🎭 Evento shown.bs.modal disparado');
-        }, { once: true });
-        
-        modal.addEventListener('hide.bs.modal', () => {
-            console.log('🎭 Evento hide.bs.modal disparado');
-        }, { once: true });
-        
-        // Configurar eventos mais robustos - usando 'once' para evitar acúmulo
-        modal.addEventListener('shown.bs.modal', () => {
-            // Permitir que o Bootstrap termine de configurar o modal primeiro
-            setTimeout(() => {
-                // Focar no primeiro select disponível após o modal ser exibido
-                const firstSelect = modal.querySelector('select:not([disabled])');
-                if (firstSelect && !firstSelect.matches(':focus')) {
-                    firstSelect.focus();
-                }
-            }, 200);
-        }, { once: true });
+        const bootstrapModal = bootstrap.Modal.getOrCreateInstance(modalEl);
 
-        modal.addEventListener('hide.bs.modal', () => {
-            // Remover foco antes que o modal seja oculto
-            const focusedElement = modal.querySelector(':focus');
-            if (focusedElement) {
-                focusedElement.blur();
+        modalEl.addEventListener('shown.bs.modal', () => {
+            const firstSelect = modalEl.querySelector('select');
+            if (firstSelect) {
+                firstSelect.focus();
             }
         }, { once: true });
 
-        modal.addEventListener('hidden.bs.modal', () => {
-            // O Bootstrap lida com aria-hidden automaticamente
-            modal.removeAttribute('aria-modal');
-        }, { once: true });
-
-        // Mostrar modal
-        console.log('Tentando mostrar modal...');
-        // Forçar z-index alto para garantir que o modal apareça na frente
-        modal.style.zIndex = '9999';
-        // Adicionar classe show manualmente primeiro
-        modal.classList.add('show');
-        modal.style.display = 'block';
-        // Criar backdrop manualmente se não existir
-        let backdrop = document.querySelector('.modal-backdrop');
-        if (!backdrop) {
-            backdrop = document.createElement('div');
-            backdrop.className = 'modal-backdrop show';
-            backdrop.style.zIndex = '9998';
-            document.body.appendChild(backdrop);
-        }
-        console.log('Modal mostrado diretamente');
+        bootstrapModal.show();
     }
 
     /**
