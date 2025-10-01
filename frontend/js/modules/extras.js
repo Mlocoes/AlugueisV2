@@ -117,12 +117,16 @@ class ExtrasManager {
 
         // Formulário de transferências - configurar apenas uma vez
         const formTransferencias = document.getElementById('form-transferencias');
+        console.log('[DEBUG] Verificando form-transferencias:', !!formTransferencias, 'hasListener:', formTransferencias?.hasTransferenciasListener);
         if (formTransferencias && !formTransferencias.hasTransferenciasListener) {
+            console.log('[DEBUG] Configurando event listener para form-transferencias');
             formTransferencias.addEventListener('submit', (e) => {
+                console.log('[DEBUG] Event submit disparado para form-transferencias');
                 e.preventDefault();
                 this.salvarTransferencias();
             });
             formTransferencias.hasTransferenciasListener = true;
+            console.log('[DEBUG] Event listener configurado com sucesso');
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -872,22 +876,28 @@ class ExtrasManager {
     async salvarTransferencias() {
     console.log('[DEBUG] Entrando en salvarTransferencias');
     try {
+            console.log('[DEBUG] Iniciando coleta de dados do formulario');
             const aliasId = document.getElementById('transferencia-alias').value;
             const nomeTransferencia = document.getElementById('transferencia-nome').value.trim();
             const dataCriacao = document.getElementById('transferencia-data-criacao').value;
             const dataFim = document.getElementById('transferencia-data-fim').value;
             
+            console.log('[DEBUG] Dados coletados:', { aliasId, nomeTransferencia, dataCriacao, dataFim });
+            
             if (!aliasId) {
+                console.log('[DEBUG] Validacao falhou: aliasId vazio');
                 this.showAlert('Selecione um alias', 'danger', 'transferencia-alerts');
                 return;
             }
 
             if (!nomeTransferencia) {
+                console.log('[DEBUG] Validacao falhou: nomeTransferencia vazio');
                 this.showAlert('Digite o nome da transferência', 'danger', 'transferencia-alerts');
                 return;
             }
 
             if (!dataCriacao) {
+                console.log('[DEBUG] Validacao falhou: dataCriacao vazia');
                 this.showAlert('Selecione a data de criação', 'danger', 'transferencia-alerts');
                 return;
             }
@@ -898,9 +908,12 @@ class ExtrasManager {
                 return;
             }
 
+            console.log('[DEBUG] Validacoes passaram, coletando proprietarios');
+            
             // Coletar valores das transferências
             const proprietarios = [];
             const inputs = document.querySelectorAll('#transferencia-proprietarios-table input[type="number"]');
+            console.log('[DEBUG] Encontrados', inputs.length, 'inputs de proprietario');
             let hasValue = false;
 
             inputs.forEach(input => {
@@ -964,7 +977,7 @@ class ExtrasManager {
                 // Resetar campo hidden
                 if (transferenciaIdInput) transferenciaIdInput.value = '';
                 // Fechar modal de forma segura para acessibilidade
-                this.safeCloseModal('modal-transferencias', 'btn-salvar-transferencia');
+                this.safeCloseModal('modal-transferencias', 'btn-salvar-transferencias');
                 // Recargar la lista de transferencias para mostrar la nova transferência
                 await this.loadTransferencias();
             }
