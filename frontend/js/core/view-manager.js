@@ -622,20 +622,20 @@ class ViewManager {
         `;
     }
 
-    getImportarMobileTemplate() {
-        const accordionId = "importar-accordion-mobile";
-        const createAccordionItem = (type, title, icon) => `
+    _createImportarAccordionItem(type, title, icon, accordionId) {
+        const suffix = this.isMobile ? '-mobile' : '';
+        return `
             <div class="accordion-item">
-                <h2 class="accordion-header" id="heading-${type}">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${type}" aria-expanded="false" aria-controls="collapse-${type}">
+                <h2 class="accordion-header" id="heading-${type}${suffix}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${type}${suffix}" aria-expanded="false" aria-controls="collapse-${type}${suffix}">
                         <i class="fas ${icon} me-2"></i>${title}
                     </button>
                 </h2>
-                <div id="collapse-${type}" class="accordion-collapse collapse" aria-labelledby="heading-${type}" data-bs-parent="#${accordionId}">
+                <div id="collapse-${type}${suffix}" class="accordion-collapse collapse" aria-labelledby="heading-${type}${suffix}" data-bs-parent="#${accordionId}">
                     <div class="accordion-body">
-                        <form id="importar-form-${type}-mobile" enctype="multipart/form-data">
+                        <form id="importar-form-${type}${suffix}" enctype="multipart/form-data">
                             <div class="input-group">
-                                <input type="file" class="form-control" id="arquivo-${type}-mobile" accept=".xlsx,.xls" required>
+                                <input type="file" class="form-control" id="arquivo-${type}${suffix}" accept=".xlsx,.xls" required>
                                 <button class="btn btn-primary" type="submit">Importar</button>
                             </div>
                         </form>
@@ -643,14 +643,22 @@ class ViewManager {
                 </div>
             </div>
         `;
+    }
+
+    getImportarMobileTemplate() {
+        const accordionId = "importar-accordion-mobile";
+        this.isMobile = true; // Forçar sufixo
+        const items = [
+            this._createImportarAccordionItem('proprietarios', 'Proprietários', 'fa-users', accordionId),
+            this._createImportarAccordionItem('imoveis', 'Imóveis', 'fa-building', accordionId),
+            this._createImportarAccordionItem('participacoes', 'Participações', 'fa-chart-pie', accordionId),
+            this._createImportarAccordionItem('alugueis', 'Aluguéis', 'fa-calendar-alt', accordionId)
+        ].join('');
 
         return `
             <div class="importar-container-mobile p-3">
                 <div class="accordion" id="${accordionId}">
-                    ${createAccordionItem('proprietarios', 'Proprietários', 'fa-users')}
-                    ${createAccordionItem('imoveis', 'Imóveis', 'fa-building')}
-                    ${createAccordionItem('participacoes', 'Participações', 'fa-chart-pie')}
-                    ${createAccordionItem('alugueis', 'Aluguéis', 'fa-calendar-alt')}
+                    ${items}
                 </div>
                 <div id="validation-results-container-mobile" class="mt-3"></div>
             </div>
@@ -1276,7 +1284,27 @@ class ViewManager {
         `;
     }
 
+    _createImportForm(type, title, icon) {
+        const suffix = this.isMobile ? '-mobile' : '';
+        return `
+            <form id="importar-form-${type}${suffix}" class="mb-3" enctype="multipart/form-data">
+                <div class="input-group">
+                    <input type="file" class="form-control" id="arquivo-${type}${suffix}" accept=".xlsx,.xls" required>
+                    <button class="btn btn-primary" type="submit" style="width: 260px;"><i class="fas ${icon} me-2"></i> Importar ${title}</button>
+                </div>
+            </form>
+        `;
+    }
+
     getImportarTemplate() {
+        this.isMobile = false; // Garantir que o sufixo não seja móvel
+        const forms = [
+            this._createImportForm('proprietarios', 'Proprietários', 'fa-users'),
+            this._createImportForm('imoveis', 'Imóveis', 'fa-building'),
+            this._createImportForm('participacoes', 'Participações', 'fa-chart-pie'),
+            this._createImportForm('alugueis', 'Aluguéis', 'fa-calendar-alt')
+        ].join('');
+
         return `
             <div class="importar-container">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -1297,30 +1325,7 @@ class ViewManager {
                                         <button class="btn btn-primary" style="width:150px" id="btn-novas-transferencias" type="button"><i class="fas fa-exchange-alt me-2"></i> Nova Transferência</button>
                                     </div>
                                 </div>
-                                <form id="importar-form-proprietarios" class="mb-3" enctype="multipart/form-data">
-                                    <div class="input-group">
-                                        <input type="file" class="form-control" id="arquivo-proprietarios" accept=".xlsx,.xls" required>
-                                        <button class="btn btn-primary" type="submit" style="width: 260px;"><i class="fas fa-users me-2"></i> Importar Proprietários</button>
-                                    </div>
-                                </form>
-                                <form id="importar-form-imoveis" class="mb-3" enctype="multipart/form-data">
-                                    <div class="input-group">
-                                        <input type="file" class="form-control" id="arquivo-imoveis" accept=".xlsx,.xls" required>
-                                        <button class="btn btn-primary" type="submit" style="width: 260px;"><i class="fas fa-building me-2"></i> Importar Imóveis</button>
-                                    </div>
-                                </form>
-                                <form id="importar-form-participacoes" class="mb-3" enctype="multipart/form-data">
-                                    <div class="input-group">
-                                        <input type="file" class="form-control" id="arquivo-participacoes" accept=".xlsx,.xls" required>
-                                        <button class="btn btn-primary" type="submit" style="width: 260px;"><i class="fas fa-chart-pie me-2"></i> Importar Participações</button>
-                                    </div>
-                                </form>
-                                <form id="importar-form-alugueis" class="mb-3" enctype="multipart/form-data">
-                                    <div class="input-group">
-                                        <input type="file" class="form-control" id="arquivo-alugueis" accept=".xlsx,.xls" required>
-                                        <button class="btn btn-primary" type="submit" style="width: 260px;"><i class="fas fa-calendar-alt me-2"></i> Importar Aluguéis</button>
-                                    </div>
-                                </form>
+                                ${forms}
                                 <div id="validation-results-container" class="mt-4" style="display: none;"></div>
                             </div>
                         </div>
