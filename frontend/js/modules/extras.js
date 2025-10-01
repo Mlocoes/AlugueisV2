@@ -8,15 +8,47 @@ class ExtrasManager {
      * Cierra el modal por id y devuelve el foco al botón indicado
      */
     safeCloseModal(modalId, buttonId) {
+        console.log('[DEBUG] safeCloseModal chamado:', modalId, buttonId);
         const modalEl = document.getElementById(modalId);
+        console.log('[DEBUG] Modal element encontrado:', !!modalEl);
         if (modalEl) {
-            const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-            modalInstance.hide();
+            try {
+                // Tentar fechar usando Bootstrap
+                const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if (modalInstance) {
+                    console.log('[DEBUG] Usando modal instance existente');
+                    modalInstance.hide();
+                } else {
+                    console.log('[DEBUG] Criando nova modal instance');
+                    const newInstance = new bootstrap.Modal(modalEl);
+                    newInstance.hide();
+                }
+                
+                // Como backup, tentar fechar manualmente
+                setTimeout(() => {
+                    if (modalEl.classList.contains('show')) {
+                        console.log('[DEBUG] Modal ainda aberto, forçando fechamento');
+                        modalEl.classList.remove('show');
+                        modalEl.style.display = 'none';
+                        document.body.classList.remove('modal-open');
+                        const backdrop = document.querySelector('.modal-backdrop');
+                        if (backdrop) backdrop.remove();
+                    }
+                }, 100);
+                
+            } catch (error) {
+                console.error('[DEBUG] Erro ao fechar modal:', error);
+            }
         }
         if (buttonId) {
             const btn = document.getElementById(buttonId);
             if (btn) {
-                setTimeout(() => btn.focus(), 300);
+                setTimeout(() => {
+                    btn.focus();
+                    console.log('[DEBUG] Foco setado no botao:', buttonId);
+                }, 300);
+            } else {
+                console.log('[DEBUG] Botao nao encontrado:', buttonId);
             }
         }
     }
@@ -974,6 +1006,7 @@ class ExtrasManager {
                 this.showSuccess(transferenciaId ? 
                     'Transferência atualizada com sucesso!' : 
                     'Transferência criada com sucesso!');
+                console.log('[DEBUG] Transferencia salva com sucesso, fechando modal');
                 // Resetar campo hidden
                 if (transferenciaIdInput) transferenciaIdInput.value = '';
                 // Fechar modal de forma segura para acessibilidade
