@@ -120,6 +120,8 @@ class ExtrasManager {
         this.exclusaoTipo = null;
         this.exclusaoId = null;
         this.exclusaoNome = null;
+        // Flag para controlar configuração de eventos do modal de transferências
+        this._transferModalEventsConfigured = false;
         // Binding de métodos
         this.load = this.load.bind(this);
         this.loadExtras = this.loadExtras.bind(this);
@@ -150,6 +152,8 @@ class ExtrasManager {
         // Formulário de transferências - configurar apenas uma vez
         const formTransferencias = document.getElementById('form-transferencias');
         const btnSalvarTransferencias = document.getElementById('btn-salvar-transferencias');
+        
+        console.log('[DEBUG] Elementos encontrados - Form:', !!formTransferencias, 'Button:', !!btnSalvarTransferencias);
         
         if (formTransferencias && !formTransferencias.hasTransferenciasListener) {
             console.log('[DEBUG] Configurando event listener para form-transferencias');
@@ -644,7 +648,11 @@ class ExtrasManager {
         
         // Garantir que os event listeners estejam configurados SEMPRE que o modal for mostrado
         console.log('[DEBUG] Garantindo configuração de event listeners para modal de transferências');
-        this.setupEvents();
+        if (!this._transferModalEventsConfigured) {
+            this.setupEvents();
+            this._transferModalEventsConfigured = true;
+            console.log('[DEBUG] Event listeners configurados para modal de transferências');
+        }
         
         const form = document.getElementById('form-transferencias');
         const modalTitle = document.getElementById('modalTransferenciasLabel');
