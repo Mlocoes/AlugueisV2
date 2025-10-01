@@ -54,6 +54,7 @@ class UserResponse(BaseModel):
     usuario: str
     tipo_usuario: str
     access_token: str
+    token_type: str = "bearer"
 
 class TokenData(BaseModel):
     usuario: Optional[str] = None
@@ -202,7 +203,8 @@ async def login(request: Request, response: Response, login_data: LoginRequest, 
     return UserResponse(
         usuario=usuario.usuario,
         tipo_usuario=usuario.tipo_de_usuario,
-        access_token=access_token
+        access_token=access_token,
+        token_type="bearer"
     )
 
 @router.get("/verify")

@@ -4,22 +4,17 @@ Testes para autenticação
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
-from main import app
 from models_final import Usuario
-from config import get_db
-import bcrypt
+from routers.auth import get_password_hash
 
-client = TestClient(app)
-
-def test_login_success(db_session: Session):
+def test_login_success(client: TestClient, db_session: Session):
     """Testa login bem-sucedido."""
     # Criar usuário de teste
-    hashed_password = bcrypt.hashpw("test123".encode('utf-8'), bcrypt.gensalt())
+    hashed_password = get_password_hash("test123")
     test_user = Usuario(
         usuario="testuser",
-        senha=hashed_password.decode('utf-8'),
-        tipo_de_usuario="usuario",
-        nome="Test User"
+        senha=hashed_password,
+        tipo_de_usuario="usuario"
     )
     db_session.add(test_user)
     db_session.commit()
@@ -35,7 +30,7 @@ def test_login_success(db_session: Session):
     assert "access_token" in data
     assert data["token_type"] == "bearer"
 
-def test_login_invalid_credentials():
+def test_login_invalid_credentials(client: TestClient):
     """Testa login com credenciais inválidas."""
     response = client.post("/api/auth/login", json={
         "usuario": "invalid",
@@ -45,7 +40,7 @@ def test_login_invalid_credentials():
     assert response.status_code == 401
     assert "inválidos" in response.json()["detail"]
 
-def test_login_rate_limiting():
+def test_login_rate_limiting(client: TestClient):
     """Testa rate limiting no login."""
     # Fazer múltiplas tentativas de login falhidas
     for i in range(6):
