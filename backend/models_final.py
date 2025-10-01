@@ -3,12 +3,38 @@ Modelos SQLAlchemy para a Estrutura Final Simplificada
 Sistema de Aluguéis V2 - Migrado para Português
 """
 from datetime import datetime, date
-from sqlalchemy import Column, Integer, String, Text, DateTime, Date, Numeric, Boolean, ForeignKey, func, UniqueConstraint, Interval, CheckConstraint, Index
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, Integer, String, Text, DateTime, Date, Numeric, Boolean, ForeignKey, func, UniqueConstraint, Interval, CheckConstraint, Index, TypeDecorator, CHAR
+from sqlalchemy.dialects.postgresql import UUID as pgUUID
+import uuid
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from pydantic import BaseModel, Field, validator
 from typing import Optional, List
+
+class UUID(TypeDecorator):
+    """Platform-independent UUID type."""
+    impl = CHAR
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(pgUUID(as_uuid=True))
+        else:
+            return dialect.type_descriptor(String(36))
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return value
+        else:
+            return str(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return value
+        else:
+            if not isinstance(value, uuid.UUID):
+                return uuid.UUID(value)
+            return value
 
 Base = declarative_base()
 
@@ -46,7 +72,7 @@ class Imovel(Base):
     __tablename__ = 'imoveis'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    uuid = Column(UUID(as_uuid=True), default=func.uuid_generate_v4(), unique=True, nullable=False)
+    uuid = Column(UUID, default=uuid.uuid4, unique=True, nullable=False)
     nome = Column(String(200), nullable=False, unique=True)
     endereco = Column(String(300), nullable=False)
     tipo_imovel = Column(String(50), nullable=True)
@@ -103,7 +129,7 @@ class Proprietario(Base):
     __tablename__ = 'proprietarios'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    uuid = Column(UUID(as_uuid=True), default=func.uuid_generate_v4(), unique=True, nullable=False)
+    uuid = Column(UUID, default=uuid.uuid4, unique=True, nullable=False)
     nome = Column(String(150), nullable=False)
     sobrenome = Column(String(150), nullable=True)
     documento = Column(String(50), nullable=True, unique=True)
@@ -170,7 +196,7 @@ class AluguelSimples(Base):
     )
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    uuid = Column(UUID(as_uuid=True), default=func.uuid_generate_v4(), unique=True, nullable=False)
+    uuid = Column(UUID, default=uuid.uuid4, unique=True, nullable=False)
     imovel_id = Column(Integer, ForeignKey('imoveis.id'), nullable=False)
     proprietario_id = Column(Integer, ForeignKey('proprietarios.id', ondelete="RESTRICT"), nullable=False)
     mes = Column(Integer, nullable=False)
@@ -215,7 +241,7 @@ class Participacao(Base):
     __tablename__ = 'participacoes'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    uuid = Column(UUID(as_uuid=True), default=func.uuid_generate_v4(), unique=True, nullable=False)
+    uuid = Column(UUID, default=uuid.uuid4, unique=True, nullable=False)
     porcentagem = Column(Numeric(10,8), nullable=False, default=0.00000000)  # 0.00000000 a 100.00000000
     data_registro = Column(DateTime, nullable=False, default=func.current_timestamp())
     ativo = Column(Boolean, nullable=False, default=True)
@@ -257,7 +283,7 @@ class HistoricoParticipacao(Base):
     __tablename__ = 'historico_participacoes'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    uuid = Column(UUID(as_uuid=True), default=func.uuid_generate_v4(), unique=True, nullable=False)
+    uuid = Column(UUID, default=uuid.uuid4, unique=True, nullable=False)
     versao_id = Column(String(50), nullable=False, index=True)  # ID da versão (timestamp ou UUID)
     data_versao = Column(DateTime, nullable=False, default=func.current_timestamp())
     porcentagem = Column(Numeric(10,8), nullable=False, default=0.00000000)
@@ -417,7 +443,7 @@ class Alias(Base):
     __tablename__ = 'alias'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    uuid = Column(UUID(as_uuid=True), default=func.uuid_generate_v4(), unique=True, nullable=False)
+    uuid = Column(UUID, default=uuid.uuid4, unique=True, nullable=False)
     alias = Column(String(200), nullable=False, unique=True)
     id_proprietarios = Column(Text, nullable=True)  # JSON array de IDs dos proprietários
     
@@ -441,7 +467,7 @@ class Transferencia(Base):
     __tablename__ = 'transferencias'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    uuid = Column(UUID(as_uuid=True), default=func.uuid_generate_v4(), unique=True, nullable=False)
+    uuid = Column(UUID, default=uuid.uuid4, unique=True, nullable=False)
     alias_id = Column(Integer, ForeignKey('alias.id'), nullable=False)
     nome_transferencia = Column(String(300), nullable=False)
     valor_total = Column(Numeric(10, 2), nullable=False, default=0.0)
