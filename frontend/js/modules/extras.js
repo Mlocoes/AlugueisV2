@@ -641,6 +641,11 @@ class ExtrasManager {
         const modal = document.getElementById('modal-transferencias');
         console.log('Modal element encontrado:', !!modal);
         console.log('Modais abertos atualmente:', document.querySelectorAll('.modal.show').length);
+        
+        // Garantir que os event listeners estejam configurados SEMPRE que o modal for mostrado
+        console.log('[DEBUG] Garantindo configuração de event listeners para modal de transferências');
+        this.setupEvents();
+        
         const form = document.getElementById('form-transferencias');
         const modalTitle = document.getElementById('modalTransferenciasLabel');
 
