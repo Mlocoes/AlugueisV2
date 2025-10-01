@@ -149,16 +149,32 @@ class ExtrasManager {
 
         // Formulário de transferências - configurar apenas uma vez
         const formTransferencias = document.getElementById('form-transferencias');
-        console.log('[DEBUG] Verificando form-transferencias:', !!formTransferencias, 'hasListener:', formTransferencias?.hasTransferenciasListener);
+        const btnSalvarTransferencias = document.getElementById('btn-salvar-transferencias');
+        
         if (formTransferencias && !formTransferencias.hasTransferenciasListener) {
             console.log('[DEBUG] Configurando event listener para form-transferencias');
             formTransferencias.addEventListener('submit', (e) => {
+                console.log('[DEBUG] ===== EVENTO SUBMIT DISPARADO =====');
                 console.log('[DEBUG] Event submit disparado para form-transferencias');
                 e.preventDefault();
+                console.log('[DEBUG] Chamando salvarTransferencias...');
                 this.salvarTransferencias();
             });
             formTransferencias.hasTransferenciasListener = true;
-            console.log('[DEBUG] Event listener configurado com sucesso');
+            console.log('[DEBUG] Event listener do form configurado com sucesso');
+        }
+        
+        // Backup: event listener direto no botão
+        if (btnSalvarTransferencias && !btnSalvarTransferencias.hasClickListener) {
+            console.log('[DEBUG] Configurando event listener direto no botão salvar');
+            btnSalvarTransferencias.addEventListener('click', (e) => {
+                console.log('[DEBUG] ===== CLIQUE DIRETO NO BOTÃO SALVAR =====');
+                console.log('[DEBUG] Botão salvar clicado diretamente');
+                e.preventDefault();
+                this.salvarTransferencias();
+            });
+            btnSalvarTransferencias.hasClickListener = true;
+            console.log('[DEBUG] Event listener do botão configurado com sucesso');
         }
 
         document.addEventListener('DOMContentLoaded', () => {
